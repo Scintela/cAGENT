@@ -1,0 +1,10 @@
+# Local tool state
+.v2c/
+
+# C/C++ build output
+/build/
+/cmake-build-*/
+*.o
+*.a
+*.so
+*.d

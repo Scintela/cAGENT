@@ -1,0 +1,46 @@
+/*
+ * SPDX-License-Identifier: MIT
+ * SPDX-FileCopyrightText: 2026 tanglinjie
+ */
+/* Core lifecycle and commonly used application APIs. */
+#pragma once
+
+#include <agent/config.h>
+#include <agent/error.h>
+#include <agent/event.h>
+#include <agent/policy.h>
+#include <agent/session.h>
+#include <agent/tool.h>
+#include <agent/types.h>
+#include <agent/version.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* Computes Core workspace size/alignment without allocation or side effects. */
+agent_error_t agent_plan(const agent_config_t* config, agent_memory_plan_t* plan);
+
+/* Initializes caller storage and enters CONFIGURING; workspace stays caller-owned. */
+agent_error_t agent_init(agent_t** agent, void* workspace, size_t workspace_size,
+                              const agent_config_t* config);
+
+/* Allocates a workspace through config.runtime.allocator, then initializes it. */
+agent_t* agent_create(const agent_config_t* config);
+
+/* Validates bindings and enters READY without issuing I/O. */
+agent_error_t agent_start(agent_t* agent);
+
+/* Destroys an idle Agent and owned resources; borrowed resources are untouched. */
+void agent_destroy(agent_t* agent);
+
+/* Runs one complete turn synchronously; provider/tool callbacks may block. */
+agent_error_t agent_run(agent_t* agent, const agent_request_t* request,
+                             agent_response_t* response);
+
+/* Replaces default limits while idle; active turns and resource ceilings stay unchanged. */
+agent_error_t agent_set_limits(agent_t* agent, const agent_limits_t* limits);
+
+#ifdef __cplusplus
+}
+#endif

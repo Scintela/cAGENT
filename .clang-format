@@ -1,0 +1,53 @@
+# cAgentV2 格式化配置 —— 从现有代码风格推导。
+# 工具:clang-format 23.x。运行:clang-format -i <file>
+---
+Language: Cpp
+BasedOnStyle: LLVM
+
+# 缩进与列宽
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+ColumnLimit: 100
+
+# 大括号(依 contracts.c 与头文件实测):
+#   函数体、if/for/while 独立成行;typedef struct/enum、extern "C" 贴行。
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterFunction: true
+  AfterControlStatement: Always
+  AfterEnum: false
+  AfterStruct: false
+  AfterUnion: false
+  AfterExternBlock: false
+  BeforeElse: false
+  BeforeCatch: false
+IndentExternBlock: NoIndent
+
+# 指针贴类型:void* context, const agent_request_t* request
+PointerAlignment: Left
+DerivePointerAlignment: false
+
+# 换行参数对齐到开括号后
+AlignAfterOpenBracket: Align
+
+# 行尾注释(包括结构体字段后的 /* ... */)纵向对齐
+AlignTrailingComments: true
+
+# 短结构不合并成单行
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+
+# 中文注释不做重排,避免 CJK 折行错乱
+ReflowComments: false
+
+# include 块保持原分组,仅组内排序
+SortIncludes: CaseSensitive
+IncludeBlocks: Preserve
+
+# 其他
+IndentCaseLabels: false
+InsertBraces: false
+InsertNewlineAtEOF: true
+MaxEmptyLinesToKeep: 1
