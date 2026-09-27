@@ -194,8 +194,8 @@ config AGENT_PORT_ESPIDF_TRANSPORT
 - `ports/espidf` 通过独立 Kconfig/CMake 选择 Runtime 和 HTTP Transport Adapter；
 - 当前 Core workspace 编译期断言仍只验证 `sizeof(agent_t) + AGENT_SCRATCH_BYTES`，后续应结合真实布局和 profile 继续加强；
 - Core 子模块逐项裁剪尚未实现，因此首版 Kconfig 不暴露会造成“菜单可关、源码仍编译”的 ENABLE 开关；
-- OpenVela 已有可选 `webclient` Transport 的 Kconfig/CMake 片段，但尚未在目标系统完成
-  组件集成与设备验证；RT-Thread 的构建组件尚未添加。
+- OpenVela 已有可独立选择的单调时钟 Runtime 和 `webclient` Transport Kconfig/CMake 片段，
+  但尚未在目标系统完成组件集成与设备验证；RT-Thread 的构建组件尚未添加。
 
 Profile 数值目前是可用的初始值，仍需在目标 MCU 上测量 workspace 峰值，并据此校准。
 

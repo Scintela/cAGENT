@@ -1,7 +1,7 @@
 # OpenVela Transport
 
 This optional subpackage implements `agent_transport_ops_t` using NuttX
-`netutils/webclient`. Include `ports/openvela/include` and compile `transport/src/transport.c` only when
+`netutils/webclient`. Include `ports/openvela/transport/include` and compile `transport/src/transport.c` only when
 `CONFIG_NETUTILS_WEBCLIENT` is enabled. The supplied `Kconfig` and `CMakeLists.txt` are integration
 fragments for NuttX application builds; they do not change the portable Core build.
 

@@ -1,13 +1,18 @@
 # OpenVela Runtime
 
-This subpackage will create an `agent_runtime_t` from OpenVela/NuttX facilities. Its source and
-public header are added only with a buildable OpenVela package.
+This optional subpackage provides `agent_port_openvela_runtime_init()` in
+`runtime/include/agent_openvela_runtime.h`. It fills a caller-owned `agent_runtime_t` with a
+`CLOCK_MONOTONIC` millisecond clock; all other callbacks remain unset. Enable
+`CONFIG_AGENT_PORT_OPENVELA_RUNTIME` or compile `runtime/src/runtime.c` with the public headers.
 
-Required behavior:
+The builder probes the clock during init and returns `AGENT_ERROR_IO` if unavailable. A later clock
+read failure returns `UINT64_MAX` so absolute deadlines fail closed. The normal path does not
+allocate. The application can add allocator, logging, and a paired `cancel_sync` before `agent_init`;
+the clock builder does not install an implicit global mutex or create threads.
 
-- provide a nondecreasing 64-bit monotonic millisecond clock;
-- document the chosen cancellation synchronization primitive and its task-context restriction;
-- leave the allocator empty unless the product explicitly enables the heap convenience path;
-- adapt logging synchronously without Agent re-entry.
+Cross-task cancellation needs application-supplied synchronization. The callbacks must cover both
+`agent_cancel_token_request()` and active-turn reads, and must not be called from an unsupported
+ISR context. The selected NuttX board must support `clock_gettime(CLOCK_MONOTONIC)`.
 
-It must not include socket, mbedTLS, HTTP, PSRAM buffer, Flash, or JSONL storage policy.
+This Runtime contains no socket, mbedTLS, HTTP, PSRAM, Flash, or JSONL storage policy. Native device
+validation remains outstanding.
