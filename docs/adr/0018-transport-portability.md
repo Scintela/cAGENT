@@ -1,6 +1,6 @@
 # ADR 0018: HTTP/TLS Transport 的跨平台 Adapter 架构
 
-- 状态：已采纳（目录边界）；首批官方 Adapter 待定
+- 状态：已采纳（同步 HTTP Contract 与目录边界）；ESP-IDF/OpenVela Adapter 已有初版，目标设备验证待完成
 - 日期：2026-09-27
 
 ## 背景
@@ -27,6 +27,20 @@ Agent Core
 - HTTP status 和 body 必须交给 Model Provider；Transport 的 `AGENT_OK` 只表示交换和 sink 交付完成，
   不表示 HTTP 2xx。
 - TLS 证书、连接池、DNS cache、socket、网络 task 栈和 I/O buffer 都不属于 `agent_workspace_t`。
+
+## 统一 Ops 与实例绑定
+
+`include/agent/transport.h` 定义统一 HTTP Contract：`agent_http_request_t` 表示一次有界请求，
+`agent_http_sink_t` 接收状态码、响应头及分块 body，`agent_transport_ops_t.request` 执行同步交换。
+`agent_transport_t` 仅保存不可变 ops 表指针和平台实例 `context`，本身不拥有该实例。
+`src/transport/transport.c` 提供平台无关的参数校验与转发；其调用入口目前是内部接口，
+不是 Agent Core 持有的全局 HTTP 服务。
+
+ESP-IDF Adapter 通过 `agent_port_espidf_transport_init(out, state, config)` 把自己的
+`request` 实现绑定到 `out->ops`，并把调用方持有的状态放入 `out->context`。应用初始化后，
+联网 Model Provider 在其专属配置中借用该 Transport，Agent 再绑定 Model；
+`agent_config_t` 不含 Transport 字段。本路径中的 OpenAI Provider 配置与完整调用链尚未实现，
+不能把已有 Ops 和 Port 误认为端到端 LLM 请求已经可用。
 
 ## 方案比较
 
@@ -106,6 +120,12 @@ Transport 自己的失败映射为：DNS/socket/TLS 失败为 `IO`，deadline �
 | 应用提供私有 Transport | AT modem、网关、企业网络库 | 最适合已有网络栈。 | 应用承担完整 contract 测试。 |
 
 三种选择都能实现相同 `agent_transport_t`；Core 和通用 Model Provider 不应知道具体选项。
+首版不增加公共 TLS VTable，也暂不把 CA 来源、证书格式等做成统一的
+`agent_tls_config_t`。由各 Adapter 的实例配置处理证书、信任根及平台特性；
+HTTPS 必须验证服务器证书链和目标主机名，缺少可信验证条件时应失败，不能静默降级。
+当前 ESP-IDF Adapter 在 HTTPS 请求前要求 PEM CA 或编译期开启的证书 Bundle，缺失时直接失败；
+OpenVela `webclient` Adapter 要求应用提供 TLS ops，无法自行证明该实现已验证证书链和主机名。
+两者都仍需目标平台集成及安全测试，不应把 Mock 测试视作 TLS 验证。
 
 ## 目录与构建方案
 
@@ -123,20 +143,27 @@ src/transport/transport_openvela.c
 ### 采用：独立 `ports/` 包
 
 ```text
-src/transport/                         # generic contract validation and Mock
-ports/espidf/transport/include/agent/port/espidf/transport.h
+src/transport/                         # generic validation and internal dispatch
+ports/espidf/include/agent_espidf_transport.h
 ports/espidf/transport/src/transport.c
-ports/openvela/transport/include/agent/port/openvela/transport.h
+ports/openvela/include/agent_openvela_transport.h
 ports/openvela/transport/src/transport.c
-ports/rtthread/transport/include/agent/port/rtthread/transport.h
+ports/rtthread/include/agent_rtthread_transport.h
 ports/rtthread/transport/src/transport.c
-ports/host/transport/include/agent/port/host/transport.h
+ports/host/include/agent_host_transport.h
 ports/host/transport/src/transport.c
 ```
 
 平台依赖和 Kconfig/CMake 配置不污染 Core；代价是发布与版本协同更复杂。对跨系统开源库更合适，并
-与 ADR 0017 的 Runtime Port 采用同一组织模型。当前仅建立目录和责任说明，未实现的 Adapter 不导出
-占位 API，也不进入任何默认构建。
+与 ADR 0017 的 Runtime Port 采用同一组织模型。目前已有 ESP-IDF 和基于 NuttX
+`netutils/webclient` 的 OpenVela Adapter 初版；其他未实现的 Adapter 不导出占位 API，
+也不进入任何默认构建。
+
+构建期选择的是参与编译的 Backend 及其 SDK 依赖，初始化期选择的是具体
+`agent_transport_t` 实例。单平台产品通常只编译一个官方 Backend，可由 Port 的 Kconfig/CMake
+提供默认选项；公共 Contract 不规定全固件只能有一个 Backend 或一个实例。同一产品可以同时链接
+官方 Adapter、应用自定义 Adapter 或 Mock，分别注入不同的 Model/Tool；不联网的产品可一个也不选。
+Core 不识别 `CAGENT_HTTP_BACKEND` 之类的全局枚举，也不设置全局 Transport 单例。
 
 ### 候选三：完全由应用实现
 
@@ -145,21 +172,25 @@ Core 只发布 `transport.h`，不维护官方 Adapter。维护成本最低，�
 
 ## 当前公开头的收敛项
 
-`transport.h` 已收敛两项基础 ABI：
+`transport.h` 已收敛以下基础 ABI：
 
 1. `agent_transport_t` 永远是 borrowed binding，`agent_transport_ops_t` 不包含 `destroy`；类型化平台
    或 Provider API 自行提供 `deinit`。
 2. `headers` 和 `body` sink 都必须非空；不消费的一方传 no-op callback，避免 Adapter 对 NULL 产生不同
    语义。
+3. `agent_transport_ops_t` 首版只有同步 `request`；取消通过请求中的 token 协作检查，
+   不另设公共 `cancel` VTable 方法。
 
 同时应决定 response header/body 的总字节计数、chunk 顺序、零字节 body、chunked decode、取消后
 异步 SDK callback 排空的精确测试规则。ADR 0007 已给出同步 contract 草案，可作为收敛起点。
 
 ## 待决项
 
-1. ESP-IDF 已有 mock-SDK 验证的最小 Adapter；何时完成硬件验证并加入 OpenVela/RT-Thread。
-2. 首版是否只支持完整 request body、同步 `request()`，暂不公开请求 streaming 与异步接口。
-3. TLS 证书、PSRAM buffer、连接池是完全 Adapter 配置，还是 Provider 配置向 Adapter 透传。
+1. ESP-IDF/OpenVela 已有 mock-SDK 验证的 Adapter；何时完成设备验证并加入 RT-Thread。
+2. 首版已选择完整 request body、同步 `request()`；何时增加请求 streaming 或异步接口仍待真实需求。
+3. 各 Adapter 如何验证 HTTPS 信任来源、证书格式、超时与取消行为，并测量私有内存。
+4. OpenVela `webclient` 自动重定向无法按当前 Contract 原样交付 3xx，因此 Adapter 明确拒绝 3xx；
+   若产品需要 3xx 响应或硬截止时间，应选其他 HTTP Backend。其阻塞 DNS/IO 期间无法保证即时取消。
 
 ## 验证要求
 

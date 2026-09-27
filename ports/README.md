@@ -20,9 +20,9 @@ ports/<platform>/
   transport/                      # Optional HTTP/TLS Transport subpackage.
 ```
 
-Each subpackage owns its own `include/`, `src/`, `tests/`, and platform-native build metadata when
-it gains a real implementation. This permits a Runtime-only Port on a networkless device and a
-Transport-only Adapter that uses application-provided Runtime callbacks.
+Ports may share one `include/` directory for short, prefixed public headers while keeping Runtime
+and Transport source directories separate. This permits a Runtime-only Port on a networkless device
+and a Transport-only Adapter that uses application-provided Runtime callbacks.
 
 The current directories are ownership and delivery boundaries, not claims that an adapter is
 implemented. An application may always construct `agent_runtime_t` or `agent_transport_t` itself.

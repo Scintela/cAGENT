@@ -90,6 +90,9 @@ codecs/cjson/
 
 这允许没有网络的 Runtime-only 产品不链接 `esp_http_client`，也允许仅以 application 自定义
 Transport 驱动联网 Provider。
+Port 构建开关只决定哪些 Backend 源码和依赖进入固件。单平台产品通常只开启一个官方 HTTP
+Backend，但不要求所有 Backend 选项互斥；同一固件可为不同 Provider/Tool 初始化多个
+`agent_transport_t` 实例。具体实例在初始化期注入，Core 不维护全局 HTTP Backend 选择器。
 
 ### 4. Core Profile 菜单以 choice 为主，Custom 才暴露细项
 
@@ -191,7 +194,8 @@ config AGENT_PORT_ESPIDF_TRANSPORT
 - `ports/espidf` 通过独立 Kconfig/CMake 选择 Runtime 和 HTTP Transport Adapter；
 - 当前 Core workspace 编译期断言仍只验证 `sizeof(agent_t) + AGENT_SCRATCH_BYTES`，后续应结合真实布局和 profile 继续加强；
 - Core 子模块逐项裁剪尚未实现，因此首版 Kconfig 不暴露会造成“菜单可关、源码仍编译”的 ENABLE 开关；
-- OpenVela、RT-Thread 的构建组件尚未添加。
+- OpenVela 已有可选 `webclient` Transport 的 Kconfig/CMake 片段，但尚未在目标系统完成
+  组件集成与设备验证；RT-Thread 的构建组件尚未添加。
 
 Profile 数值目前是可用的初始值，仍需在目标 MCU 上测量 workspace 峰值，并据此校准。
 
