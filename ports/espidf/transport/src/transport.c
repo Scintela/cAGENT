@@ -4,12 +4,15 @@
  */
 /* ESP-IDF esp_http_client implementation of the synchronous Transport contract. */
 
-#include <agent/port/espidf/transport.h>
+#include <agent_espidf_transport.h>
 
 #include <agent/run.h>
 
 #include <esp_err.h>
 #include <esp_http_client.h>
+#if defined(CONFIG_MBEDTLS_CERTIFICATE_BUNDLE)
+#include <esp_crt_bundle.h>
+#endif
 
 #include <limits.h>
 #include <string.h>
@@ -53,6 +56,36 @@ static bool agent_port_espidf_view_equal(agent_string_view_t value, const char* 
     return value.data != NULL && value.size == size && memcmp(value.data, literal, size) == 0;
 }
 
+static agent_error_t agent_port_espidf_url_scheme(agent_string_view_t url, bool* https)
+{
+    size_t index;
+
+    if (url.data == NULL || https == NULL)
+    {
+        return AGENT_ERROR_INVALID;
+    }
+    if (url.size > 8u && memcmp(url.data, "https://", 8u) == 0)
+    {
+        *https = true;
+    }
+    else if (url.size > 7u && memcmp(url.data, "http://", 7u) == 0)
+    {
+        *https = false;
+    }
+    else
+    {
+        return AGENT_ERROR_NOT_SUPPORTED;
+    }
+    for (index = 0u; index < url.size; ++index)
+    {
+        if ((unsigned char)url.data[index] <= 0x20u || (unsigned char)url.data[index] == 0x7fu)
+        {
+            return AGENT_ERROR_INVALID;
+        }
+    }
+    return AGENT_OK;
+}
+
 static bool agent_port_espidf_http_text_valid(agent_string_view_t value, bool required)
 {
     size_t index;
@@ -88,7 +121,10 @@ static agent_error_t agent_port_espidf_copy_text(char* output, size_t output_siz
         return AGENT_ERROR_CAPACITY;
     }
 
-    memcpy(output, input.data, input.size);
+    if (input.size != 0u)
+    {
+        memcpy(output, input.data, input.size);
+    }
     output[input.size] = '\0';
     return AGENT_OK;
 }
@@ -187,10 +223,23 @@ static agent_error_t agent_port_espidf_set_headers(esp_http_client_handle_t clie
                                                     const agent_http_request_t* request)
 {
     size_t index;
+    size_t character;
     agent_error_t status;
 
     for (index = 0u; index < request->header_count; ++index)
     {
+        if (request->headers[index].name.data == NULL || request->headers[index].name.size == 0u)
+        {
+            return AGENT_ERROR_INVALID;
+        }
+        for (character = 0u; character < request->headers[index].name.size; ++character)
+        {
+            unsigned char value = (unsigned char)request->headers[index].name.data[character];
+            if (value <= 0x20u || value >= 0x7fu || value == ':')
+            {
+                return AGENT_ERROR_INVALID;
+            }
+        }
         status = agent_port_espidf_copy_text(transport->config.request_header_name_buffer,
                                              transport->config.request_header_name_buffer_size,
                                              request->headers[index].name, true);
@@ -233,13 +282,20 @@ static agent_error_t agent_port_espidf_store_header(agent_port_espidf_exchange_t
 
     name_size = strlen(name);
     value_size = strlen(value);
-    if (name_size > exchange->request->max_response_header_bytes - exchange->response_header_bytes ||
+    if (exchange->response_header_bytes > exchange->request->max_response_header_bytes ||
+        name_size > exchange->request->max_response_header_bytes - exchange->response_header_bytes ||
         value_size > exchange->request->max_response_header_bytes - exchange->response_header_bytes - name_size)
     {
         return AGENT_ERROR_CAPACITY;
     }
+    if (name_size >= config->response_header_buffer_size ||
+        config->response_header_buffer_size - name_size < 2u ||
+        value_size > config->response_header_buffer_size - name_size - 2u)
+    {
+        return AGENT_ERROR_CAPACITY;
+    }
     required = name_size + 1u + value_size + 1u;
-    if (required < name_size || exchange->response_header_text_used > config->response_header_buffer_size ||
+    if (exchange->response_header_text_used > config->response_header_buffer_size ||
         required > config->response_header_buffer_size - exchange->response_header_text_used)
     {
         return AGENT_ERROR_CAPACITY;
@@ -327,7 +383,8 @@ static esp_err_t agent_port_espidf_event(esp_http_client_event_t* event)
             else
             {
                 data_size = (size_t)event->data_len;
-                if (data_size > exchange->request->max_response_bytes - exchange->response_body_bytes)
+                if (exchange->response_body_bytes > exchange->request->max_response_bytes ||
+                    data_size > exchange->request->max_response_bytes - exchange->response_body_bytes)
                 {
                     exchange->status = AGENT_ERROR_CAPACITY;
                 }
@@ -362,6 +419,7 @@ static agent_error_t agent_port_espidf_request(void* context,
     agent_error_t status;
     esp_err_t error;
     int timeout_ms;
+    bool https;
 
     if (transport == NULL || request == NULL || sink == NULL || sink->headers == NULL ||
         sink->body == NULL || request->method.data == NULL || request->method.size == 0u ||
@@ -380,6 +438,22 @@ static agent_error_t agent_port_espidf_request(void* context,
     {
         return AGENT_ERROR_LIMIT;
     }
+
+    status = agent_port_espidf_url_scheme(request->url, &https);
+    if (status != AGENT_OK)
+    {
+        return status;
+    }
+    if (https && transport->config.cert_pem == NULL && !transport->config.use_crt_bundle)
+    {
+        return AGENT_ERROR_INVALID;
+    }
+#if !defined(CONFIG_MBEDTLS_CERTIFICATE_BUNDLE)
+    if (https && transport->config.use_crt_bundle)
+    {
+        return AGENT_ERROR_NOT_SUPPORTED;
+    }
+#endif
 
     status = agent_port_espidf_copy_text(transport->config.url_buffer,
                                          transport->config.url_buffer_size, request->url, true);
@@ -402,6 +476,12 @@ static agent_error_t agent_port_espidf_request(void* context,
     config = (esp_http_client_config_t){0};
     config.url = transport->config.url_buffer;
     config.cert_pem = transport->config.cert_pem;
+#if defined(CONFIG_MBEDTLS_CERTIFICATE_BUNDLE)
+    if (transport->config.use_crt_bundle)
+    {
+        config.crt_bundle_attach = esp_crt_bundle_attach;
+    }
+#endif
     config.timeout_ms = timeout_ms;
     config.disable_auto_redirect = true;
     config.event_handler = agent_port_espidf_event;
@@ -428,6 +508,14 @@ static agent_error_t agent_port_espidf_request(void* context,
     {
         error = esp_http_client_perform(client);
         status = exchange.status != AGENT_OK ? exchange.status : agent_port_espidf_map_error(error);
+        if (status == AGENT_OK && !exchange.headers_emitted)
+        {
+            status = AGENT_ERROR_IO;
+        }
+        if (status == AGENT_OK)
+        {
+            status = agent_port_espidf_poll(&exchange);
+        }
     }
 
     esp_http_client_cleanup(client);
@@ -458,6 +546,17 @@ agent_error_t agent_port_espidf_transport_init(
     {
         return AGENT_ERROR_INVALID;
     }
+    if ((config->cert_pem != NULL && config->cert_pem[0] == '\0') ||
+        (config->cert_pem != NULL && config->use_crt_bundle))
+    {
+        return AGENT_ERROR_INVALID;
+    }
+#if !defined(CONFIG_MBEDTLS_CERTIFICATE_BUNDLE)
+    if (config->use_crt_bundle)
+    {
+        return AGENT_ERROR_NOT_SUPPORTED;
+    }
+#endif
 
     state->config = *config;
     state->active = false;

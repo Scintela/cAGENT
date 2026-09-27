@@ -40,6 +40,7 @@ typedef esp_err_t (*esp_http_client_event_cb_t)(esp_http_client_event_t* event);
 typedef struct {
     const char* url;
     const char* cert_pem;
+    esp_err_t (*crt_bundle_attach)(void* conf);
     int timeout_ms;
     bool disable_auto_redirect;
     esp_http_client_event_cb_t event_handler;

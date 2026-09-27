@@ -12,17 +12,20 @@ endif()
 if(CONFIG_AGENT_PORT_ESPIDF_TRANSPORT)
     list(APPEND _agent_port_sources transport/src/transport.c)
     list(APPEND _agent_private_requires esp_http_client)
+    if(CONFIG_MBEDTLS_CERTIFICATE_BUNDLE)
+        list(APPEND _agent_private_requires mbedtls)
+    endif()
 endif()
 
 if(_agent_private_requires)
     idf_component_register(
         SRCS ${_agent_port_sources}
-        INCLUDE_DIRS runtime/include transport/include
+        INCLUDE_DIRS include
         REQUIRES cagent
         PRIV_REQUIRES ${_agent_private_requires})
 else()
     idf_component_register(
         SRCS ${_agent_port_sources}
-        INCLUDE_DIRS runtime/include transport/include
+        INCLUDE_DIRS include
         REQUIRES cagent)
 endif()

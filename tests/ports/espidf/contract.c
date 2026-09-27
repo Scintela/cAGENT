@@ -4,8 +4,8 @@
  */
 /* ESP-IDF Port contract tests with a minimal ESP-IDF API fake. */
 
-#include <agent/port/espidf/runtime.h>
-#include <agent/port/espidf/transport.h>
+#include <agent_espidf_runtime.h>
+#include <agent_espidf_transport.h>
 #include <agent/run.h>
 
 #include <esp_http_client.h>
@@ -23,16 +23,18 @@ struct esp_http_client {
 static struct esp_http_client fake_client;
 static uint64_t fake_now_ms = 1000u;
 static int64_t fake_timer_us = 1234567;
+static unsigned int fake_status = 200u;
+static bool fake_empty_body;
+
+esp_err_t esp_crt_bundle_attach(void* conf)
+{
+    (void)conf;
+    return ESP_OK;
+}
 
 int64_t esp_timer_get_time(void)
 {
     return fake_timer_us;
-}
-
-bool agent_cancel_token_is_set(const agent_cancel_token_t* token)
-{
-    (void)token;
-    return false;
 }
 
 esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t* config)
@@ -98,12 +100,15 @@ esp_err_t esp_http_client_perform(esp_http_client_handle_t client)
         return ESP_FAIL;
     }
 
-    event.event_id = HTTP_EVENT_ON_DATA;
-    event.data = body;
-    event.data_len = (int)(sizeof(body) - 1u);
-    if (client->config.event_handler(&event) != ESP_OK)
+    if (!fake_empty_body)
     {
-        return ESP_FAIL;
+        event.event_id = HTTP_EVENT_ON_DATA;
+        event.data = body;
+        event.data_len = (int)(sizeof(body) - 1u);
+        if (client->config.event_handler(&event) != ESP_OK)
+        {
+            return ESP_FAIL;
+        }
     }
 
     event.event_id = HTTP_EVENT_ON_FINISH;
@@ -112,7 +117,7 @@ esp_err_t esp_http_client_perform(esp_http_client_handle_t client)
 
 int esp_http_client_get_status_code(esp_http_client_handle_t client)
 {
-    return client == &fake_client ? 200 : -1;
+    return client == &fake_client ? (int)fake_status : -1;
 }
 
 static uint64_t test_now_ms(void* context)
@@ -134,7 +139,7 @@ static agent_error_t test_headers(void* context, unsigned int status,
 {
     test_sink_t* sink = (test_sink_t*)context;
 
-    if (status != 200u || count != 1u || headers == NULL ||
+    if (status != fake_status || count != 1u || headers == NULL ||
         headers[0].name.size != strlen("content-type"))
     {
         return AGENT_ERROR;
@@ -185,6 +190,7 @@ int main(void)
 
     config = (agent_port_espidf_transport_config_t){0};
     config.runtime.now_ms = test_now_ms;
+    config.cert_pem = "test-ca-pem";
     config.request_timeout_ms = 5000u;
     config.url_buffer = url_buffer;
     config.url_buffer_size = sizeof(url_buffer);
@@ -233,6 +239,50 @@ int main(void)
     if (transport.ops->request(transport.context, &request, &sink) != AGENT_ERROR_TIMEOUT)
     {
         return 5;
+    }
+
+    request.deadline_ms = 0u;
+    state.config.cert_pem = NULL;
+    if (transport.ops->request(transport.context, &request, &sink) != AGENT_ERROR_INVALID)
+    {
+        return 6;
+    }
+
+    state.config.use_crt_bundle = true;
+#if defined(CONFIG_MBEDTLS_CERTIFICATE_BUNDLE)
+    if (transport.ops->request(transport.context, &request, &sink) != AGENT_OK ||
+        fake_client.config.crt_bundle_attach != esp_crt_bundle_attach)
+    {
+        return 7;
+    }
+#else
+    if (transport.ops->request(transport.context, &request, &sink) != AGENT_ERROR_NOT_SUPPORTED ||
+        agent_port_espidf_transport_init(&transport, &state, &state.config) !=
+            AGENT_ERROR_NOT_SUPPORTED)
+    {
+        return 7;
+    }
+    state.config.cert_pem = "test-ca-pem";
+    state.config.use_crt_bundle = false;
+#endif
+
+    fake_status = 401u;
+    fake_empty_body = true;
+    {
+        unsigned int previous_headers = sink_state.headers;
+        unsigned int previous_bodies = sink_state.bodies;
+    if (transport.ops->request(transport.context, &request, &sink) != AGENT_OK ||
+        sink_state.status != 401u || sink_state.headers != previous_headers + 1u ||
+            sink_state.bodies != previous_bodies)
+        {
+            return 9;
+        }
+    }
+
+    request.url = agent_string_view("ftp://example.invalid", sizeof("ftp://example.invalid") - 1u);
+    if (transport.ops->request(transport.context, &request, &sink) != AGENT_ERROR_NOT_SUPPORTED)
+    {
+        return 8;
     }
 
     return 0;

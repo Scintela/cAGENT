@@ -16,6 +16,7 @@ extern "C" {
 typedef struct {
     agent_runtime_t runtime;                  /* Copied; now_ms must be set. */
     const char* cert_pem;                     /* Optional borrowed PEM trust store. */
+    bool use_crt_bundle;                      /* Use the ESP-IDF certificate bundle instead of cert_pem. */
     uint32_t request_timeout_ms;              /* Required nonzero per-request ceiling. */
     char* url_buffer;                         /* Caller NUL-termination buffer. */
     size_t url_buffer_size;                   /* URL buffer capacity. */

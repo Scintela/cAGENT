@@ -4,7 +4,7 @@
  */
 /* ESP-IDF Runtime clock adapter. */
 
-#include <agent/port/espidf/runtime.h>
+#include <agent_espidf_runtime.h>
 
 #include <esp_timer.h>
 

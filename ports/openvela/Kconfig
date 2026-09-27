@@ -1,0 +1,11 @@
+menu "cAgent OpenVela Port"
+
+config AGENT_PORT_OPENVELA_TRANSPORT
+    bool "Build OpenVela webclient HTTP Transport"
+    depends on NETUTILS_WEBCLIENT
+    default n
+    help
+      Add the synchronous NuttX webclient HTTP adapter. HTTPS additionally
+      needs an application-supplied authenticated webclient TLS implementation.
+
+endmenu

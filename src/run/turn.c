@@ -2,13 +2,44 @@
  * SPDX-License-Identifier: MIT
  * SPDX-FileCopyrightText: 2026 tanglinjie
  */
-/**
- * cAgentV2 运行状态机 实现（骨架）。
- *
- * 职责：agent_turn_begin/step/resume/end、cancel/cancel_from_isr
- * V1 参考：无（V2 新增）
- */
+/* Cancellation token support; the turn state machine remains pending. */
 
 #include "run/run_internal.h"
 
-/* TODO(cAgentV2): 实现本模块。 */
+void agent_cancel_token_init(agent_cancel_token_t* token, const agent_sync_t* sync)
+{
+    if (token == NULL)
+    {
+        return;
+    }
+    token->sync = sync != NULL ? *sync : (agent_sync_t){0};
+    token->requested = false;
+}
+
+void agent_cancel_token_request_locked(agent_cancel_token_t* token)
+{
+    if (token != NULL)
+    {
+        token->requested = true;
+    }
+}
+
+bool agent_cancel_token_is_set(const agent_cancel_token_t* token)
+{
+    bool requested;
+
+    if (token == NULL)
+    {
+        return false;
+    }
+    if (token->sync.enter != NULL)
+    {
+        token->sync.enter(token->sync.context);
+    }
+    requested = token->requested;
+    if (token->sync.leave != NULL)
+    {
+        token->sync.leave(token->sync.context);
+    }
+    return requested;
+}
