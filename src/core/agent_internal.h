@@ -31,7 +31,8 @@ struct agent {
     agent_tool_registry_t* tools;
     agent_context_registry_t* contexts;
     agent_skill_registry_t* skills;
-    agent_session_manager_t* sessions;
+    void* session_storage;
+    void* session_cursor;
     agent_turn_t* turn;
     agent_cancel_token_t* active_cancel;
     agent_arena_t scratch;
@@ -45,8 +46,8 @@ struct agent {
 };
 
 agent_error_t agent_core_validate_config(const agent_config_t* config);
-agent_error_t agent_core_layout(const agent_config_t* config, agent_arena_t* arena,
-                                     agent_t** agent);
+agent_error_t agent_core_layout(agent_workspace_t* workspace, const agent_config_t* config,
+                                agent_t** agent);
 agent_error_t agent_core_require_idle(const agent_t* agent);
 void agent_core_emit(agent_t* agent, const agent_event_t* event);
 

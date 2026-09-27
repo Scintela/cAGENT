@@ -17,9 +17,9 @@ extern "C" {
 typedef struct agent_session_manager agent_session_manager_t;
 typedef struct agent_session_turn agent_session_turn_t;
 
+/* Legacy RAM manager; replace with Storage Provider binding before implementation. */
 agent_error_t agent_session_manager_init(agent_session_manager_t** manager,
-                                              agent_arena_t* arena,
-                                              const agent_core_capacity_t* capacity);
+                                         agent_arena_t* arena);
 agent_error_t agent_session_turn_open(agent_session_manager_t* manager,
                                            agent_string_view_t session_id,
                                            agent_string_view_t input,

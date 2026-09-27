@@ -67,10 +67,11 @@ typedef struct {
     uint32_t per_tool_timeout_ms;  /* Tool call timeout; 0=overall deadline only. */
     uint32_t max_tool_calls;       /* Maximum attempted handler calls; 0=disable tools. */
     uint32_t max_output_tokens;    /* Per-model-call requested budget; 0=unspecified. */
+    uint32_t max_history_turns;    /* Previous complete turn groups to project; 0=disable. */
 } agent_limits_t;
 
 /* Default limits, matching agent_config_default().  */
-#define AGENT_LIMITS_DEFAULT {8u, 30000u, 15000u, 3000u, 4u, 512u}
+#define AGENT_LIMITS_DEFAULT {8u, 30000u, 15000u, 3000u, 4u, 512u, 0u}
 
 /* Per-turn facts; failure/cancellation never implies no device effects.  */
 typedef struct {

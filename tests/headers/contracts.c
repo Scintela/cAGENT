@@ -14,6 +14,7 @@ static const agent_string_view_t literal = AGENT_SV_LITERAL("sample");
 static const agent_limits_t limits = AGENT_LIMITS_DEFAULT;
 typedef char confirmation_zero_must_not_allow[(AGENT_RESUME_ALLOW != 0) ? 1 : -1];
 typedef char policy_zero_must_deny[(AGENT_POLICY_DENY == 0) ? 1 : -1];
+typedef char projected_messages_must_be_positive[(AGENT_MAX_PROJECTED_MESSAGES > 0u) ? 1 : -1];
 
 static agent_error_t sample_model(void* context, const agent_model_request_t* request,
                                        const agent_model_sink_t* sink)
@@ -79,6 +80,10 @@ int header_contract_fixture(agent_t* agent, agent_model_workspace_t* model_works
     (void)core_workspace;
     (void)init_fn;
     agent_error_t status = agent_model_init(&model, model_workspace, &model_ops, NULL);
+    if (limits.max_history_turns != 0u)
+    {
+        return AGENT_ERROR;
+    }
     if (status != AGENT_OK)
     {
         return status;

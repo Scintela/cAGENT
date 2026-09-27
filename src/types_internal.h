@@ -27,10 +27,8 @@ typedef struct {
     size_t max_tools;
     size_t max_contexts;
     size_t max_skills;
-    size_t max_sessions;
-    size_t session_event_capacity;
-    size_t session_payload_bytes;
     size_t scratch_bytes;
+    size_t max_projected_messages;
     size_t max_input_bytes;
     size_t max_context_bytes;
     size_t max_schema_bytes;

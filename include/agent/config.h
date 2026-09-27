@@ -30,6 +30,7 @@
 #endif
 #endif
 
+/* Transitional RAM Storage Provider capacity; not part of the Core layout. */
 #ifndef AGENT_MAX_SESSIONS
 #ifdef CONFIG_AGENT_MAX_SESSIONS
 #define AGENT_MAX_SESSIONS CONFIG_AGENT_MAX_SESSIONS
@@ -38,6 +39,7 @@
 #endif
 #endif
 
+/* Transitional RAM Storage Provider capacity; not part of the Core layout. */
 #ifndef AGENT_SESSION_EVENT_CAPACITY
 #ifdef CONFIG_AGENT_SESSION_EVENT_CAPACITY
 #define AGENT_SESSION_EVENT_CAPACITY CONFIG_AGENT_SESSION_EVENT_CAPACITY
@@ -46,11 +48,21 @@
 #endif
 #endif
 
+/* Transitional RAM Storage Provider capacity; not part of the Core layout. */
 #ifndef AGENT_SESSION_PAYLOAD_BYTES
 #ifdef CONFIG_AGENT_SESSION_PAYLOAD_BYTES
 #define AGENT_SESSION_PAYLOAD_BYTES CONFIG_AGENT_SESSION_PAYLOAD_BYTES
 #else
 #define AGENT_SESSION_PAYLOAD_BYTES 8192u
+#endif
+#endif
+
+/* Maximum message descriptors projected into one Model request. */
+#ifndef AGENT_MAX_PROJECTED_MESSAGES
+#ifdef CONFIG_AGENT_MAX_PROJECTED_MESSAGES
+#define AGENT_MAX_PROJECTED_MESSAGES CONFIG_AGENT_MAX_PROJECTED_MESSAGES
+#else
+#define AGENT_MAX_PROJECTED_MESSAGES 32u
 #endif
 #endif
 
