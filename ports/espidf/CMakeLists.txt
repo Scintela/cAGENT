@@ -20,12 +20,12 @@ endif()
 if(_agent_private_requires)
     idf_component_register(
         SRCS ${_agent_port_sources}
-        INCLUDE_DIRS include
+        INCLUDE_DIRS runtime/include transport/include
         REQUIRES cagent
         PRIV_REQUIRES ${_agent_private_requires})
 else()
     idf_component_register(
         SRCS ${_agent_port_sources}
-        INCLUDE_DIRS include
+        INCLUDE_DIRS runtime/include transport/include
         REQUIRES cagent)
 endif()
