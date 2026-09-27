@@ -113,7 +113,7 @@ borrowed binding 却含有不清晰的清理入口。
 include/agent/transport.h
 src/transport/                            # generic validation and dispatch only
 
-ports/espidf/include/agent_espidf_transport.h
+ports/espidf/transport/include/agent_espidf_transport.h
 ports/espidf/transport/src/transport.c
 ports/openvela/include/agent_openvela_transport.h
 ports/openvela/transport/src/transport.c

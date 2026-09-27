@@ -1,8 +1,8 @@
 # ESP-IDF Transport
 
 This subpackage adapts `esp_http_client` to the synchronous `agent_transport_ops_t` contract. Its
-source is in `src/`; the shared Port header is `ports/espidf/include/agent_espidf_transport.h`.
-The component build selects the source explicitly.
+source is in `src/` and its public header is `include/agent_espidf_transport.h`. The component
+build selects the source explicitly.
 
 Required behavior:
 

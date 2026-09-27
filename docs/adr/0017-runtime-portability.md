@@ -124,7 +124,7 @@ agent_error_t agent_port_stm32_runtime_init(
 include/agent/runtime.h                 # Core contract only
 src/runtime/runtime.c                   # validation and callback dispatch
 
-ports/espidf/include/agent_espidf_runtime.h
+ports/espidf/runtime/include/agent_espidf_runtime.h
 ports/espidf/runtime/src/runtime.c
 ports/openvela/include/agent_openvela_runtime.h
 ports/openvela/runtime/src/runtime.c

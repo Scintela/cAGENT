@@ -144,7 +144,7 @@ src/transport/transport_openvela.c
 
 ```text
 src/transport/                         # generic validation and internal dispatch
-ports/espidf/include/agent_espidf_transport.h
+ports/espidf/transport/include/agent_espidf_transport.h
 ports/espidf/transport/src/transport.c
 ports/openvela/include/agent_openvela_transport.h
 ports/openvela/transport/src/transport.c

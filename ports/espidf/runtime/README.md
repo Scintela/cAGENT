@@ -1,8 +1,8 @@
 # ESP-IDF Runtime
 
-This subpackage creates a minimal `agent_runtime_t` from ESP-IDF services. Its source is in `src/`;
-the shared Port header is `ports/espidf/include/agent_espidf_runtime.h`. The component build
-selects the source explicitly.
+This subpackage creates a minimal `agent_runtime_t` from ESP-IDF services. Its source is in `src/`
+and its public header is `include/agent_espidf_runtime.h`. The component build selects the source
+explicitly.
 
 Required behavior:
 
