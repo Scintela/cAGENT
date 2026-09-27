@@ -13,9 +13,10 @@ extern "C" {
 #endif
 
 #define AGENT_UNUSED(value) ((void)(value))
+#define AGENT_ALIGNOF(type) offsetof(struct { char byte; type value; }, value)
 
 typedef struct {
-    unsigned char* base; /* NULL while measuring layout. */
+    unsigned char* base; /* Caller-provided arena base. */
     size_t capacity;
     size_t used;
     size_t peak;
