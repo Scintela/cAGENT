@@ -16,6 +16,7 @@ static uint64_t fake_now_ms = 1000u;
 static unsigned int fake_status = 200u;
 static unsigned int fake_calls;
 static bool fake_empty_body;
+static bool fake_bad_buffer;
 static const struct webclient_tls_ops fake_tls_ops = {0};
 
 void webclient_set_defaults(struct webclient_context* client)
@@ -51,7 +52,9 @@ int webclient_perform(struct webclient_context* client)
         return -1;
     }
     if (fake_status != 302u && !fake_empty_body &&
-        client->sink_callback(&data, 0, 2, &buflen, client->sink_callback_arg) != 0)
+        client->sink_callback(&data, 0, 2,
+                              fake_bad_buffer ? NULL : &buflen,
+                              client->sink_callback_arg) != 0)
     {
         return -1;
     }
@@ -190,6 +193,12 @@ int main(void)
         return 7;
     }
     request.deadline_ms = 0u;
+    fake_bad_buffer = true;
+    if (transport.ops->request(transport.context, &request, &sink) != AGENT_ERROR_IO)
+    {
+        return 10;
+    }
+    fake_bad_buffer = false;
     agent_cancel_token_init(&token, NULL);
     request.cancel = &token;
     agent_cancel_token_request_locked(&token);

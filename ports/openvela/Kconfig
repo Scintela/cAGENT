@@ -1,5 +1,12 @@
 menu "cAgent OpenVela Port"
 
+config AGENT_PORT_OPENVELA_RUNTIME
+    bool "Build OpenVela monotonic-clock Runtime"
+    default n
+    help
+      Add the allocation-free CLOCK_MONOTONIC Runtime builder. Applications
+      may separately provide logging and cross-task cancel synchronization.
+
 config AGENT_PORT_OPENVELA_TRANSPORT
     bool "Build OpenVela webclient HTTP Transport"
     depends on NETUTILS_WEBCLIENT

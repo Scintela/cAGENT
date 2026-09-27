@@ -211,7 +211,7 @@ static int agent_port_openvela_body(char** buffer, int offset, int datend,
     {
         return -ECANCELED;
     }
-    if (buffer == NULL || *buffer == NULL || buflen == NULL || offset < 0 ||
+    if (buffer == NULL || buflen == NULL || *buffer == NULL || offset < 0 ||
         datend < offset || datend > *buflen)
     {
         exchange->status = AGENT_ERROR_IO;
