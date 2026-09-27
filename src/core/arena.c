@@ -71,9 +71,13 @@ agent_error_t agent_arena_take(agent_arena_t* arena, size_t size, size_t alignme
         return status;
     }
     status = agent_size_add(offset, size, &end);
-    if (status != AGENT_OK || end > arena->capacity)
+    if (status != AGENT_OK)
     {
-        return AGENT_ERROR_LIMIT;
+        return status;
+    }
+    if (end > arena->capacity)
+    {
+        return AGENT_ERROR_CAPACITY;
     }
 
     *memory = arena->base + offset;

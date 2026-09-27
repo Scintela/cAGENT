@@ -108,7 +108,7 @@ turn end   -> rewind to mark
 ```
 
 scratch 内的对象只在其 owning turn 或 callback 内有效。Storage Provider 返回的历史 view、注册项、
-已确认 Tool 结果等跨 turn 数据不得指向 scratch。Core 必须使用显式 `AGENT_ERROR_LIMIT`、
+已确认 Tool 结果等跨 turn 数据不得指向 scratch。Core 必须使用显式 `AGENT_ERROR_CAPACITY`、
 `AGENT_ERROR_CONTEXT_OVERFLOW` 或相应模块错误报告容量不足，不能静默截断或临时扩容。
 
 scratch 是一个受限 arena，不要求为 context、message/Tool view 数组、arguments、Tool output

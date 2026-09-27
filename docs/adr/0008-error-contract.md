@@ -75,7 +75,7 @@ typedef enum {
     AGENT_ERROR_INVALID = -3,          /* Invalid argument, configuration, or local data. */
     AGENT_ERROR_STATE = -4,            /* Lifecycle state does not permit the operation. */
     AGENT_ERROR_BUSY = -5,             /* Active turn prevents an idle-only operation. */
-    AGENT_ERROR_LIMIT = -6,            /* Configured execution or bounded-storage limit. */
+    AGENT_ERROR_LIMIT = -6,            /* Configured execution or admission limit. */
     AGENT_ERROR_TIMEOUT = -7,          /* Effective deadline elapsed. */
     AGENT_ERROR_CANCELLED = -8,        /* Cooperative cancellation observed. */
     AGENT_ERROR_NOT_FOUND = -9,        /* Named object is absent. */
@@ -85,6 +85,7 @@ typedef enum {
     AGENT_ERROR_AUTH = -13,            /* Remote credential or authorization rejected. */
     AGENT_ERROR_TRUNCATED = -14,       /* Final output was not fully delivered. */
     AGENT_ERROR_PARSE = -15,           /* Non-provider input or wire format cannot be parsed. */
+    AGENT_ERROR_CAPACITY = -16,        /* Fixed workspace, pool, or scratch is exhausted. */
 
     /* Module errors. */
     AGENT_ERROR_CONTEXT_OVERFLOW = -32,/* Context projection exceeded its byte limit. */
@@ -102,11 +103,11 @@ typedef enum {
 |--------|----------------|
 | `AGENT_OK` | 操作成功；唯一成功状态。 |
 | `AGENT_ERROR` | 无法进一步归类的外部或遗留 callback 失败；Core 已知具体原因时不得使用。 |
-| `AGENT_ERROR_NOMEM` | allocator、workspace 或 Provider 所需内存无法取得。 |
+| `AGENT_ERROR_NOMEM` | allocator 或 Provider 的 heap 分配失败；不用于固定 caller workspace 耗尽。 |
 | `AGENT_ERROR_INVALID` | 调用参数、配置值或本地输入数据不合法。 |
 | `AGENT_ERROR_STATE` | 当前生命周期状态不允许该操作，例如未完成初始化或已停止。 |
 | `AGENT_ERROR_BUSY` | 活动 turn 或其他互斥操作暂时阻止空闲期操作；等待当前操作结束后可重试。 |
-| `AGENT_ERROR_LIMIT` | 配置的 steps、Tool 调用、消息、scratch、Session pool 或一般字节预算达到上限。 |
+| `AGENT_ERROR_LIMIT` | 配置的 steps、Tool 调用、输入字节等行为/准入上限，或受检算术溢出。 |
 | `AGENT_ERROR_TIMEOUT` | 有效 deadline 已到；不能据此推断外部 Tool 没有产生副作用。 |
 | `AGENT_ERROR_CANCELLED` | 在协作式取消检查点观察到外部取消请求。 |
 | `AGENT_ERROR_NOT_FOUND` | 指定名称或 ID 的对象不存在。 |
@@ -116,6 +117,7 @@ typedef enum {
 | `AGENT_ERROR_AUTH` | 远端凭证或授权被拒绝，例如 HTTP `401`、`403`。 |
 | `AGENT_ERROR_TRUNCATED` | 最终输出未能完整交付到应用 buffer；它是交付状态，不应触发 Model 或 Tool 重执行。 |
 | `AGENT_ERROR_PARSE` | 非模型专属的配置、HTTP envelope、协议帧或其他输入格式无法解析。 |
+| `AGENT_ERROR_CAPACITY` | 固定 Core workspace、registry/payload pool、turn scratch 或 Provider 固定 staging/caching 空间耗尽；不暴露具体 arena 实现。 |
 | `AGENT_ERROR_CONTEXT_OVERFLOW` | 完整 Context 投影超过其专属字节预算；不用于请求序列化或一般 buffer 不足。 |
 | `AGENT_ERROR_MODEL_FAILED` | Model Provider 失败但没有更准确的 Model 语义，例如被远端拒绝的请求。 |
 | `AGENT_ERROR_MODEL_PARSE` | 已成功取得模型响应，但其 payload 不符合 Provider 的响应契约。 |
@@ -131,11 +133,12 @@ typedef enum {
 其他非模型专属格式解析；成功收到模型响应但其内容不符合 Model 契约时使用
 `MODEL_PARSE`；模型给出的 Tool arguments 不合法时使用 `TOOL_ARGUMENT`。
 
-`LIMIT` 同时覆盖配置的 steps、Tool 调用、消息、scratch、Session pool 和一般字节上限。
-调用方不得仅凭 `LIMIT` 或 `CONTEXT_OVERFLOW` 决定淘汰 Session；仅 Context/Session 投影
+`LIMIT` 覆盖配置的 steps、Tool 调用和单对象准入上限；`CAPACITY` 覆盖对象本身合法但固定
+workspace、pool 或 scratch 余量不足的情况。调用方不得仅凭 `LIMIT`、`CAPACITY` 或
+`CONTEXT_OVERFLOW` 决定淘汰 Session；仅 Context/Session 投影
 阶段可在本模块确认裁剪历史后重试。`CONTEXT_OVERFLOW` 仅表示完整 Context 投影超过其字节
 预算，不能用于 JSON 转义、Model HTTP request 序列化、Tool schema 或应用输出 buffer 不足。
-这些情况使用 `LIMIT`。最终 assistant 输出写入应用 buffer 时允许部分交付则使用
+这些情况按具体边界使用 `LIMIT` 或 `CAPACITY`：超过声明的单对象上限为前者，固定工作区余量不足为后者。最终 assistant 输出写入应用 buffer 时允许部分交付则使用
 `TRUNCATED`；它是交付结果而不是 Model 或 Tool 的再次执行理由。
 
 `STATE` 与 `BUSY` 不合并：前者表示对象尚未 start、turn 已结束等生命周期不合法；后者

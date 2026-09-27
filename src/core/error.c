@@ -47,6 +47,8 @@ const char* agent_error_str(agent_error_t code)
             return "AGENT_ERROR_TRUNCATED";
         case AGENT_ERROR_PARSE:
             return "AGENT_ERROR_PARSE";
+        case AGENT_ERROR_CAPACITY:
+            return "AGENT_ERROR_CAPACITY";
         case AGENT_ERROR_CONTEXT_OVERFLOW:
             return "AGENT_ERROR_CONTEXT_OVERFLOW";
         case AGENT_ERROR_MODEL_FAILED:

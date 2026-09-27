@@ -2,6 +2,8 @@
 #include <agent.h>
 #include <agent/model.h>
 
+#include "core/arena_internal.h"
+
 #include <stdlib.h>
 
 static uint64_t test_now_ms(void* context)
@@ -52,12 +54,22 @@ int main(void)
     agent_limits_t invalid_limits = AGENT_LIMITS_DEFAULT;
     agent_response_t response;
     agent_stats_t stats;
+    unsigned char arena_bytes[8];
+    agent_arena_t arena;
+    void* arena_memory;
     agent_request_t request = {AGENT_SV_LITERAL(""), AGENT_SV_LITERAL("input"),
                                AGENT_SV_LITERAL(""), NULL, NULL};
 
     config.runtime.now_ms = test_now_ms;
     config.runtime.allocator.alloc = test_alloc;
     config.runtime.allocator.free = test_free;
+    if (agent_arena_init(&arena, arena_bytes, sizeof(arena_bytes)) != AGENT_OK ||
+        agent_arena_take(&arena, sizeof(arena_bytes), 1u, &arena_memory) != AGENT_OK ||
+        agent_arena_take(&arena, 1u, 1u, &arena_memory) != AGENT_ERROR_CAPACITY ||
+        agent_error_str(AGENT_ERROR_CAPACITY) == NULL)
+    {
+        return 10;
+    }
     if (agent_init(&agent, &workspace, &config) != AGENT_OK || agent == NULL)
     {
         return 1;

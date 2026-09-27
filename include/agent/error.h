@@ -29,6 +29,7 @@ typedef enum {
     AGENT_ERROR_AUTH = -13,          /* Remote credential or authorization rejected. */
     AGENT_ERROR_TRUNCATED = -14,     /* Final output was not fully delivered. */
     AGENT_ERROR_PARSE = -15,         /* Non-provider input or wire format cannot be parsed. */
+    AGENT_ERROR_CAPACITY = -16,      /* Fixed workspace, pool, or scratch is exhausted. */
 
     /* Module errors. */
     AGENT_ERROR_CONTEXT_OVERFLOW = -32, /* Context projection exceeded its byte limit. */
