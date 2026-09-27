@@ -1005,9 +1005,9 @@ include/agent/
 
 ## 22. 推荐目录结构
 
-以下是实现成熟后的目标目录，不是当前仓库状态。当前工程尚未包含 `CMakeLists.txt`、
-`tests/`、`plugins/`、`ports/` 和 `compat/` 目录，现有 `src/runtime/port_*.c` 只是
-对应 Port 的骨架占位。
+以下是实现成熟后的目标目录，不完全代表当前仓库状态。当前已包含 `tests/` 和 `ports/`；
+`ports/` 仅建立可选包的责任边界，尚无可发布的平台 Adapter。Core 不再包含
+`src/runtime/port_*.c` 平台骨架。
 
 ```text
 cAgentV2/
@@ -1027,7 +1027,7 @@ cAgentV2/
 │   ├── transport_posix/
 │   └── storage_jsonl/
 ├── ports/
-│   ├── posix/
+│   ├── host/
 │   ├── openvela/
 │   ├── espidf/
 │   └── stm32/

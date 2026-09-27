@@ -62,7 +62,7 @@ int header_contract_fixture(agent_t* agent, agent_model_workspace_t* model_works
 {
     static agent_workspace_t core_workspace;
     static const agent_model_ops_t model_ops = {sample_model, NULL};
-    static const agent_transport_ops_t http_ops = {sample_http, NULL};
+    static const agent_transport_ops_t http_ops = {sample_http};
     agent_transport_t transport = {&http_ops, NULL};
     agent_tool_t tool = {AGENT_SV_LITERAL("sample"),
                          AGENT_SV_LITERAL("description"),

@@ -98,8 +98,8 @@ Adapter 不自动重试、重定向或重放请求。上层若需要可显式配
 - 私有 Transport 若由某个具体 Model Provider 创建，其构造和销毁由该 Provider 的
   专用 API 管理，而不是由通用 Agent API 推断。
 
-因此，通用 `agent_transport_ops_t` 不应包含 `destroy`。当前草案头中的该字段应在实现
-前移除，避免 borrowed binding 却含有不清晰的清理入口。
+因此，通用 `agent_transport_ops_t` 不包含 `destroy`。该字段已从公开 ABI 移除，避免
+borrowed binding 却含有不清晰的清理入口。
 
 ### 平台 Adapter 与构建裁剪
 
@@ -107,16 +107,16 @@ Adapter 不自动重试、重定向或重放请求。上层若需要可显式配
 
 ```text
 include/agent/transport.h
-include/agent/transport/espidf.h
-include/agent/transport/openvela.h
-include/agent/transport/rtthread.h
-include/agent/transport/host.h
+src/transport/                            # generic validation and dispatch only
 
-src/transport/transport_espidf.c
-src/transport/transport_openvela.c
-src/transport/transport_rtthread.c
-src/transport/transport_host.c
-src/transport/transport_mock.c
+ports/espidf/include/agent/port/espidf/transport.h
+ports/espidf/src/transport.c
+ports/openvela/include/agent/port/openvela/transport.h
+ports/openvela/src/transport.c
+ports/rtthread/include/agent/port/rtthread/transport.h
+ports/rtthread/src/transport.c
+ports/host/include/agent/port/host/transport.h
+ports/host/src/transport.c
 ```
 
 构建系统以等价于以下的配置裁剪源文件与其平台依赖：
@@ -128,8 +128,9 @@ CONFIG_AGENT_TRANSPORT_RTTHREAD=n
 CONFIG_AGENT_TRANSPORT_HOST=n
 ```
 
-配置项是构建系统的职责，不要求 Core 识别平台 enum 或在运行时选择 backend。产品也可
-完全不编译库提供的 Adapter，而自行实现 `agent_transport_ops_t`。
+配置项是 Port 构建系统的职责，不要求 Core 识别平台 enum 或在运行时选择 backend。产品也可
+完全不编译库提供的 Adapter，而自行实现 `agent_transport_ops_t`。在某个 Adapter 可真实初始化
+并通过契约测试前，不应创建上述公开头或占位实现。
 
 面向 MCU 的 Adapter 应优先提供 caller-storage 路径；其 workspace 类型和具体配置由平台
 扩展头定义，而非通用 Core ABI：
@@ -160,7 +161,7 @@ Tool 作者负责，Core 不因 Tool 使用 HTTP 而产生新的网络生命周�
 
 ## 当前头文件的收敛项
 
-在实现任意平台 Adapter 前，`transport.h` 应完成以下调整：
+`transport.h` 已完成以下 ABI 收敛；内部 dispatcher 在调用 Adapter 前执行相应参数校验：
 
 1. 从 `agent_transport_ops_t` 删除 `destroy`；通用 binding 只表示借用。
 2. 明确 `request`、`sink->headers`、`sink->body` 均为必需 callback；不需要消费数据的

@@ -2,7 +2,7 @@
  * SPDX-License-Identifier: MIT
  * SPDX-FileCopyrightText: 2026 tanglinjie
  */
-/* Provider-facing synchronous HTTP transport, independent of Core lifecycle. Interface draft; declarations do not imply an implemented feature. */
+/* Provider-facing synchronous HTTP transport, independent of Core lifecycle. */
 #pragma once
 
 #include <agent/error.h>
@@ -46,7 +46,6 @@ typedef struct {
 typedef struct {
     agent_error_t (*request)(void* context, const agent_http_request_t* request,
                                   const agent_http_sink_t* sink); /* Required blocking exchange. */
-    void (*destroy)(void* context);                /* Optional external-owner cleanup. */
 } agent_transport_ops_t;
 
 /* Allocation-free transport binding, passed through model configuration. */
