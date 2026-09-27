@@ -1,0 +1,16 @@
+menu "cAgent ESP-IDF Port"
+
+config AGENT_PORT_ESPIDF_RUNTIME
+    bool "Build ESP-IDF Runtime adapter"
+    default y
+    help
+      Add the esp_timer based clock builder. This option does not start tasks
+      or initialize networking.
+
+config AGENT_PORT_ESPIDF_TRANSPORT
+    bool "Build ESP-IDF HTTP Transport adapter"
+    default n
+    help
+      Add the esp_http_client based synchronous HTTP transport.
+
+endmenu

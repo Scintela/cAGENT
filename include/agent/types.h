@@ -5,6 +5,10 @@
 /* Common handles, bounded views and cross-module execution values. Interface draft; declarations do not imply an implemented feature. */
 #pragma once
 
+#if defined(AGENT_BUILD_CONFIG_HEADER)
+#include AGENT_BUILD_CONFIG_HEADER
+#endif
+
 #include <agent/error.h>
 
 #include <stdbool.h>
@@ -70,8 +74,62 @@ typedef struct {
     uint32_t max_history_turns;    /* Previous complete turn groups to project; 0=disable. */
 } agent_limits_t;
 
-/* Default limits, matching agent_config_default().  */
-#define AGENT_LIMITS_DEFAULT {8u, 30000u, 15000u, 3000u, 4u, 512u, 0u}
+/* Build-profile defaults; each value can be overridden for the whole firmware. */
+#ifndef AGENT_DEFAULT_MAX_STEPS
+#ifdef CONFIG_AGENT_DEFAULT_MAX_STEPS
+#define AGENT_DEFAULT_MAX_STEPS CONFIG_AGENT_DEFAULT_MAX_STEPS
+#else
+#define AGENT_DEFAULT_MAX_STEPS 8u
+#endif
+#endif
+#ifndef AGENT_DEFAULT_TIMEOUT_MS
+#ifdef CONFIG_AGENT_DEFAULT_TIMEOUT_MS
+#define AGENT_DEFAULT_TIMEOUT_MS CONFIG_AGENT_DEFAULT_TIMEOUT_MS
+#else
+#define AGENT_DEFAULT_TIMEOUT_MS 30000u
+#endif
+#endif
+#ifndef AGENT_DEFAULT_MODEL_TIMEOUT_MS
+#ifdef CONFIG_AGENT_DEFAULT_MODEL_TIMEOUT_MS
+#define AGENT_DEFAULT_MODEL_TIMEOUT_MS CONFIG_AGENT_DEFAULT_MODEL_TIMEOUT_MS
+#else
+#define AGENT_DEFAULT_MODEL_TIMEOUT_MS 15000u
+#endif
+#endif
+#ifndef AGENT_DEFAULT_TOOL_TIMEOUT_MS
+#ifdef CONFIG_AGENT_DEFAULT_TOOL_TIMEOUT_MS
+#define AGENT_DEFAULT_TOOL_TIMEOUT_MS CONFIG_AGENT_DEFAULT_TOOL_TIMEOUT_MS
+#else
+#define AGENT_DEFAULT_TOOL_TIMEOUT_MS 3000u
+#endif
+#endif
+#ifndef AGENT_DEFAULT_MAX_TOOL_CALLS
+#ifdef CONFIG_AGENT_DEFAULT_MAX_TOOL_CALLS
+#define AGENT_DEFAULT_MAX_TOOL_CALLS CONFIG_AGENT_DEFAULT_MAX_TOOL_CALLS
+#else
+#define AGENT_DEFAULT_MAX_TOOL_CALLS 4u
+#endif
+#endif
+#ifndef AGENT_DEFAULT_MAX_OUTPUT_TOKENS
+#ifdef CONFIG_AGENT_DEFAULT_MAX_OUTPUT_TOKENS
+#define AGENT_DEFAULT_MAX_OUTPUT_TOKENS CONFIG_AGENT_DEFAULT_MAX_OUTPUT_TOKENS
+#else
+#define AGENT_DEFAULT_MAX_OUTPUT_TOKENS 512u
+#endif
+#endif
+#ifndef AGENT_DEFAULT_MAX_HISTORY_TURNS
+#ifdef CONFIG_AGENT_DEFAULT_MAX_HISTORY_TURNS
+#define AGENT_DEFAULT_MAX_HISTORY_TURNS CONFIG_AGENT_DEFAULT_MAX_HISTORY_TURNS
+#else
+#define AGENT_DEFAULT_MAX_HISTORY_TURNS 0u
+#endif
+#endif
+
+/* Default limits, matching agent_config_default(). */
+#define AGENT_LIMITS_DEFAULT {AGENT_DEFAULT_MAX_STEPS, AGENT_DEFAULT_TIMEOUT_MS, \
+                              AGENT_DEFAULT_MODEL_TIMEOUT_MS, AGENT_DEFAULT_TOOL_TIMEOUT_MS, \
+                              AGENT_DEFAULT_MAX_TOOL_CALLS, AGENT_DEFAULT_MAX_OUTPUT_TOKENS, \
+                              AGENT_DEFAULT_MAX_HISTORY_TURNS}
 
 /* Per-turn facts; failure/cancellation never implies no device effects.  */
 typedef struct {

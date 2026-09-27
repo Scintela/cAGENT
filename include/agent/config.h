@@ -5,6 +5,11 @@
 /* Build-profile capacities, caller-storage and runtime initialization configuration. Interface draft; declarations do not imply an implemented feature. */
 #pragma once
 
+/* Load one build-wide profile before exposing layout-dependent public types. */
+#if defined(AGENT_BUILD_CONFIG_HEADER)
+#include AGENT_BUILD_CONFIG_HEADER
+#endif
+
 /* Direct AGENT_* definitions take precedence over generated CONFIG_AGENT_* values. */
 #ifndef AGENT_MAX_TOOLS
 #ifdef CONFIG_AGENT_MAX_TOOLS

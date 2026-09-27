@@ -1,6 +1,6 @@
 # ADR 0019: Kconfig 集成边界、Core Profile 与 Port 裁剪
 
-- 状态：提案
+- 状态：已采纳，首版构建集成已实现
 - 日期：2026-09-27
 
 ## 背景
@@ -182,16 +182,18 @@ config AGENT_PORT_ESPIDF_TRANSPORT
 `PRIV_REQUIRES`。Core component 名称建议固定为 `cagent`，但只有在 Core component CMake 可构建后
 才能把此名称写入 Port CMake。
 
-## 实现前置条件与阶段
+## 首版实现状态
 
-1. 定义并测试 `AGENT_BUILD_CONFIG_HEADER` 注入机制；
-2. 在 `config.h` 实现 `ENABLE_*` 与七项 `AGENT_DEFAULT_*` 三级宏；
-3. 完成 Core 固定布局的编译期断言，验证 Profile 容量与 `agent_workspace_t` 一致；
-4. 定稿 Tiny、Default、Device ReAct 的数值表，并以编译矩阵覆盖；
-5. 将 Core 作为名称固定的可构建 component 交付；
-6. 再添加 Core 与 `ports/espidf` 的 Kconfig/CMake，随后为 OpenVela、RT-Thread 等 Port 复制模式。
+- `agent/config.h` 与 `agent/types.h` 可通过 `AGENT_BUILD_CONFIG_HEADER` 读取构建生成的统一配置头；
+- `AGENT_DEFAULT_*` 默认值支持七项限额，并由 `agent_config_default()` 使用；
+- 根 `CMakeLists.txt` 构建平台无关的 `cagent_core`，Mock 与 OpenAI Provider 可选择性构建；
+- 根 `Kconfig` 定义 Tiny、Default、Device ReAct、Custom Profile 及现有容量/default-limit 符号；
+- `ports/espidf` 通过独立 Kconfig/CMake 选择 Runtime 和 HTTP Transport Adapter；
+- 当前 Core workspace 编译期断言仍只验证 `sizeof(agent_t) + AGENT_SCRATCH_BYTES`，后续应结合真实布局和 profile 继续加强；
+- Core 子模块逐项裁剪尚未实现，因此首版 Kconfig 不暴露会造成“菜单可关、源码仍编译”的 ENABLE 开关；
+- OpenVela、RT-Thread 的构建组件尚未添加。
 
-在上述第 1 至 3 项之前，不应添加只会暴露菜单、却不能可靠传递或验证配置的 Kconfig 文件。
+Profile 数值目前是可用的初始值，仍需在目标 MCU 上测量 workspace 峰值，并据此校准。
 
 ## 不采用的方案
 

@@ -1,0 +1,207 @@
+menu "cAgent Core"
+
+choice AGENT_PROFILE
+    prompt "Core capacity profile"
+    default AGENT_PROFILE_DEFAULT
+
+config AGENT_PROFILE_TINY
+    bool "Tiny"
+
+config AGENT_PROFILE_DEFAULT
+    bool "Default"
+
+config AGENT_PROFILE_DEVICE_REACT
+    bool "Device ReAct"
+
+config AGENT_PROFILE_CUSTOM
+    bool "Custom"
+
+endchoice
+
+config AGENT_MAX_TOOLS
+    int "Maximum registered tools" if AGENT_PROFILE_CUSTOM
+    range 1 64
+    default 4 if AGENT_PROFILE_TINY
+    default 16 if AGENT_PROFILE_DEVICE_REACT
+    default 12
+
+config AGENT_MAX_CONTEXTS
+    int "Maximum context providers" if AGENT_PROFILE_CUSTOM
+    range 1 32
+    default 2 if AGENT_PROFILE_TINY
+    default 8
+
+config AGENT_MAX_SKILLS
+    int "Maximum registered skills" if AGENT_PROFILE_CUSTOM
+    range 1 32
+    default 2 if AGENT_PROFILE_TINY
+    default 12 if AGENT_PROFILE_DEVICE_REACT
+    default 8
+
+config AGENT_MAX_SESSIONS
+    int "RAM session slots (transitional)" if AGENT_PROFILE_CUSTOM
+    range 1 32
+    default 1 if AGENT_PROFILE_TINY
+    default 4
+
+config AGENT_SESSION_EVENT_CAPACITY
+    int "RAM session event capacity (transitional)" if AGENT_PROFILE_CUSTOM
+    range 1 1024
+    default 24 if AGENT_PROFILE_TINY
+    default 96
+
+config AGENT_SESSION_PAYLOAD_BYTES
+    int "RAM session payload bytes (transitional)" if AGENT_PROFILE_CUSTOM
+    range 256 1048576
+    default 2048 if AGENT_PROFILE_TINY
+    default 8192
+
+config AGENT_MAX_PROJECTED_MESSAGES
+    int "Maximum projected messages per model request" if AGENT_PROFILE_CUSTOM
+    range 1 256
+    default 8 if AGENT_PROFILE_TINY
+    default 48 if AGENT_PROFILE_DEVICE_REACT
+    default 32
+
+config AGENT_SCRATCH_BYTES
+    int "Core turn scratch bytes" if AGENT_PROFILE_CUSTOM
+    range 1024 1048576
+    default 8192 if AGENT_PROFILE_TINY
+    default 24576 if AGENT_PROFILE_DEVICE_REACT
+    default 12288
+
+config AGENT_MAX_INPUT_BYTES
+    int "Maximum input bytes" if AGENT_PROFILE_CUSTOM
+    range 1 1048576
+    default 512 if AGENT_PROFILE_TINY
+    default 2048 if AGENT_PROFILE_DEVICE_REACT
+    default 1024
+
+config AGENT_MAX_CONTEXT_BYTES
+    int "Maximum context bytes" if AGENT_PROFILE_CUSTOM
+    range 1 1048576
+    default 2048 if AGENT_PROFILE_TINY
+    default 8192 if AGENT_PROFILE_DEVICE_REACT
+    default 4096
+
+config AGENT_MAX_SCHEMA_BYTES
+    int "Maximum tool schema bytes" if AGENT_PROFILE_CUSTOM
+    range 1 1048576
+    default 1024 if AGENT_PROFILE_TINY
+    default 4096 if AGENT_PROFILE_DEVICE_REACT
+    default 2048
+
+config AGENT_MAX_ARGUMENTS_BYTES
+    int "Maximum tool arguments bytes" if AGENT_PROFILE_CUSTOM
+    range 1 1048576
+    default 512 if AGENT_PROFILE_TINY
+    default 2048 if AGENT_PROFILE_DEVICE_REACT
+    default 1024
+
+config AGENT_MAX_TOOL_OUTPUT_BYTES
+    int "Maximum tool output bytes" if AGENT_PROFILE_CUSTOM
+    range 1 1048576
+    default 512 if AGENT_PROFILE_TINY
+    default 2048 if AGENT_PROFILE_DEVICE_REACT
+    default 1024
+
+config AGENT_MAX_MODEL_OUTPUT_BYTES
+    int "Maximum model output bytes" if AGENT_PROFILE_CUSTOM
+    range 1 1048576
+    default 1024 if AGENT_PROFILE_TINY
+    default 4096 if AGENT_PROFILE_DEVICE_REACT
+    default 2048
+
+config AGENT_MAX_MODEL_TOOL_CALLS
+    int "Maximum tool calls in one model response" if AGENT_PROFILE_CUSTOM
+    range 0 64
+    default 2 if AGENT_PROFILE_TINY
+    default 8 if AGENT_PROFILE_DEVICE_REACT
+    default 4
+
+config AGENT_MAX_NAME_BYTES
+    int "Maximum tool/skill name bytes" if AGENT_PROFILE_CUSTOM
+    range 1 1024
+    default 32 if AGENT_PROFILE_TINY
+    default 64
+
+config AGENT_MAX_DESCRIPTION_BYTES
+    int "Maximum tool/skill description bytes" if AGENT_PROFILE_CUSTOM
+    range 1 8192
+    default 128 if AGENT_PROFILE_TINY
+    default 512 if AGENT_PROFILE_DEVICE_REACT
+    default 256
+
+config AGENT_MAX_IDENTIFIER_BYTES
+    int "Maximum identifier bytes" if AGENT_PROFILE_CUSTOM
+    range 1 1024
+    default 32 if AGENT_PROFILE_TINY
+    default 64
+
+config AGENT_MAX_JSON_DEPTH
+    int "Maximum JSON nesting depth" if AGENT_PROFILE_CUSTOM
+    range 1 128
+    default 8 if AGENT_PROFILE_TINY
+    default 24 if AGENT_PROFILE_DEVICE_REACT
+    default 16
+
+config AGENT_CORE_WORKSPACE_BYTES
+    int "Core caller workspace bytes" if AGENT_PROFILE_CUSTOM
+    range 4096 1048576
+    default 16384 if AGENT_PROFILE_TINY
+    default 49152 if AGENT_PROFILE_DEVICE_REACT
+    default 32768
+
+config AGENT_MODEL_WORKSPACE_BYTES
+    int "Model wrapper workspace bytes" if AGENT_PROFILE_CUSTOM
+    range 128 65536
+    default 128
+
+config AGENT_DEFAULT_MAX_STEPS
+    int "Default maximum steps" if AGENT_PROFILE_CUSTOM
+    range 1 1000
+    default 4 if AGENT_PROFILE_TINY
+    default 12 if AGENT_PROFILE_DEVICE_REACT
+    default 8
+
+config AGENT_DEFAULT_TIMEOUT_MS
+    int "Default overall timeout (ms)" if AGENT_PROFILE_CUSTOM
+    range 0 3600000
+    default 15000 if AGENT_PROFILE_TINY
+    default 60000 if AGENT_PROFILE_DEVICE_REACT
+    default 30000
+
+config AGENT_DEFAULT_MODEL_TIMEOUT_MS
+    int "Default model timeout (ms)" if AGENT_PROFILE_CUSTOM
+    range 0 3600000
+    default 10000 if AGENT_PROFILE_TINY
+    default 45000 if AGENT_PROFILE_DEVICE_REACT
+    default 15000
+
+config AGENT_DEFAULT_TOOL_TIMEOUT_MS
+    int "Default tool timeout (ms)" if AGENT_PROFILE_CUSTOM
+    range 0 3600000
+    default 2000 if AGENT_PROFILE_TINY
+    default 5000 if AGENT_PROFILE_DEVICE_REACT
+    default 3000
+
+config AGENT_DEFAULT_MAX_TOOL_CALLS
+    int "Default maximum tool calls per turn" if AGENT_PROFILE_CUSTOM
+    range 0 1024
+    default 2 if AGENT_PROFILE_TINY
+    default 8 if AGENT_PROFILE_DEVICE_REACT
+    default 4
+
+config AGENT_DEFAULT_MAX_OUTPUT_TOKENS
+    int "Default model output token limit" if AGENT_PROFILE_CUSTOM
+    range 0 65536
+    default 256 if AGENT_PROFILE_TINY
+    default 1024 if AGENT_PROFILE_DEVICE_REACT
+    default 512
+
+config AGENT_DEFAULT_MAX_HISTORY_TURNS
+    int "Default projected history turns" if AGENT_PROFILE_CUSTOM
+    range 0 1024
+    default 0
+
+endmenu

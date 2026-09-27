@@ -28,6 +28,20 @@ bash tests/ports/espidf/compile.sh
 Core 的通用代码位于 `src/`。平台 SDK、RTOS、HTTP/TLS 适配位于可选的
 [ports/](ports/README.md) 包中，由产品构建系统显式选择；未选择的 Port 不会进入 Core 库。
 
+## CMake 与 Kconfig
+
+普通 CMake 构建只生成平台无关的 Core：
+
+```sh
+cmake -S . -B build -DCONFIG_AGENT_MAX_TOOLS=16
+cmake --build build
+```
+
+容量与默认 limits 通过同一生成配置头传入所有依赖目标。ESP-IDF 工程将本仓库放在
+`components/cagent`，并将 `ports/espidf` 加入组件搜索路径；Core 与 ESP-IDF Port 分别提供
+Kconfig/CMake。Runtime 默认启用，HTTP Transport 默认关闭，需要时在 menuconfig 中启用。
+当前 Mock/OpenAI Model provider 仍是骨架，CMake 选项仅用于独立编译对应源码，不代表协议实现已完成。
+
 ## 许可证
 
 本项目采用 [MIT License](LICENSE)。
