@@ -124,14 +124,14 @@ src/transport/transport_openvela.c
 
 ```text
 src/transport/                         # generic contract validation and Mock
-ports/espidf/include/agent/port/espidf/transport.h
-ports/espidf/src/transport.c
-ports/openvela/include/agent/port/openvela/transport.h
-ports/openvela/src/transport.c
-ports/rtthread/include/agent/port/rtthread/transport.h
-ports/rtthread/src/transport.c
-ports/host/include/agent/port/host/transport.h
-ports/host/src/transport.c
+ports/espidf/transport/include/agent/port/espidf/transport.h
+ports/espidf/transport/src/transport.c
+ports/openvela/transport/include/agent/port/openvela/transport.h
+ports/openvela/transport/src/transport.c
+ports/rtthread/transport/include/agent/port/rtthread/transport.h
+ports/rtthread/transport/src/transport.c
+ports/host/transport/include/agent/port/host/transport.h
+ports/host/transport/src/transport.c
 ```
 
 平台依赖和 Kconfig/CMake 配置不污染 Core；代价是发布与版本协同更复杂。对跨系统开源库更合适，并
@@ -157,7 +157,7 @@ Core 只发布 `transport.h`，不维护官方 Adapter。维护成本最低，�
 
 ## 待决项
 
-1. 首批官方支持哪些目标：Host + ESP-IDF，还是同时加入 OpenVela/RT-Thread。
+1. ESP-IDF 已有 mock-SDK 验证的最小 Adapter；何时完成硬件验证并加入 OpenVela/RT-Thread。
 2. 首版是否只支持完整 request body、同步 `request()`，暂不公开请求 streaming 与异步接口。
 3. TLS 证书、PSRAM buffer、连接池是完全 Adapter 配置，还是 Provider 配置向 Adapter 透传。
 

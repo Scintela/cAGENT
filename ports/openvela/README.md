@@ -1,7 +1,7 @@
 # OpenVela Port
 
-This optional package will own OpenVela/NuttX headers, Runtime integration, and any selected HTTP
-Transport implementation. Socket, mbedTLS, PSRAM buffers, and JSONL storage remain package or
-application concerns, not Runtime or Core concerns.
+This optional Port is split into [runtime/](runtime/README.md) and
+[transport/](transport/README.md). It owns OpenVela/NuttX headers and build metadata; neither
+subpackage is part of the Core build.
 
 No OpenVela implementation is shipped yet.

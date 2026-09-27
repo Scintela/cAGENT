@@ -109,14 +109,14 @@ borrowed binding 却含有不清晰的清理入口。
 include/agent/transport.h
 src/transport/                            # generic validation and dispatch only
 
-ports/espidf/include/agent/port/espidf/transport.h
-ports/espidf/src/transport.c
-ports/openvela/include/agent/port/openvela/transport.h
-ports/openvela/src/transport.c
-ports/rtthread/include/agent/port/rtthread/transport.h
-ports/rtthread/src/transport.c
-ports/host/include/agent/port/host/transport.h
-ports/host/src/transport.c
+ports/espidf/transport/include/agent/port/espidf/transport.h
+ports/espidf/transport/src/transport.c
+ports/openvela/transport/include/agent/port/openvela/transport.h
+ports/openvela/transport/src/transport.c
+ports/rtthread/transport/include/agent/port/rtthread/transport.h
+ports/rtthread/transport/src/transport.c
+ports/host/transport/include/agent/port/host/transport.h
+ports/host/transport/src/transport.c
 ```
 
 构建系统以等价于以下的配置裁剪源文件与其平台依赖：

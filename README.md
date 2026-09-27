@@ -16,10 +16,12 @@ Ops 的基础实现；ReAct、OpenAI Provider、Session Storage 和具体平台 
 bash tests/headers/compile.sh
 bash tests/core/compile.sh
 bash tests/transport/compile.sh
+bash tests/ports/espidf/compile.sh
 ```
 
 头文件检查覆盖公共头的独立和组合包含。Core 与 Transport 检查覆盖当前实现的生命周期和
-同步分发契约；不表示已提供真实 HTTP/TLS 或平台 SDK Adapter。
+同步分发契约；ESP-IDF Port 检查以 mock SDK 验证 Runtime 和 `esp_http_client` Adapter 契约，
+不替代真实硬件、TLS 或网络集成测试。
 
 ## Port 包
 

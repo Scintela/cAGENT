@@ -16,11 +16,13 @@ Target package layout:
 ```text
 ports/<platform>/
   README.md
-  include/agent/port/<platform>/  # Only after a real public Port API exists.
-  src/                            # Runtime and/or Transport adapter implementation.
-  tests/                          # Platform integration tests.
-  CMakeLists.txt or Kconfig       # Platform-native build metadata.
+  runtime/                        # Optional Runtime subpackage.
+  transport/                      # Optional HTTP/TLS Transport subpackage.
 ```
+
+Each subpackage owns its own `include/`, `src/`, `tests/`, and platform-native build metadata when
+it gains a real implementation. This permits a Runtime-only Port on a networkless device and a
+Transport-only Adapter that uses application-provided Runtime callbacks.
 
 The current directories are ownership and delivery boundaries, not claims that an adapter is
 implemented. An application may always construct `agent_runtime_t` or `agent_transport_t` itself.

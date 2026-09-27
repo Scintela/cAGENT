@@ -37,6 +37,7 @@ ADR 0006 中尚未同步的设计差异仍需评审，尤其是 Tool schema 的�
 | [adr/0016-session-history-storage.md](adr/0016-session-history-storage.md) | Session 完整 turn 历史的投影窗口、Storage Provider 所有权、JSONL/Flash/NVS 持久化与 PSRAM 缓存边界提案 |
 | [adr/0017-runtime-portability.md](adr/0017-runtime-portability.md) | Runtime 最小平台服务、时钟/同步/allocator 契约和跨系统 Port 组织方案提案 |
 | [adr/0018-transport-portability.md](adr/0018-transport-portability.md) | HTTP/TLS Transport 通用契约、平台 Adapter、构建裁剪与 Provider 分层方案提案 |
+| [adr/0019-kconfig-integration.md](adr/0019-kconfig-integration.md) | Kconfig 集成边界：Core Profile 菜单、Port 包裁剪项、命名规范与等价通道提案 |
 
 ## 文档原则
 

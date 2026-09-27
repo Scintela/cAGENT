@@ -1,7 +1,8 @@
 # ESP-IDF Port
 
-This optional package will own ESP-IDF headers, component metadata, Runtime clock/log glue, and
-an `esp_http_client` Transport adapter. The adapter must use caller-controlled bounds and obey the
-synchronous `agent_transport_ops_t` callback contract.
+This optional Port is split into [runtime/](runtime/README.md) and
+[transport/](transport/README.md). It owns ESP-IDF headers and component metadata; neither
+subpackage is part of the Core build.
 
-No ESP-IDF implementation is shipped yet.
+Both subpackages now have source and public headers. They are validated with a C99 mock SDK; an
+ESP-IDF hardware integration target is still required before claiming a supported SDK release.

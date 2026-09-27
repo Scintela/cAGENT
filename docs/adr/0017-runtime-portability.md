@@ -124,12 +124,16 @@ agent_error_t agent_port_stm32_runtime_init(
 include/agent/runtime.h                 # Core contract only
 src/runtime/runtime.c                   # validation and callback dispatch
 
-ports/espidf/include/agent/port/espidf_runtime.h
-ports/espidf/src/runtime.c
-ports/openvela/include/agent/port/openvela_runtime.h
-ports/rtthread/include/agent/port/rtthread_runtime.h
-ports/stm32/include/agent/port/stm32_runtime.h
-ports/host/include/agent/port/host_runtime.h
+ports/espidf/runtime/include/agent/port/espidf_runtime.h
+ports/espidf/runtime/src/runtime.c
+ports/openvela/runtime/include/agent/port/openvela_runtime.h
+ports/openvela/runtime/src/runtime.c
+ports/rtthread/runtime/include/agent/port/rtthread_runtime.h
+ports/rtthread/runtime/src/runtime.c
+ports/stm32/runtime/include/agent/port/stm32_runtime.h
+ports/stm32/runtime/src/runtime.c
+ports/host/runtime/include/agent/port/host_runtime.h
+ports/host/runtime/src/runtime.c
 ```
 
 `src/runtime/port_*.c` 过渡骨架已删除。Core 静态库不编译任何 SDK 头；Kconfig、CMake preset 或
@@ -141,7 +145,7 @@ ports/host/include/agent/port/host_runtime.h
 | 平台 | 时钟 | cancel 同步 | 默认日志 | 注意事项 |
 |---|---|---|---|---|
 | Host | `clock_gettime(CLOCK_MONOTONIC)` 或等价 | mutex/原子实现 | stderr | 仅用于测试/开发，不作为 MCU 内存结论。 |
-| ESP-IDF | `esp_timer_get_time()/1000` | 极短 FreeRTOS critical section | `ESP_LOGx` adapter | allocator 默认留空，避免隐式 heap。 |
+| ESP-IDF | `esp_timer_get_time()/1000` | 目前未注入；后续可选短 FreeRTOS critical section | 目前未注入 | 已有最小 Runtime builder；allocator 默认留空，避免隐式 heap。 |
 | openvela/NuttX | `CLOCK_MONOTONIC` | 平台短 critical/mutex | syslog 或应用 logger | 不把 socket/mbedTLS 放入 Runtime。 |
 | RT-Thread | 经回绕扩展的 tick 或板级时钟 | 短 critical section | `rt_kprintf` adapter | tick 单位、回绕和低功耗唤醒需要产品确认。 |
 | STM32 | 板级维护的 64 位 tick | 应用定义 | 可选串口 logger | 不应假设 HAL tick 天然满足 64 位单调契约。 |
