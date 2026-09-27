@@ -2,8 +2,171 @@
  * SPDX-License-Identifier: MIT
  * SPDX-FileCopyrightText: 2026 tanglinjie
  */
-/* Core workspace capacities and initialization configuration. Interface draft; declarations do not imply an implemented feature. */
+/* Build-profile capacities, caller-storage and runtime initialization configuration. Interface draft; declarations do not imply an implemented feature. */
 #pragma once
+
+/* Direct AGENT_* definitions take precedence over generated CONFIG_AGENT_* values. */
+#ifndef AGENT_MAX_TOOLS
+#ifdef CONFIG_AGENT_MAX_TOOLS
+#define AGENT_MAX_TOOLS CONFIG_AGENT_MAX_TOOLS
+#else
+#define AGENT_MAX_TOOLS 12u
+#endif
+#endif
+
+#ifndef AGENT_MAX_CONTEXTS
+#ifdef CONFIG_AGENT_MAX_CONTEXTS
+#define AGENT_MAX_CONTEXTS CONFIG_AGENT_MAX_CONTEXTS
+#else
+#define AGENT_MAX_CONTEXTS 8u
+#endif
+#endif
+
+#ifndef AGENT_MAX_SKILLS
+#ifdef CONFIG_AGENT_MAX_SKILLS
+#define AGENT_MAX_SKILLS CONFIG_AGENT_MAX_SKILLS
+#else
+#define AGENT_MAX_SKILLS 8u
+#endif
+#endif
+
+#ifndef AGENT_MAX_SESSIONS
+#ifdef CONFIG_AGENT_MAX_SESSIONS
+#define AGENT_MAX_SESSIONS CONFIG_AGENT_MAX_SESSIONS
+#else
+#define AGENT_MAX_SESSIONS 4u
+#endif
+#endif
+
+#ifndef AGENT_SESSION_EVENT_CAPACITY
+#ifdef CONFIG_AGENT_SESSION_EVENT_CAPACITY
+#define AGENT_SESSION_EVENT_CAPACITY CONFIG_AGENT_SESSION_EVENT_CAPACITY
+#else
+#define AGENT_SESSION_EVENT_CAPACITY 96u
+#endif
+#endif
+
+#ifndef AGENT_SESSION_PAYLOAD_BYTES
+#ifdef CONFIG_AGENT_SESSION_PAYLOAD_BYTES
+#define AGENT_SESSION_PAYLOAD_BYTES CONFIG_AGENT_SESSION_PAYLOAD_BYTES
+#else
+#define AGENT_SESSION_PAYLOAD_BYTES 8192u
+#endif
+#endif
+
+#ifndef AGENT_SCRATCH_BYTES
+#ifdef CONFIG_AGENT_SCRATCH_BYTES
+#define AGENT_SCRATCH_BYTES CONFIG_AGENT_SCRATCH_BYTES
+#else
+#define AGENT_SCRATCH_BYTES 12288u
+#endif
+#endif
+
+#ifndef AGENT_MAX_INPUT_BYTES
+#ifdef CONFIG_AGENT_MAX_INPUT_BYTES
+#define AGENT_MAX_INPUT_BYTES CONFIG_AGENT_MAX_INPUT_BYTES
+#else
+#define AGENT_MAX_INPUT_BYTES 1024u
+#endif
+#endif
+
+#ifndef AGENT_MAX_CONTEXT_BYTES
+#ifdef CONFIG_AGENT_MAX_CONTEXT_BYTES
+#define AGENT_MAX_CONTEXT_BYTES CONFIG_AGENT_MAX_CONTEXT_BYTES
+#else
+#define AGENT_MAX_CONTEXT_BYTES 4096u
+#endif
+#endif
+
+#ifndef AGENT_MAX_SCHEMA_BYTES
+#ifdef CONFIG_AGENT_MAX_SCHEMA_BYTES
+#define AGENT_MAX_SCHEMA_BYTES CONFIG_AGENT_MAX_SCHEMA_BYTES
+#else
+#define AGENT_MAX_SCHEMA_BYTES 2048u
+#endif
+#endif
+
+#ifndef AGENT_MAX_ARGUMENTS_BYTES
+#ifdef CONFIG_AGENT_MAX_ARGUMENTS_BYTES
+#define AGENT_MAX_ARGUMENTS_BYTES CONFIG_AGENT_MAX_ARGUMENTS_BYTES
+#else
+#define AGENT_MAX_ARGUMENTS_BYTES 1024u
+#endif
+#endif
+
+#ifndef AGENT_MAX_TOOL_OUTPUT_BYTES
+#ifdef CONFIG_AGENT_MAX_TOOL_OUTPUT_BYTES
+#define AGENT_MAX_TOOL_OUTPUT_BYTES CONFIG_AGENT_MAX_TOOL_OUTPUT_BYTES
+#else
+#define AGENT_MAX_TOOL_OUTPUT_BYTES 1024u
+#endif
+#endif
+
+#ifndef AGENT_MAX_MODEL_OUTPUT_BYTES
+#ifdef CONFIG_AGENT_MAX_MODEL_OUTPUT_BYTES
+#define AGENT_MAX_MODEL_OUTPUT_BYTES CONFIG_AGENT_MAX_MODEL_OUTPUT_BYTES
+#else
+#define AGENT_MAX_MODEL_OUTPUT_BYTES 2048u
+#endif
+#endif
+
+#ifndef AGENT_MAX_MODEL_TOOL_CALLS
+#ifdef CONFIG_AGENT_MAX_MODEL_TOOL_CALLS
+#define AGENT_MAX_MODEL_TOOL_CALLS CONFIG_AGENT_MAX_MODEL_TOOL_CALLS
+#else
+#define AGENT_MAX_MODEL_TOOL_CALLS 4u
+#endif
+#endif
+
+#ifndef AGENT_MAX_NAME_BYTES
+#ifdef CONFIG_AGENT_MAX_NAME_BYTES
+#define AGENT_MAX_NAME_BYTES CONFIG_AGENT_MAX_NAME_BYTES
+#else
+#define AGENT_MAX_NAME_BYTES 64u
+#endif
+#endif
+
+#ifndef AGENT_MAX_DESCRIPTION_BYTES
+#ifdef CONFIG_AGENT_MAX_DESCRIPTION_BYTES
+#define AGENT_MAX_DESCRIPTION_BYTES CONFIG_AGENT_MAX_DESCRIPTION_BYTES
+#else
+#define AGENT_MAX_DESCRIPTION_BYTES 256u
+#endif
+#endif
+
+#ifndef AGENT_MAX_IDENTIFIER_BYTES
+#ifdef CONFIG_AGENT_MAX_IDENTIFIER_BYTES
+#define AGENT_MAX_IDENTIFIER_BYTES CONFIG_AGENT_MAX_IDENTIFIER_BYTES
+#else
+#define AGENT_MAX_IDENTIFIER_BYTES 64u
+#endif
+#endif
+
+#ifndef AGENT_MAX_JSON_DEPTH
+#ifdef CONFIG_AGENT_MAX_JSON_DEPTH
+#define AGENT_MAX_JSON_DEPTH CONFIG_AGENT_MAX_JSON_DEPTH
+#else
+#define AGENT_MAX_JSON_DEPTH 16u
+#endif
+#endif
+
+/* Total Core caller-storage; implementation verifies the profile is sufficient. */
+#ifndef AGENT_CORE_WORKSPACE_BYTES
+#ifdef CONFIG_AGENT_CORE_WORKSPACE_BYTES
+#define AGENT_CORE_WORKSPACE_BYTES CONFIG_AGENT_CORE_WORKSPACE_BYTES
+#else
+#define AGENT_CORE_WORKSPACE_BYTES 32768u
+#endif
+#endif
+
+/* Model wrapper caller-storage; provider state remains provider-owned. */
+#ifndef AGENT_MODEL_WORKSPACE_BYTES
+#ifdef CONFIG_AGENT_MODEL_WORKSPACE_BYTES
+#define AGENT_MODEL_WORKSPACE_BYTES CONFIG_AGENT_MODEL_WORKSPACE_BYTES
+#else
+#define AGENT_MODEL_WORKSPACE_BYTES 128u
+#endif
+#endif
 
 #include <agent/runtime.h>
 
@@ -11,41 +174,23 @@
 extern "C" {
 #endif
 
-/* Physical capacities, immutable after init; zero disables optional slots. */
-typedef struct {
-    size_t max_tools;              /* Tool slots; 0 disables registration. */
-    size_t max_contexts;           /* Context provider slots; 0 disables registration. */
-    size_t max_skills;             /* Skill slots; 0 disables registration. */
-    size_t max_sessions;           /* Session identity slots; at least 1. */
-    size_t session_event_capacity; /* Global bounded event descriptors. */
-    size_t session_payload_bytes;  /* Global session content/identity pool. */
-    size_t scratch_bytes;          /* Reusable context/model/tool/turn storage. */
-    size_t max_input_bytes;        /* Per-turn user input ceiling. */
-    size_t max_context_bytes;      /* Combined system/context/skill byte ceiling. */
-    size_t max_schema_bytes;       /* Per-tool JSON Schema byte ceiling. */
-    size_t max_arguments_bytes;    /* Per-call argument object byte ceiling. */
-    size_t max_tool_output_bytes;  /* Per-handler result byte ceiling. */
-    size_t max_model_output_bytes; /* Per-model-call text byte ceiling. */
-    size_t max_model_tool_calls;   /* Calls retained from a single model response. */
-    size_t max_name_bytes;         /* Tool/context/skill name byte ceiling. */
-    size_t max_description_bytes;  /* Per-contribution description byte ceiling. */
-    size_t max_identifier_bytes;   /* Session/trace/call identifier byte ceiling. */
-    size_t max_json_depth;         /* Codec nesting ceiling; nonzero. */
-} agent_resource_config_t;
+/* Fixed Core caller-storage; size and alignment follow the active build profile. */
+typedef union {
+    void* align_pointer;                                   /* Pointer alignment. */
+    uint64_t align_u64;                                    /* 64-bit scalar alignment. */
+    long double align_long_double;                          /* Conservative scalar alignment. */
+    unsigned char bytes[AGENT_CORE_WORKSPACE_BYTES];       /* Private Core storage. */
+} agent_workspace_t;
 
 /* Initialization configuration; value copied, referenced objects borrowed. */
 typedef struct {
     agent_string_view_t system_prompt; /* Optional immutable instructions. */
-    agent_resource_config_t resources; /* Core storage capacities. */
     agent_limits_t limits;             /* Default execution limits. */
     agent_runtime_t runtime;           /* Supplied platform services, including clock. */
 } agent_config_t;
 
 /* Return a bounded general-purpose configuration. */
 agent_config_t agent_config_default(void);
-
-/* Return reduced storage capacities and limits, not just shorter timeouts. */
-agent_config_t agent_config_tiny(void);
 
 #ifdef __cplusplus
 }

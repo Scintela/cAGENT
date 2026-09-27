@@ -5,6 +5,7 @@
 /* Synchronous model provider contract and explicit ownership binding. */
 #pragma once
 
+#include <agent/config.h>
 #include <agent/error.h>
 #include <agent/run.h>
 #include <agent/runtime.h>
@@ -17,6 +18,14 @@ extern "C" {
 
 /* Opaque model wrapper, independent of the Agent workspace. */
 typedef struct agent_model agent_model_t;
+
+/* Fixed caller-storage for a model wrapper; provider state is separate. */
+typedef union {
+    void* align_pointer;                                    /* Pointer alignment. */
+    uint64_t align_u64;                                     /* 64-bit scalar alignment. */
+    long double align_long_double;                           /* Conservative scalar alignment. */
+    unsigned char bytes[AGENT_MODEL_WORKSPACE_BYTES];       /* Private wrapper storage. */
+} agent_model_workspace_t;
 
 /* Normalized transcript roles, independent of a vendor wire format. */
 typedef enum {
@@ -73,12 +82,9 @@ typedef struct {
     void (*destroy)(void* context); /* Optional state cleanup; not wrapper deallocation. */
 } agent_model_ops_t;
 
-/* Queries only wrapper storage; provider state is outside this plan. */
-agent_error_t agent_model_plan(agent_memory_plan_t* plan);
-
 /* Initializes a wrapper in caller storage without opening I/O. */
-agent_error_t agent_model_init(agent_model_t** model, void* workspace, size_t workspace_size,
-                                    const agent_model_ops_t* ops, void* context);
+agent_error_t agent_model_init(agent_model_t** model, agent_model_workspace_t* workspace,
+                               const agent_model_ops_t* ops, void* context);
 
 /* Allocates a wrapper through the supplied allocator. */
 agent_model_t* agent_model_create(const agent_model_ops_t* ops, void* context,

@@ -19,7 +19,7 @@ typedef struct agent_session_turn agent_session_turn_t;
 
 agent_error_t agent_session_manager_init(agent_session_manager_t** manager,
                                               agent_arena_t* arena,
-                                              const agent_resource_config_t* resources);
+                                              const agent_core_capacity_t* capacity);
 agent_error_t agent_session_turn_open(agent_session_manager_t* manager,
                                            agent_string_view_t session_id,
                                            agent_string_view_t input,

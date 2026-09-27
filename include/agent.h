@@ -18,12 +18,9 @@
 extern "C" {
 #endif
 
-/* Computes Core workspace size/alignment without allocation or side effects. */
-agent_error_t agent_plan(const agent_config_t* config, agent_memory_plan_t* plan);
-
 /* Initializes caller storage and enters CONFIGURING; workspace stays caller-owned. */
-agent_error_t agent_init(agent_t** agent, void* workspace, size_t workspace_size,
-                              const agent_config_t* config);
+agent_error_t agent_init(agent_t** agent, agent_workspace_t* workspace,
+                         const agent_config_t* config);
 
 /* Allocates a workspace through config.runtime.allocator, then initializes it. */
 agent_t* agent_create(const agent_config_t* config);

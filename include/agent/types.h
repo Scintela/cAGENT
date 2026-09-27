@@ -46,12 +46,6 @@ static inline bool agent_string_view_is_empty(agent_string_view_t view)
     return view.size == 0u;
 }
 
-/* Workspace requirement; excludes external provider/RTOS/TLS memory.  */
-typedef struct {
-    size_t size;      /* Required byte count for an aligned base address. */
-    size_t alignment; /* Required nonzero base-address alignment in bytes. */
-} agent_memory_plan_t;
-
 /* Bounded text sink; callbacks and context are BORROWED for the call. */
 typedef struct {
     agent_error_t (*write)(void* context, agent_string_view_t text); /* Required writer. */

@@ -55,10 +55,11 @@ static agent_error_t sample_http(void* state, const agent_http_request_t* reques
     return AGENT_ERROR_NOT_SUPPORTED;
 }
 
-int header_contract_fixture(agent_t* agent, void* model_workspace, size_t size);
+int header_contract_fixture(agent_t* agent, agent_model_workspace_t* model_workspace);
 
-int header_contract_fixture(agent_t* agent, void* model_workspace, size_t size)
+int header_contract_fixture(agent_t* agent, agent_model_workspace_t* model_workspace)
 {
+    static agent_workspace_t core_workspace;
     static const agent_model_ops_t model_ops = {sample_model, NULL};
     static const agent_transport_ops_t http_ops = {sample_http, NULL};
     agent_transport_t transport = {&http_ops, NULL};
@@ -74,7 +75,10 @@ int header_contract_fixture(agent_t* agent, void* model_workspace, size_t size)
     agent_context_provider_t context = {AGENT_SV_LITERAL("state"), 0, false, sample_context, NULL};
     agent_model_t* model = NULL;
     agent_resume_t resume = {AGENT_RESUME_DENY, 1u, AGENT_SV_LITERAL("call")};
-    agent_error_t status = agent_model_init(&model, model_workspace, size, &model_ops, NULL);
+    agent_error_t (*init_fn)(agent_t**, agent_workspace_t*, const agent_config_t*) = agent_init;
+    (void)core_workspace;
+    (void)init_fn;
+    agent_error_t status = agent_model_init(&model, model_workspace, &model_ops, NULL);
     if (status != AGENT_OK)
     {
         return status;
