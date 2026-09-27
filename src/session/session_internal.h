@@ -5,7 +5,7 @@
 /* Private bounded conversation transactions and model projection. */
 #pragma once
 
-#include "types_internal.h"
+#include "core/arena_internal.h"
 #include <agent/config.h>
 #include <agent/model.h>
 #include <agent/session.h>

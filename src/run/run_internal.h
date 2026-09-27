@@ -5,7 +5,7 @@
 /* Private turn state, cancellation, and ReAct dispatch. */
 #pragma once
 
-#include "types_internal.h"
+#include "core/arena_internal.h"
 #include <agent/run.h>
 #include <agent/runtime.h>
 

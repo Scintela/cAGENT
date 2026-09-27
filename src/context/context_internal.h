@@ -5,7 +5,7 @@
 /* Private context registry and bounded projection. */
 #pragma once
 
-#include "types_internal.h"
+#include "core/arena_internal.h"
 #include <agent/context.h>
 
 #ifdef __cplusplus

@@ -5,7 +5,7 @@
 /* Private ordered skill registry and bounded projection. */
 #pragma once
 
-#include "types_internal.h"
+#include "core/arena_internal.h"
 #include <agent/skill.h>
 
 #ifdef __cplusplus

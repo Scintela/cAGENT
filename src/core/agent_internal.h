@@ -10,7 +10,7 @@
 #include "session/session_internal.h"
 #include "skill/skill_internal.h"
 #include "tool/tool_internal.h"
-#include "types_internal.h"
+#include "core/arena_internal.h"
 #include <agent.h>
 #include <agent/model.h>
 
@@ -19,6 +19,25 @@ extern "C" {
 #endif
 
 typedef enum { AGENT_CORE_CONFIGURING = 0, AGENT_CORE_READY, AGENT_CORE_ACTIVE } agent_core_state_t;
+
+struct agent_core_capacity {
+    size_t max_tools;
+    size_t max_contexts;
+    size_t max_skills;
+    size_t scratch_bytes;
+    size_t max_projected_messages;
+    size_t max_input_bytes;
+    size_t max_context_bytes;
+    size_t max_schema_bytes;
+    size_t max_arguments_bytes;
+    size_t max_tool_output_bytes;
+    size_t max_model_output_bytes;
+    size_t max_model_tool_calls;
+    size_t max_name_bytes;
+    size_t max_description_bytes;
+    size_t max_identifier_bytes;
+    size_t max_json_depth;
+};
 
 struct agent {
     agent_config_t config;

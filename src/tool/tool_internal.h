@@ -5,7 +5,7 @@
 /* Private tool registry, schema validation, and guarded dispatch. */
 #pragma once
 
-#include "types_internal.h"
+#include "core/arena_internal.h"
 #include <agent/config.h>
 #include <agent/model.h>
 #include <agent/tool.h>
@@ -15,6 +15,7 @@ extern "C" {
 #endif
 
 typedef struct agent_tool_registry agent_tool_registry_t;
+typedef struct agent_core_capacity agent_core_capacity_t;
 
 agent_error_t agent_tool_registry_init(agent_tool_registry_t** registry,
                                             agent_arena_t* arena,

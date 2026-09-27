@@ -4,7 +4,7 @@
  */
 /* Private checked arithmetic and caller-backed arena implementation. */
 
-#include "types_internal.h"
+#include "core/arena_internal.h"
 
 #include <stdint.h>
 
