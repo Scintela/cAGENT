@@ -187,7 +187,7 @@ header、完整用户输入或隐私数据。
 
 | 边界 | 约定 |
 |------|------|
-| `agent_plan()`、`agent_init()`、注册/注销、空闲期设置 | 直接返回 code；没有活动 turn 或结果对象。 |
+| `agent_init()`、注册/注销、空闲期设置 | 直接返回 code；没有活动 turn 或结果对象。 |
 | `agent_turn_begin()`、`agent_turn_resume()`、`agent_cancel()` | 直接返回请求是否被接受的 code。 |
 | `agent_turn_step()` | 参数、句柄和调用状态错误时直接返回负 code；有效 step 即使结束为失败也返回 `AGENT_OK`，终态 code 写入 `agent_step_result_t.status`。 |
 | `agent_run()` | 返回最终执行 code，并在有效 `agent_response_t` 中写入相同 `status`。 |

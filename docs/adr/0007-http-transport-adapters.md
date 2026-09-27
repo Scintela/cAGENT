@@ -131,14 +131,14 @@ CONFIG_AGENT_TRANSPORT_HOST=n
 配置项是构建系统的职责，不要求 Core 识别平台 enum 或在运行时选择 backend。产品也可
 完全不编译库提供的 Adapter，而自行实现 `agent_transport_ops_t`。
 
-面向 MCU 的 Adapter 应优先提供 caller-storage 路径；其名称和具体配置类型由平台扩展
-头定义，而非通用 Core ABI：
+面向 MCU 的 Adapter 应优先提供 caller-storage 路径；其 workspace 类型和具体配置由平台
+扩展头定义，而非通用 Core ABI：
 
 ```c
-int agent_transport_espidf_plan(agent_memory_plan_t *plan);
+typedef struct agent_transport_espidf_workspace agent_transport_espidf_workspace_t;
+
 int agent_transport_espidf_init(agent_transport_t *out,
-                                void *workspace,
-                                size_t workspace_size,
+                                agent_transport_espidf_workspace_t *workspace,
                                 const agent_transport_espidf_config_t *config);
 void agent_transport_espidf_deinit(agent_transport_t *transport);
 ```
@@ -203,8 +203,8 @@ Tool 作者负责，Core 不因 Tool 使用 HTTP 而产生新的网络生命周�
   失败、HTTP 401/429/5xx、cancel 和 deadline 均有测试。
 - 断言 headers 先于 body、sink 错误后无更多 callback、`request` 返回后无 sink callback。
 - 异步平台 Adapter 验证跨任务 callback 不接触 Agent turn；取消/超时后排空再返回。
-- 报告 Adapter state、HTTP buffer、TLS heap、网络任务栈和 cJSON DOM 的峰值；这些不计入
-  Core `agent_plan()`，但必须进入产品内存预算。
+- 报告 Adapter state、HTTP buffer、TLS heap、网络任务栈和 cJSON DOM 的峰值；这些不属于
+  Core `agent_workspace_t`，但必须进入产品内存预算。
 - 最小构建不链接任何 HTTP/TLS 库；未选中的 Adapter 不进入 ROM 或依赖图。
 
 ## 影响

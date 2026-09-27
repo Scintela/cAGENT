@@ -26,8 +26,8 @@ Core 不创建应用线程，不管理 UI、语音、网络连接恢复或硬件
 | smart_home 枚举工具、调整权限和模型配置 | 枚举与空闲时重配置不是纯粹的预留需求 |
 | addons 的 `remote_tool.c` 注册、排空并注销远程工具 | 支持 turn 之间的目录更新，区别于运行中热卸载 |
 | 本地与远程 Tool 均使用 `input_schema_json` | 不强制所有远程 schema 转换成受限 C descriptor |
-| `agent_t` 内嵌 Session/消息/Tool-call 最大数组 | 实际存储随资源配置变化，避免多层最大容量相乘 |
-| `agent_config_tiny()` 只调整 limits；每轮另分配 arena | 运行限制、存储容量和编译裁剪应分别定义 |
+| `agent_t` 内嵌 Session/消息/Tool-call 最大数组 | 保留编译期容量 Profile，但使用共享 payload/descriptor pool，避免多层最大容量相乘 |
+| `agent_config_tiny()` 只调整 limits；每轮另分配 arena | Tiny/Default/ReAct 改为 build Profile；运行 limits 与编译期容量分离，Core 不再每轮分配 arena |
 | Tool 执行后模型失败，loop 保留提示但丢弃未完成 turn | 区分运行失败与动作未执行，保留部分执行事实 |
 | `memory_store.c` 返回 NOTSUP，`llm_router.c` 为占位 | 不因 V1 有声明就承诺 V2 已有对应能力 |
 
@@ -40,7 +40,7 @@ Core 不创建应用线程，不管理 UI、语音、网络连接恢复或硬件
 |------|--------|------|
 | 应用 API | 产品开发者 | 初始化、运行、工具注册、会话、策略、事件、统计 |
 | 扩展 API | Provider/Port/addon 作者 | Model ops/sink、Transport、Runtime、可选能力包 |
-| 实现私有 | 库维护者 | arena、注册表布局、状态机内部字段、缓存、Session payload 池 |
+| 实现私有 | 库维护者 | arena、注册表布局、状态机内部字段、缓存、Storage Provider 内部索引与 payload |
 
 首批闭环：一个 Agent 同时一个 turn，Model + Tool + 有界 Session + Context/Skill 注入，
 配合 Policy、确认、取消与事件。Skill 和 Context 可关闭，不作为启动必需项。
@@ -52,7 +52,7 @@ MCP、远程 Node、业务设备 Tool Pack 继续作为独立 addon。
 | 头文件 | 范围 |
 |--------|------|
 | `agent.h` | 生命周期和同步运行，聚合基础类型、配置、Tool、Policy、Event、Session |
-| `agent/types.h`、`error.h`、`config.h` | 最小公共值类型、错误、资源与默认配置 |
+| `agent/types.h`、`error.h`、`config.h` | 最小公共值类型、错误、编译期容量与默认配置 |
 | `agent/run.h` | turn 驱动、确认、取消 token；高级应用显式包含 |
 | `agent/tool.h`、`policy.h` | 设备工具与授权契约 |
 | `agent/event.h`、`session.h` | 观测与有界会话管理 |
@@ -68,14 +68,15 @@ MCP、远程 Node、业务设备 Tool Pack 继续作为独立 addon。
 |------|----------------|
 | `agent_t`、`agent_turn_t` | 不透明句柄，不允许应用依赖内部布局 |
 | `agent_string_view_t` | data + size；不假定 NUL 终止，NULL data 只允许 size 为 0 |
-| `agent_config_t` | 系统提示、资源、默认限制、Runtime；不包含厂商配置或完整插件管理状态 |
+| `agent_config_t` | 系统提示、默认限制、Runtime；不包含编译期容量、厂商配置或完整插件管理状态 |
 | `agent_request_t` | 输入、session/trace、limits、user_data；不保存厂商请求 JSON |
 | `agent_response_t`、`agent_step_result_t` | 有界输出、执行状态与本轮摘要；具体布局见 §4 待补齐项 |
 | `agent_message_view_t`、`agent_tool_call_view_t`、`agent_tool_view_t` | Model 扩展所需的规范视图，数组有数量，字符串有长度 |
 | `agent_tool_t`、`agent_context_provider_t`、`agent_skill_t` | 贡献定义、callback/context 与元数据，不公开注册表条目 |
-| `agent_limits_t`、`agent_resource_config_t` | 运行限制与物理存储容量分开，不能相互替代 |
+| `agent_limits_t` | 每 Agent/turn 的运行限制；不得突破 build Profile 的物理容量 |
 | `agent_stats_t`、`agent_event_t` | 统计快照与临时观测负载，不作为可修改内部状态 |
-| `agent_memory_plan_t` | Agent 管理的 workspace 大小/对齐，不是全系统内存预测 |
+| `agent_workspace_t` | 当前 build Profile 决定大小与对齐的 Core caller-storage；不包含 Provider/TLS/HTTP 内存 |
+| `agent_model_workspace_t` | 固定大小的 Model wrapper caller-storage；Provider 状态仍在 Core 外部 |
 
 统一使用 BORROWED（外部持有）、COPIED（库复制）、TRANSFERRED（成功才移交所有权）、
 VIEW（特定期限内只读）标注。每个 view 必须明确有效到哪次操作，不能只写“临时有效”。
@@ -86,25 +87,23 @@ VIEW（特定期限内只读）标注。每个 view 必须明确有效到哪次�
 
 ### 3.1 基本入口
 
-建议普通初始化直接接收 `agent_config_t`，不强制经过 `agent_composition_t`。
-这是对原草案签名的收敛建议，不是现有头文件声明：
+建议普通初始化直接接收 `agent_config_t`，不强制经过 `agent_composition_t`：
 
 ```c
 agent_config_t agent_config_default(void);
-agent_config_t agent_config_tiny(void);
 
-agent_error_t agent_plan(const agent_config_t *config, agent_memory_plan_t *out);
-agent_error_t agent_init(agent_t **out, void *workspace, size_t workspace_size,
-                              const agent_config_t *config);
+agent_error_t agent_init(agent_t **out, agent_workspace_t *workspace,
+                         const agent_config_t *config);
 agent_t *agent_create(const agent_config_t *config);
 agent_error_t agent_start(agent_t *agent);
 void agent_destroy(agent_t *agent);
 ```
 
-- `agent_init()` 校验配置与 workspace，成功进入 CONFIGURING；合法 out 参数在失败时
-  置 NULL。失败清理已创建资源，不释放 caller workspace。
-- `agent_start()` 校验必需能力并进入 READY，不隐式发起模型请求。失败仍在 CONFIGURING，
-  撤销本次 start 的临时资源，允许修正配置或销毁。
+- `agent_init()` 绑定编译期 Profile 对应的 `agent_workspace_t`，初始化固定 pool 并进入
+  CONFIGURING；合法 out 参数在失败时置 NULL。失败不释放 caller workspace，也不申请 Core heap。
+- `agent_start()` 校验 Core 配置和固定 pool 状态并进入 READY，不隐式发起模型请求。首版允许
+  无 Model 的 READY；需要模型的 run/turn 在使用点检查 binding。失败仍在 CONFIGURING，允许
+  修正配置或销毁。
 - `agent_create()` 是可选 heap 包装；Agent 记录 workspace 来源与配对 allocator。
   NULL 表示失败，需要详细错误的调用者使用 init。
 - `agent_destroy()` 适用 init/create：清理内部及明确 owned 的资源，只有 create 路径
@@ -115,26 +114,37 @@ void agent_destroy(agent_t *agent);
 生命周期建议为 CONFIGURING -> READY -> ACTIVE -> READY。ACTIVE 包括等待确认以及
 已完成但尚未 `turn_end()` 的 turn，以保证结果视图和注册对象仍然有效。
 
-### 3.2 内存查询与资源上限
+### 3.2 编译期容量与 workspace
 
-`agent_plan()` 是可选的 workspace 预查询；调用方可以直接提供固定缓冲区并 init。
-init 必须自行验证容量，不要求先 plan。两者共用一份内部布局计算，覆盖对齐和整数
-溢出检查；plan 不分配内存，不连接网络，不执行有副作用的初始化。
+Tool、Context、Skill、scratch、输入、schema、arguments、Tool/模型输出与 JSON 深度的容量均由
+build Profile 的 `CONFIG_AGENT_*` 宏决定。Kconfig/CMake 同时决定模块
+是否编译；未启用模块不进入依赖图和 Core workspace。普通应用应选择 Tiny、Default、Device
+ReAct 或产品 Profile，而不是逐项设置全部容量宏；细项只在 Custom/Advanced Profile 中覆盖。
 
-`agent_memory_plan_t` 首版只需所需字节数和基地址对齐要求，详细分项报告可扩展。
-建议 init 拒绝不满足对齐的基地址，避免尺寸查询因实际地址不同而失真。C99 的静态
-数组对齐方式由 Port/编译器提供，不能假定任意 `unsigned char[]` 都适合内部结构。
+应用使用 `agent_workspace_t` 取得正确大小与对齐，不猜测 `unsigned char[]` 的长度。Core
+workspace 包含 Agent、固定 registry、session binding/cursor、turn 状态与可复用 scratch；不包含
+完整 Session 历史、借用字符串、Model Provider、cJSON DOM、TLS/HTTP 缓冲或应用线程栈。后者
+必须作为产品外部内存预算单独测量。
 
-预算包含 Agent、注册槽、Session pool、turn 状态与 scratch。借用的字符串、Provider、
-cJSON DOM、TLS/HTTP 缓冲和应用线程栈是外部资源，应另行声明和测量。workspace 大小
-不是设备总峰值；初始化后绑定的借用型能力包也不会自动被 plan 计入。
+Core 在 init 时先预留 registry、session binding/cursor 等跨 turn 状态，再建立一个 turn scratch arena。
+context、消息/Tool view 数组、arguments 和临时 Tool result 在同一轮内按需共享该 arena，turn
+结束后整体复位。因此 context 可以使用本轮未被其他临时内容使用的空间；长期状态不得侵占
+scratch，单项内容仍受 Profile 的保护上限约束。Tool schema、名称和描述是 borrowed view，
+其字节上限主要用于注册/解析准入，不意味着 Core 为每项预留固定 buffer；Provider 序列化所需
+JSON buffer 属于外部 Provider workspace。仅有一个 `AGENT_CORE_WORKSPACE_BYTES` 无法表达这些
+隔离规则，不能作为唯一容量配置项。
 
-Core 在初始化时绑定预分配存储，运行时复用 scratch/容量槽，不再每轮调用 heap 分配
-arena。此约束不扩展为 Provider/codec/Transport 全链路零分配承诺；cJSON 例外见 §6.2。
+`agent_init()` 只绑定固定 workspace、初始化 pool 并验证运行期配置，不在主路径申请 heap。
+运行时复用 scratch/容量槽，不再每轮创建 request arena。该规则不承诺 Provider/codec/Transport
+全链路零分配，cJSON 例外见 §6.2。
 
-`agent_resource_config_t` 至少约束工具/上下文/技能/会话容量、Session payload、scratch、
-输入、schema、arguments 和 Tool/模型输出字节数。注册与运行不得无界扩容。
-`config_tiny()` 必须调整实际资源配置；编译开关负责移除未用模块及依赖，两者不同。
+Tiny/Default/Device ReAct 是构建 Profile，不是 `agent_config_tiny()` 之类运行期容量切换。
+同一静态库构建只对应一组 Core 容量；不同产品容量需要重建 Profile。
+
+`agent/config.h` 按 `AGENT_*` 直接宏、生成的 `CONFIG_AGENT_*` 宏、内建 Default 值的顺序
+选择容量。`AGENT_CORE_WORKSPACE_BYTES` 是当前 Profile 的 Core 总 caller-storage；Core 实现必须
+在编译时验证其足以容纳内部布局。Model wrapper 不占用该空间，需要 caller-storage 时使用
+`agent_model_workspace_t`，其大小由 `AGENT_MODEL_WORKSPACE_BYTES` 决定。
 
 ### 3.3 默认限制与请求覆盖
 
@@ -146,8 +156,8 @@ arena。此约束不扩展为 Provider/codec/Transport 全链路零分配承诺�
 `max_steps` 必须非零；`max_output_tokens == 0` 表示未指定模型 token 预算。
 这些计数规则仍需在头文件定稿时统一，不沿用未定义的 V1 行为。
 
-资源字节上限不能被请求覆盖。产品若有不可放宽的步骤/时间/调用上限，应独立配置硬
-限制并拒绝越界请求；不能把可修改默认值同时当作产品硬限制。硬限制字段布局待定。
+编译期字节/数量上限不能被请求覆盖。产品若有不可放宽的步骤、时间或调用上限，应以 build
+Profile 或独立 admission 检查拒绝越界请求；不能把可修改默认 limits 同时当作产品硬限制。
 Token 预算不能替代输出字节上限，也不能假定 provider/model 一定遵守请求参数。
 
 ## 4. 同步运行、turn 与结果
@@ -312,17 +322,20 @@ Policy/Context/Event 回调在驱动任务同步执行，不重入 Agent；慢�
 
 ## 8. Session 与失败事实
 
-保留 `agent_session_clear()`、`clear_all()`、`count()`；增加 `remove()` 明确释放指定
-会话槽。clear 保留会话身份，remove 释放槽；仅无活动 turn 时修改。空 session ID
-表示默认会话；满容量明确拒绝，不隐式删除另一个会话。
+Session 的权威历史属于可替换的 Session Storage Provider；Core 仅维护当前 turn 的事务、完整
+turn/Tool 配对不变量和本次投影。`agent_session_clear()`、`clear_all()`、`count()` 与未来
+`remove()` 应委托 Provider 实现；具体是否存在默认 session、列举范围和删除语义由稳定的
+Storage 契约定义。当前头文件仍是过渡草案，不应据此推断 Session 历史保存在 Core workspace。
 
-Session 保持 Tool call/result 配对，按完整 turn 淘汰。失败不能仅删除已执行工具的
-事实并表现为从未发生；至少保留有界 abort/部分执行记录，并定义其后续模型投影，
-避免孤立 Tool result。追加前需预留失败收尾所需容量，不能直到溢出才尝试记录 abort。
-具体池与事件布局保持私有。
+Session 保持 Tool call/result 配对，按完整 turn 记录、淘汰与投影。失败不能仅删除已执行工具的
+事实并表现为从未发生；至少保留 abort/部分执行记录，并定义其后续模型投影，避免孤立 Tool
+result。Provider 追加前应预留失败收尾所需空间，不能直到溢出才尝试记录 abort。具体日志格式、
+缓存、索引与持久化介质保持 Provider 私有。
 
-首版不承诺掉电恢复、完整回放或跨设备迁移。过程内记录与 Flash 持久化是不同保障，
-产品不能把内存 Session 当作持久化审计。
+`max_history_turns` 是每次模型请求投影多少个此前完整 turn group 的运行期窗口；它不是历史
+保留策略，也不等同于 `max_steps`。每轮还必须受 build Profile 的
+`AGENT_MAX_PROJECTED_MESSAGES`、Context 和 scratch 预算限制。保留、JSONL/Flash/NVS 编码、
+PSRAM 热缓存、checkpoint 和恢复策略都属于 Session Storage Provider。权威规则见 ADR 0016。
 
 ## 9. 并发、动态目录与能力包
 
@@ -342,7 +355,7 @@ Session 保持 Tool call/result 配对，按完整 turn 淘汰。失败不能仅
 | cancel | 无操作 | 无操作 | 有同步保证的跨任务请求 |
 | destroy | 允许 | 允许 | 禁止，先 end |
 
-Runtime、workspace、资源容量在 init 后不变；表中的重配置不包含这些字段。
+Runtime、workspace 和编译期容量在 init 后不变；表中的重配置不包含这些字段。
 网络 reader 只更新 addon 连接状态/入队，注册表 mutation 由驱动任务在 turn 之间执行。
 远程对象离线先阻止新调用，等待引用排空，再注销释放。Core 不管理连接代次，但拒绝
 ACTIVE 中的目录变更。
@@ -380,7 +393,8 @@ ACTIVE 中的目录变更。
 - Mock + caller workspace 跑通 input -> final，Model binding 不要求额外 heap。
 - Tool -> result -> final、拒绝/确认/取消、动作成功后模型失败；输出交付失败不隐式
   重执行。验证确认 ID、view 寿命与 deadline。
-- plan/init 共用计算，覆盖对齐、恰好足够、少一字节、乘加溢出和初始化失败清理。
+- Profile 布局与 `agent_init()` 使用同一内部计算，覆盖对齐、恰好足够、少一字节、乘加溢出和
+  初始化失败清理；实际布局超出 `agent_workspace_t` 时必须在构建期失败。
 - 远程目录上下线/重连、ACTIVE 拒绝 mutation、注销后才能释放 user_data。
 - borrowed/owned 替换失败、相同句柄重绑、schema/输出超限及每条清理路径。
 - 最小构建不链接网络/Storage/Memory/Plugin；公共头独立 C99 编译，各 Port 运行相同
@@ -407,8 +421,8 @@ ACTIVE 中的目录变更。
 - `agent.h` 聚合应用接口；新增 `context.h`、`transport.h` 补齐已有模块的扩展契约。
   Runtime 不含网络/TLS，HTTP Transport 经 Model Provider 配置注入，不增加
   `agent_set_transport()`。具体 Model Provider 工厂头留待实现时定义。
-- Model 保持不透明句柄，使用 `agent_model_plan()/init()` 支持外部缓冲区；
-  `agent_model_create()` 使用显式 allocator。wrapper 是否调用 provider 的 destroy
+- Model 保持不透明句柄，使用类型化 `agent_model_workspace_t` 的 `agent_model_init()` 支持
+  caller-storage；`agent_model_create()` 使用显式 allocator。wrapper 是否调用 provider 的 destroy
   与 Agent 是否拥有 wrapper 是两个层次，成功才移交相应清理责任。
 - `step` 新增 final、执行摘要、完整待确认调用和确认 nonce；零值确认无效，必须同时
   匹配 nonce 和 call ID。同步 response 分开记录 execution status 与 delivery status，

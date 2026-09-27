@@ -25,7 +25,7 @@ OpenAI 请求 JSON。Core 负责该投影的编排、预算、顺序、取消和
 持有其原始状态。
 
 ```text
-Session event/payload pool ─┐
+Session Storage Provider ──┐
 Tool registry              ├─> Core projection ─> Model request views
 Skill registry             │       (turn scratch)       |
 Context providers          ┤                            v
@@ -37,15 +37,15 @@ Optional Memory provider ──┘                    Provider wire encoding
 | 信息或能力 | 原始状态所有者 | Core 的职责 | Model Provider 的职责 |
 |---|---|---|---|
 | system prompt / Agent 指令 | 应用配置或 Core 复制的配置 | 选择、计入预算、输出最终 `system_prompt` | 映射到目标模型请求字段 |
-| Session 历史 | Session Manager | 事务记录、裁剪、投影 `agent_message_view_t[]` | 编码目标协议的 messages |
+| Session 历史 | Session Storage Provider | 维护当前 turn 事务、按预算查询完整历史 turn group、投影 `agent_message_view_t[]` | 编码目标协议的 messages |
 | Tool 定义与 schema | 应用持有或 Tool Registry 的受控副本 | 筛选可见 Tool、Policy 检查、投影 `agent_tool_view_t[]` | 编码目标协议的 tools/function schema |
 | Skill | 应用提供、Registry 注册 | 按启用状态与优先级选择，写入 Context | 不解释 Skill 领域含义 |
 | 动态 Context | Context Provider / 应用 | 调用、排序、限制输出、处理失败 | 不直接读取设备或应用状态 |
 | 长期 Memory | 可选的外部 Memory Provider | 将选中的结果作为受限 Context 贡献 | 不保存或检索长期记忆 |
 | OpenAI JSON / HTTP body | Model Provider | 不持有、不生成 | 序列化、发送、解析和释放/复用临时 buffer |
 
-Core 可以持有注册项、Session payload 和本 turn 的投影副本，但不取得应用状态、Memory
-后端或 Provider wire buffer 的所有权。所有跨边界文本都使用 `agent_string_view_t`；除非
+Core 可以持有注册项、当前 session 的绑定/游标和本 turn 的投影副本，但不持有完整 Session
+历史，也不取得应用状态、Memory 后端或 Provider wire buffer 的所有权。所有跨边界文本都使用 `agent_string_view_t`；除非
 接口明确标为 COPIED，否则 Provider 和应用不得在 callback 返回后保留 view。
 
 ### Model 输入不是单一字符串
@@ -102,17 +102,43 @@ OpenAI-compatible Provider 可以将上述三部分编码为 `messages`、`tools
 4. 将来由可选 Memory Provider 返回的检索结果；
 5. Session 消息与 Tool 列表作为独立结构化投影，而非拼入 system text。
 
-每类贡献可在后续 `agent_config_t` 中获得独立上限，但无论如何最终都不得超过
-`max_context_bytes` 与当前 turn 的 `scratch_bytes`。Core 在写入前检查整数溢出和容量；
-不得以截断 JSON、截断 UTF-8 字节序列或悄悄丢弃 required 内容的方式“凑合成功”。
+每类贡献的上限由 build Profile 的 `CONFIG_AGENT_MAX_CONTEXT_BYTES`、
+`CONFIG_AGENT_SCRATCH_BYTES` 及相关容量宏确定。无论如何最终 Context 都不得超过这些固定
+边界。Core 在写入前检查容量；不得以截断 JSON、截断 UTF-8 字节序列或悄悄丢弃 required
+内容的方式“凑合成功”。
 
 `AGENT_ERROR_CONTEXT_OVERFLOW` 仅表示最终 system/context 文本投影无法满足预算。Session
 消息描述符、Tool schema、Model HTTP body 或 Provider 输出 buffer 的容量不足分别属于其
 所属模块，不得滥用该错误码；详见 ADR 0008。
 
+### Session 历史窗口
+
+Session 历史由 Storage Provider 保存和按需读取；Core 不读取整段历史后再裁剪。每次模型请求
+只选择最近的、已经结束的完整历史 turn group。目标 API 在 `agent_limits_t` 增加
+`max_history_turns`：它是本次请求最多投影多少个**此前完整** turn group 的运行期窗口，既不是
+一次执行的 `max_steps`，也不是存储后端的保留数量。`max_history_turns == 0` 表示不投影持久化
+历史；默认值将由 `AGENT_LIMITS_DEFAULT` 给出。
+
+一个 turn group 可包含 user 消息、assistant Tool call、Tool result、assistant final 或 abort
+事实。Core 必须从最新 group 向前选择，并同时满足下列边界：
+
+- `max_history_turns`；
+- build Profile 的 `AGENT_MAX_PROJECTED_MESSAGES`，用于限制 scratch 中
+  `agent_message_view_t[]` 的数量；
+- `AGENT_MAX_CONTEXT_BYTES`、可用 turn scratch 与其他本轮必需投影的预算。
+
+若一个较旧的完整 group 无法整体放入剩余预算，Core 跳过该 group，不得留下孤立的 Tool call 或
+Tool result；最终送给 Model 的已选 group 恢复为时间正序。旧历史因窗口或预算未被投影是正常
+裁剪，不是 `AGENT_ERROR_CONTEXT_OVERFLOW`。Storage 读取失败按 Provider I/O 契约返回错误，除非
+未来显式增加“历史可选”的降级策略。
+
+历史保留、JSONL/Flash/NVS 编码、PSRAM 热缓存、压缩、checkpoint 和清理策略属于 Session
+Storage Provider，不属于 `agent_limits_t` 或 Core workspace。详见 ADR 0016。
+
 ### 生命周期与内存
 
-Core workspace 在 `agent_init()` 时被切分为长期状态和可复用 turn scratch。Context 文本、
+Core workspace 在 `agent_init()` 时被切分为长期状态和可复用 turn scratch。长期状态只保存
+session binding、游标和当前事务事实，不保存跨 turn 的完整消息/event payload。Context 文本、
 message view 数组及 Tool view 数组的有效期至少覆盖一次 Model `complete()` 调用。模型返回
 后，只有后续状态机仍需使用的结果，例如待确认的 Tool call，才必须保留到该 turn 结束或
 中止；不再使用的输入投影可以在实现内部复用其 scratch。
@@ -122,8 +148,8 @@ message view 数组及 Tool view 数组的有效期至少覆盖一次 Model `com
 turn 创建 heap arena，也不执行无界增长。
 
 OpenAI Provider 的 request/response JSON、cJSON DOM、TLS/HTTP buffer 和网络任务栈不属于
-Core scratch，也不计入 `agent_plan()` 的 Core 结果；产品 Profile 必须在独立内存预算中声明
-它们，参见 ADR 0006 与 ADR 0007。Provider 不得把 Core scratch 作为其私有长期 allocator。
+编译期 `agent_workspace_t`；产品 Profile 必须在独立内存预算中声明它们，参见 ADR 0006 与
+ADR 0007。Provider 不得把 Core scratch 作为其私有长期 allocator。
 
 ### Memory 的位置
 
@@ -169,7 +195,7 @@ Provider 将绕过 Policy、Context 预算和统一的 Session 行为；不同 P
 
 - Provider 必须实现从规范化 view 到目标 wire format 的序列化；
 - 应用编写动态 Context 时必须显式处理输出大小、deadline 和数据有效期；
-- 需要在实现阶段定义 Context checkpoint、非必需失败事件以及每类贡献的精确资源配置。
+- 需要在实现阶段定义 Context checkpoint、非必需失败事件以及每个 build Profile 的精确容量。
 
 ## 评审重点
 

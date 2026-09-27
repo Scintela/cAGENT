@@ -29,6 +29,12 @@ ADR 0006 中尚未同步的设计差异仍需评审，尤其是 Tool schema 的�
 | [adr/0008-error-contract.md](adr/0008-error-contract.md) | 跨平台错误类别、来源、远端失败、Tool 副作用事实与传播规则提案 |
 | [adr/0009-types-boundary.md](adr/0009-types-boundary.md) | 公共 `types.h` 的跨模块类型边界、Model 类型迁移与 include 规则提案 |
 | [adr/0010-context-projection.md](adr/0010-context-projection.md) | Context 的编排、模型投影、资源预算、Memory 边界与 Provider 契约提案 |
+| [adr/0011-configuration-boundaries.md](adr/0011-configuration-boundaries.md) | 编译期容量 Profile、运行期 limits、workspace 与可替换 Model Provider 的边界提案 |
+| [adr/0012-agent-header-boundary.md](adr/0012-agent-header-boundary.md) | `agent.h` 的应用入口、聚合范围、生命周期与同步运行边界提案 |
+| [adr/0013-text-representation.md](adr/0013-text-representation.md) | 公共 API 文本表示候选方案：NUL 字符串、长度视图、混合边界、双轨 API 与 `_Generic` |
+| [adr/0014-memory-domains.md](adr/0014-memory-domains.md) | Core workspace、Session、turn scratch、Provider/Transport 与外部库的内存域和分配边界提案 |
+| [adr/0015-event-model.md](adr/0015-event-model.md) | Live Event 观测模型：边界事件集合、单回调契约、push/pull 分工、双通道与 OTel 映射提案 |
+| [adr/0016-session-history-storage.md](adr/0016-session-history-storage.md) | Session 完整 turn 历史的投影窗口、Storage Provider 所有权、JSONL/Flash/NVS 持久化与 PSRAM 缓存边界提案 |
 
 ## 文档原则
 

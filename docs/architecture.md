@@ -120,8 +120,9 @@ VIEW        临时只读视图，只在当前调用或回调期间有效
 Tool、Skill、Context provider、Session、事件、消息 payload、Tool 参数、Tool 输出、
 模型输出和 scratch buffer 都必须有明确上限。
 
-运行期容量必须小于等于编译期 hard maximum；实际内存应根据运行期容量和已选择插件
-计算，而不是始终按 hard maximum 常驻。
+模块是否存在与所有 Core 容量均由 build Profile 的编译期配置决定。Profile 可以裁剪未用
+模块、Core registry/scratch 容量与 Session Storage Provider Profile；运行期不得扩容、heap fallback 或
+创建每轮临时 arena。
 
 ### 5.5 失败可回滚
 
@@ -258,7 +259,7 @@ Adapter；本地 Model、Mock 和串口 Model 不产生 Transport 依赖。具�
 | 状态 | 所属模块 |
 |------|----------|
 | Tool entries、schema cache、schema generation | Tool Registry |
-| Session slots、event descriptors、payload pool | Session Manager |
+| Session binding/cursor 与完整 turn 不变量 | Core；历史记录/缓存由 Session Storage Provider |
 | Model 指针、ops、ownership | Model Binding |
 | deadline、effective limits、step count | Run Context |
 | plugin mount records、cleanup stack | Plugin Manager |
@@ -294,27 +295,24 @@ UNINITIALIZED
 
 第一阶段建议采用严格规则：
 
-- Plugin 只在 `CONFIGURING` 状态挂载和卸载。
-- Tool/Skill 的启停只允许在 `READY` 状态执行。
-- `RUNNING` 状态禁止修改注册表和替换 Provider。
+- 通用 Plugin mount/unmount 延后；静态能力包通过普通装配函数直接注册自己的贡献并自行回滚。
+- Tool/Context/Skill 注册、注销和启停只允许在 CONFIGURING/READY。
+- ACTIVE 状态禁止修改注册表和替换 Provider。
 - 同一个 Agent 只允许一个活动 run/turn。
 - `agent_destroy()` 不允许与运行并发。
-- 销毁时按挂载相反顺序停止并卸载插件。
 
 ### 9.2 初始化和清理
 
 ```text
-validate composition
--> calculate memory plan
--> bind workspace
--> initialize kernel modules
--> mount plugins
--> validate required capabilities
--> start plugins
+validate build Profile and runtime config
+-> bind fixed workspace
+-> initialize kernel fixed pools
+-> application registers/binds optional capabilities
+-> validate Core ready state without I/O
 -> READY
 ```
 
-任意步骤失败时，按照已经完成步骤的相反顺序清理。
+任意步骤失败时，撤销已建立的 Core 引用和装配项；caller workspace 仍由调用方持有。
 
 ## 10. 运行状态机
 
@@ -417,6 +415,10 @@ ISR 版本只更新 Runtime 提供的原子/临界区标志，不调用网络、
 callback。
 
 ## 11. Session 事件模型
+
+> 本节中的事件种类仍描述 Core 必须维护的完整 turn/Tool 配对不变量；关于完整历史的所有权、
+> Storage Provider、投影窗口和内存域，以 ADR 0016 为准。本文早期的 Core event/payload pool
+> 与直接 storage mount 签名均为已被替代的架构草图。
 
 ### 11.1 Session 是运行事实，不是厂商消息 JSON
 
@@ -766,57 +768,38 @@ int agent_jsonl_session_mount(
 
 第一阶段不支持 `RUNNING` 状态热卸载。
 
-## 16. 配置与组合
+## 16. 配置与装配
 
-### 16.1 Core Config
+### 16.1 Core Config 与 Build Profile
 
-Core 配置只包含 Kernel 真正拥有的内容：
+本节按 ADR 0011 定义配置模型，并取代本文件早期关于运行期容量布局和
+`agent_composition_t` 的草图。
+
+Core 的模块裁剪和物理容量由 build Profile 决定，而不是由每个 `agent_config_t` 的资源字段
+决定。Kconfig、CMake preset 或等价生成配置负责 Tool/Session/Context/Skill 是否编译，并生成
+长期 registry/当前 session binding 容量、每轮 scratch 总预算和单对象准入上限。完整 Session
+历史的保留、缓存与 I/O 预算属于 Session Storage Provider。输入、schema、arguments
+和模型输出上限主要保护单次对象；它们不意味着每项都在 Core 中拥有同等大小的固定 buffer。
+
+运行期 `agent_config_t` 只包含每个 Agent 可不同、不会改变 workspace 布局的内容：
 
 ```c
 typedef struct {
-    uint32_t abi_version;
-    uint32_t struct_size;
-
-    agent_identity_config_t identity;
-    agent_resource_config_t resources;
-    agent_run_config_t run;
-    agent_session_config_t session;
+    agent_string_view_t system_prompt;
+    agent_limits_t limits;
     agent_runtime_t runtime;
 } agent_config_t;
 ```
 
-资源配置示例：
+OpenAI、JSONL、Wi-Fi、Transport 和其他 Provider 配置不进入 `agent_config_t`。它们通过各自
+Provider/Adapter API 创建并绑定，避免 Core 配置随着插件生态不断膨胀。
 
-```c
-typedef struct {
-    uint16_t max_tools;
-    uint16_t max_skills;
-    uint16_t max_context_providers;
-    uint16_t max_policies;
-    uint16_t max_sessions;
-    uint16_t max_session_events;
+### 16.2 直接装配
 
-    size_t session_payload_bytes;
-    size_t run_scratch_bytes;
-    size_t tool_result_bytes;
-} agent_resource_config_t;
-```
-
-OpenAI、JSONL、Wi-Fi 和其他插件配置不进入 `agent_config_t`，避免 Core 配置随着
-插件生态不断膨胀。
-
-### 16.2 Composition
-
-```c
-typedef struct {
-    agent_config_t core;
-    const agent_plugin_spec_t *plugins;
-    size_t plugin_count;
-} agent_composition_t;
-```
-
-Plugin spec 指向静态 descriptor 和对应的类型化配置。Profile 是预先定义好的
-composition 构造器，不拥有另一套运行机制。
+首版不公开运行期 `agent_composition_t` 或可变 Profile builder。产品在当前 build Profile 下
+创建 Agent 后，直接注册 Tool/Context/Skill、设置 Policy/Event 并绑定 Model。需要静态能力包
+时，由包自身提供普通装配函数与失败回滚；通用 Plugin composition 待实际生命周期需求稳定后
+再设计。
 
 示例 Profile：
 
@@ -835,52 +818,35 @@ Device ReAct
 └── JSONL/Flash Session Storage
 ```
 
-## 17. 内存规划
+## 17. 编译期内存 Profile
 
-### 17.1 内存计划
+### 17.1 固定容量
 
-```c
-typedef struct {
-    size_t kernel_bytes;
-    size_t registry_bytes;
-    size_t session_bytes;
-    size_t run_scratch_bytes;
-    size_t plugin_state_bytes;
-    size_t alignment_waste_bytes;
-    size_t total_bytes;
-} agent_memory_plan_t;
-
-agent_error_t agent_plan(const agent_composition_t *composition,
-                              agent_memory_plan_t *plan);
-```
-
-初始化前即可判断配置是否适合目标设备。
+每个 build Profile 在编译时确定 Core workspace 的大小、对齐和组成。Profile 的构建输出必须
+报告 `sizeof(agent_workspace_t)`、启用模块和 Core 静态 RAM；这替代公开的运行期
+容量查询与布局规划接口。
 
 ### 17.2 Caller-provided Workspace
 
 ```c
-agent_error_t agent_init(agent_t **out,
-                              void *workspace,
-                              size_t workspace_size,
-                              const agent_composition_t *composition);
-```
-
-嵌入式示例：
-
-```c
-static unsigned char g_agent_workspace[32 * 1024];
+static agent_workspace_t g_agent_workspace;
 
 agent_t *agent;
-int ret = agent_init(&agent,
-                      g_agent_workspace,
-                      sizeof(g_agent_workspace),
-                      &composition);
+agent_error_t ret = agent_init(&agent, &g_agent_workspace, &config);
 ```
+
+`agent_workspace_t` 由库保证对齐并随 build Profile 变化；应用与库必须使用同一生成配置。
+`agent_init()` 初始化固定 registry、session binding/cursor 和可复用 turn scratch，不申请 Core heap。
+
+公共 `agent/config.h` 以 `AGENT_*` 覆盖、`CONFIG_AGENT_*` 生成配置、Default 值的顺序
+选择容量。`AGENT_CORE_WORKSPACE_BYTES` 定义 `agent_workspace_t` 的总大小；Core 必须在编译时
+验证当前内部布局未超过它。Model wrapper 的 caller-storage 独立为
+`agent_model_workspace_t`，不占用 Core workspace。
 
 Host/大 SoC 保留便利封装：
 
 ```c
-agent_t *agent_create(const agent_composition_t *composition);
+agent_t *agent_create(const agent_config_t *config);
 void agent_destroy(agent_t *agent);
 ```
 
@@ -893,43 +859,35 @@ void agent_destroy(agent_t *agent);
 ```text
 Persistent Kernel State
 Persistent Plugin State
-Session Descriptor/Payload Pools
 Per-run Scratch Arena
+Session Storage Provider Workspace and Persistent Media
 Transport/Provider External Buffers
 ```
 
-Provider 使用外部缓冲区时，必须通过 `query_memory()` 纳入计划，或者在接口中明确
-声明该内存不由 cAgent 管理。
+Provider 使用外部缓冲区时，必须在产品内存账中单独声明和测量；它不属于
+`agent_workspace_t`。
 
 ## 18. 上层开发体验
 
-### 18.1 完整组合接口
+### 18.1 直接装配接口
 
 ```c
-agent_config_t core = agent_config_default();
+static agent_workspace_t workspace;
 
-core.resources.max_tools = 8;
-core.resources.max_sessions = 2;
-core.resources.session_payload_bytes = 16 * 1024;
-core.resources.run_scratch_bytes = 12 * 1024;
+agent_config_t config = agent_config_default();
+agent_t *agent;
 
-agent_composition_t app;
-agent_composition_init(&app, &core);
-
-agent_composition_add_openai_model(&app, &openai_config);
-agent_composition_add_http_transport(&app, &http_config);
-agent_composition_add_jsonl_session(&app, &session_storage);
-agent_composition_add_tool_pack(&app, &device_tool_pack);
-agent_composition_add_policy(&app, &device_policy);
-
-agent_memory_plan_t plan;
-agent_plan(&app, &plan);
-
-agent_t *agent = agent_create(&app);
+agent_init(&agent, &workspace, &config);
+agent_register_tool(agent, &device_tool);
+agent_set_policy_callback(agent, device_policy, NULL);
+agent_set_model(agent, model);
 agent_start(agent);
 agent_run(agent, &request, &response);
 agent_destroy(agent);
 ```
+
+Tool/Session/Context/Skill 容量和 scratch 大小在此之前已由 build Profile 决定；Provider 和
+Transport 按各自 API 创建，不进入 Core 初始化配置。
 
 ### 18.2 结构体注入（不提供 `_simple` 变体）
 
@@ -1098,7 +1056,7 @@ V2 稳定后取代 V1 成为正式 `agent` 库，V1 目标转为 `agent_legacy`�
 | Runtime callback | 保留，拆分 Transport |
 | Tool/Skill/Context 注册 | 保留概念，加入作用域和事务 |
 | Session turn 完整性 | 保留并转为事件状态机 |
-| 固定二维 Session 数组 | 改为 descriptor + shared payload pool |
+| 固定二维 Session 数组 | 改为 Session Storage Provider 的记录/缓存与有界投影 |
 | 同步 `agent_run()` | 保留为状态机便利封装 |
 | request 覆盖 Agent limits | 改为独立 run context |
 | Model 请求中的 JSON | 移出 Core，由 Provider 构造 |

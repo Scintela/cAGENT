@@ -34,7 +34,6 @@ Model、Tool、Context、Run、Event、Session 和 Runtime 共享必要的值类
 | `agent_turn_t` | Run 公开的短生命周期 token；前置声明放在基础层不会引入 Run 定义。 |
 | `agent_cancel_token_t` | Model、Tool、Context 与 Transport 都只需借用其不透明指针。 |
 | `agent_string_view_t`、`AGENT_SV_LITERAL`、`agent_string_view()` | 全部无分配文本输入/输出的统一表示。 |
-| `agent_memory_plan_t` | Core 与 Provider 的 caller-storage 预检都使用的空间/对齐契约。 |
 | `agent_text_sink_t` | Model、Tool、Context 和内部投影共享的有界文本输出契约。 |
 | `agent_tool_call_view_t` | Model 输出、Tool 输入、Run confirmation 与 Event 观察共同交换的调用事实。 |
 | `agent_limits_t` | Config 默认值、Run override、Model 与 Tool deadline/budget 共同引用的执行限制。 |
@@ -52,6 +51,7 @@ Model、Tool、Context、Run、Event、Session 和 Runtime 共享必要的值类
 | 类型 | 原因 |
 |------|------|
 | `agent_model_t` | 仅由 Model 的构造、绑定、销毁与 Core 内部持有。 |
+| `agent_model_workspace_t` | Model wrapper 的类型化 caller-storage，不包含 Provider 状态。 |
 | `agent_message_role_t` | 是供应商无关的 Model transcript 角色，不是一般 Core 消息总线。 |
 | `agent_message_view_t` | 仅在一次 Model completion 中借用的 transcript 项。 |
 | `agent_tool_view_t` | 注册 Tool 面向 Model 的裁剪投影，依赖 `agent_tool_flags_t`。 |
@@ -86,6 +86,9 @@ error.h
 
 `agent_error_t` 例外地位于 `error.h`，因为它是所有返回路径的最小依赖，`types.h` 只引用
 它而不重新定义错误语义。
+
+根据 ADR 0011，运行期容量规划不进入公共类型层；由当前 build Profile 决定大小与对齐的
+`agent_workspace_t` 属于 `config.h` 的初始化 storage 契约，不属于跨模块值类型层。
 
 ## 不采用的方案
 
