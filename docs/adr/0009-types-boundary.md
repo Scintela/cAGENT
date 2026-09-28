@@ -3,6 +3,8 @@
 - 状态：提案
 - 日期：2026-09-24
 
+本文关于公开 `agent_turn_t` 的讨论已由 ADR 0020 暂缓；MVP 的 `types.h` 不声明它。
+
 ## 背景
 
 cAgentV2 面向 ESP-IDF、openvela、RT-Thread 与 Host 的同一套 C API。公共头文件既要让

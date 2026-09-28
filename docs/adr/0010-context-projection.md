@@ -3,6 +3,8 @@
 - 状态：提案
 - 日期：2026-09-26
 
+本文提到的 `agent_turn_end()` 是后续候选接口；同步 MVP 以 `agent_run()` 返回结束运行，见 ADR 0020。
+
 ## 背景
 
 Agent 的“上下文”容易被误解为由 Core 长期持有的一份大字符串，或由 Model Provider

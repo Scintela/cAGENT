@@ -7,11 +7,10 @@
 
 ## 仓库状态（2026-09）
 
-本仓库仍处于架构与公共 API 草案阶段：`include/` 已补齐首批接口声明和简短普通注释，
-`src/` 内部头已定义协作边界；Memory、通用 Plugin 与持久化 Storage 仍延后。
-`.c` 实现、完整构建系统、运行测试基座和具体平台 port 尚未落地。新增的
-`tests/headers/compile.sh` 仅检查头文件独立包含、组合包含及 C99/C++11 用法，不证明
-运行行为。因此，这些声明不应被理解为已可链接运行或 ABI 稳定的实现。
+本仓库仍在 MVP 实现阶段：Core 生命周期、部分 Model/Transport 封装、ESP-IDF 与
+OpenVela Port 已有实现和 mock 测试；`agent_run()` 的完整 Model/Tool/Session 执行链
+仍未落地。Memory、通用 Plugin 与持久化 Storage 继续延后。头文件可编译不代表所有
+声明已可链接运行或 ABI 稳定，设备上的网络与 TLS 行为仍需验证。
 
 运行头文件检查：`bash tests/headers/compile.sh`；可通过 `CC`、`CXX` 选择编译器。
 接口收敛以 [public-api.md](api/public-api.md) 及其头文件快照说明为准；总体架构和
@@ -38,6 +37,7 @@ ADR 0006 中尚未同步的设计差异仍需评审，尤其是 Tool schema 的�
 | [adr/0017-runtime-portability.md](adr/0017-runtime-portability.md) | Runtime 最小平台服务、时钟/同步/allocator 契约和跨系统 Port 组织方案提案 |
 | [adr/0018-transport-portability.md](adr/0018-transport-portability.md) | HTTP/TLS Transport 通用契约、平台 Adapter、构建裁剪与 Provider 分层方案提案 |
 | [adr/0019-kconfig-integration.md](adr/0019-kconfig-integration.md) | Kconfig 集成边界：Core Profile 菜单、Port 包裁剪项、命名规范与等价通道提案 |
+| [adr/0020-synchronous-run-mvp.md](adr/0020-synchronous-run-mvp.md) | 同步运行 MVP 的公开边界、取消和确认失败关闭规则 |
 
 ## 文档原则
 

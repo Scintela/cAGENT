@@ -1,8 +1,8 @@
 # cAgentV2 公共 API 设计与收敛建议
 
-> 状态：基于 V1 实际应用复核的修订草案，2026-09-22。
+> 状态：基于 V1 实际应用复核的修订草案；同步运行 MVP 边界以 ADR 0020 为准。
 > 本文定义建议的公开范围、行为和所有权，不表示这些接口已实现或 ABI 已稳定。
-> `include/` 已补齐首批公共声明和简短普通注释，内部头已补齐协作契约；`.c` 尚未实现。
+> `include/` 已补齐首批公共声明；部分 Core/Port 代码可运行，但 `agent_run()` 执行链尚未实现。
 > 下文保留设计评审语境，最新声明快照见 §11.1；声明不等于已接受或通过运行验证。
 
 ## 1. 目标与评审依据
@@ -42,8 +42,8 @@ Core 不创建应用线程，不管理 UI、语音、网络连接恢复或硬件
 | 扩展 API | Provider/Port/addon 作者 | Model ops/sink、Transport、Runtime、可选能力包 |
 | 实现私有 | 库维护者 | arena、注册表布局、状态机内部字段、缓存、Storage Provider 内部索引与 payload |
 
-首批闭环：一个 Agent 同时一个 turn，Model + Tool + 有界 Session + Context/Skill 注入，
-配合 Policy、确认、取消与事件。Skill 和 Context 可关闭，不作为启动必需项。
+首批闭环：一个 Agent 同时处理一次同步运行，Model + Tool + 有界 Session + Context/Skill 注入，
+配合 Policy、取消与事件。可暂停的人工确认延期；Skill 和 Context 可关闭，不作为启动必需项。
 MCP、远程 Node、业务设备 Tool Pack 继续作为独立 addon。
 
 `include/agent.h` 聚合常用应用 API；扩展作者按需包含其他头，不自动引入厂商、OS 或
@@ -53,7 +53,7 @@ MCP、远程 Node、业务设备 Tool Pack 继续作为独立 addon。
 |--------|------|
 | `agent.h` | 生命周期和同步运行，聚合基础类型、配置、Tool、Policy、Event、Session |
 | `agent/types.h`、`error.h`、`config.h` | 最小公共值类型、错误、编译期容量与默认配置 |
-| `agent/run.h` | turn 驱动、确认、取消 token；高级应用显式包含 |
+| `agent/run.h` | 同步运行的协作取消与 token 查询；由 `agent.h` 聚合 |
 | `agent/tool.h`、`policy.h` | 设备工具与授权契约 |
 | `agent/event.h`、`session.h` | 观测与有界会话管理 |
 | `agent/model.h`、`runtime.h`、`transport.h` | 能力绑定与扩展接口；按需包含 |
@@ -66,11 +66,11 @@ MCP、远程 Node、业务设备 Tool Pack 继续作为独立 addon。
 
 | 类型 | 公开内容及约束 |
 |------|----------------|
-| `agent_t`、`agent_turn_t` | 不透明句柄，不允许应用依赖内部布局 |
+| `agent_t` | 不透明句柄，不允许应用依赖内部布局 |
 | `agent_string_view_t` | data + size；不假定 NUL 终止，NULL data 只允许 size 为 0 |
 | `agent_config_t` | 系统提示、默认限制、Runtime；不包含编译期容量、厂商配置或完整插件管理状态 |
 | `agent_request_t` | 输入、session/trace、limits、user_data；不保存厂商请求 JSON |
-| `agent_response_t`、`agent_step_result_t` | 有界输出、执行状态与本轮摘要；具体布局见 §4 待补齐项 |
+| `agent_response_t` | 有界输出、执行状态与本轮摘要；具体布局见 §4 |
 | `agent_message_view_t`、`agent_tool_call_view_t`、`agent_tool_view_t` | Model 扩展所需的规范视图，数组有数量，字符串有长度 |
 | `agent_tool_t`、`agent_context_provider_t`、`agent_skill_t` | 贡献定义、callback/context 与元数据，不公开注册表条目 |
 | `agent_limits_t` | 每 Agent/turn 的运行限制；不得突破 build Profile 的物理容量 |
@@ -102,17 +102,17 @@ void agent_destroy(agent_t *agent);
 - `agent_init()` 绑定编译期 Profile 对应的 `agent_workspace_t`，初始化固定 pool 并进入
   CONFIGURING；合法 out 参数在失败时置 NULL。失败不释放 caller workspace，也不申请 Core heap。
 - `agent_start()` 校验 Core 配置和固定 pool 状态并进入 READY，不隐式发起模型请求。首版允许
-  无 Model 的 READY；需要模型的 run/turn 在使用点检查 binding。失败仍在 CONFIGURING，允许
+  无 Model 的 READY；需要模型的 run 在使用点检查 binding。失败仍在 CONFIGURING，允许
   修正配置或销毁。
 - `agent_create()` 是可选 heap 包装；Agent 记录 workspace 来源与配对 allocator。
   NULL 表示失败，需要详细错误的调用者使用 init。
 - `agent_destroy()` 适用 init/create：清理内部及明确 owned 的资源，只有 create 路径
-  释放 workspace。NULL 安全；必须先结束 turn，禁止与回调/Provider 调用并发。
+  释放 workspace。NULL 安全；禁止与运行、回调或 Provider 调用并发。
 - 首版不同时增加 `deinit()`，也暂不公开语义混杂的 `stop()/reset()`；清会话使用
   Session API，取消使用 cancel。今后按明确的重新配置或统计重置需求独立设计。
 
-生命周期建议为 CONFIGURING -> READY -> ACTIVE -> READY。ACTIVE 包括等待确认以及
-已完成但尚未 `turn_end()` 的 turn，以保证结果视图和注册对象仍然有效。
+生命周期建议为 CONFIGURING -> READY -> ACTIVE -> READY。同步 `agent_run()` 返回时
+不留下可恢复的活动 turn；运行期间禁止修改注册对象。
 
 ### 3.2 编译期容量与 workspace
 
@@ -160,51 +160,34 @@ Tiny/Default/Device ReAct 是构建 Profile，不是 `agent_config_tiny()` 之�
 Profile 或独立 admission 检查拒绝越界请求；不能把可修改默认 limits 同时当作产品硬限制。
 Token 预算不能替代输出字节上限，也不能假定 provider/model 一定遵守请求参数。
 
-## 4. 同步运行、turn 与结果
+## 4. 同步运行与结果
 
-保留以下名字；除补齐结果语义外，沿用已有 `run.h` 的基本形态：
+MVP 只公开 `agent_run(agent, request, response)` 作为一次请求的同步入口。`run.h`
+只保留 `agent_cancel(agent)` 和 `agent_cancel_token_is_set(token)`；不公开 turn 句柄、
+step 或 resume。同步调用返回后不留下活动运行。完整执行链仍在实现中。
 
-| 接口 | 建议行为 |
-|------|----------|
-| `agent_run(agent, request, response)` | begin/step/end 的同步封装，只维护一套执行逻辑 |
-| `agent_turn_begin(agent, request, out_turn)` | READY 中开始运行，复制请求描述和值类型限制；句柄来自 workspace |
-| `agent_turn_step(turn, result)` | 推进一次执行阶段；返回值表示 API 调用是否成功，result 表示运行进展/失败 |
-| `agent_turn_resume(turn, decision)` | 提交当前待确认调用的决定；实际执行由后续 step 完成 |
-| `agent_turn_end(turn)` | 驱动任务结束/回收 turn；未完成时中止；不撤销已发生的设备动作 |
-| `agent_cancel(agent)` | 协作取消；无活动 turn 时无操作，不影响下一次运行 |
-| `agent_cancel_token_is_set(token)` | Tool/Provider 查询取消；token 不得活过所属 turn |
-
-请求描述复制不意味着字符串深拷贝：input/session/trace view 及 user_data 仍由调用者
-保持有效直到同步 run 返回或 turn_end。借用指向的请求文本在此期间不可修改。
-
-第一版允许 Model/Tool 同步阻塞，应用可在独立任务中驱动。`step()` 不承诺固定耗时或
-非阻塞；暂停确认也不等于网络异步。异步 Provider 作为后续独立提案。
+input/session/trace view 与 user_data 由调用方保持有效直到 `agent_run()` 返回；
+指向的文本在运行期间不可修改。Model/Tool 可以同步阻塞，应用需要非阻塞 UI 时应在
+自己的工作任务中运行 Agent；取消是协作式检查，不保证打断阻塞中的 SDK。
 
 ### 4.1 结果与部分执行
 
-现有 `agent_step_result_t.message` 是诊断描述，不能兼任最终输出。建议增设最终输出
-view 和本轮执行摘要，不增加另一套结果查询 API；确切布局待头文件评审。
+- `agent_response_t` 使用 caller buffer；`output_written` 不含终止符，非零容量须以
+  NUL 终止。`output_required`、`output_truncated` 和 `delivery_status` 区分输出交付
+  与 `status` 所表示的执行结果。
+- 输出交付失败不重新执行 Model/Tool；本轮 `summary` 记录工具是否执行、成功/失败
+  次数和 scratch 峰值。累计 stats 不能替代本轮摘要。
+- 超时或取消不意味着已执行的设备动作被撤销。具体设备结果查询、幂等性和未知执行
+  状态由 Tool/addon 处理；Core 不自动重试副作用工具。
+- Event/sink 的 view 仅在回调期间有效；流式文本交付如需向应用公开，应另行定义
+  有界 sink，不复用事件回调。
 
-- 普通 step/确认返回视图有效到下一次 step/resume/end；最终输出在终态后保持到 end。
-  Event/sink 的回调参数则仅在回调期间有效。
-- 同步 response 使用 caller buffer；`output_written` 不含终止符，非零容量保证 NUL
-  终止。建议补充所需长度与截断标志，空间不足明确报告，不静默成功。
-- 输出交付失败不重新执行 Model/Tool。执行状态与输出复制状态需分开，避免应用因
-  buffer 太小重试已发生的设备动作；对应字段/错误码在实现前定稿。
-- 本轮摘要至少区分 final 是否有效、成功/失败调用数量、是否执行过工具。诊断文本和
-  最后工具结果不能伪装成 assistant final；累计 stats 不能替代本轮摘要。
-- 超时可能只在 handler 返回后检测；取消与失败不意味着动作未发生。精确的设备
-  结果查询、幂等性和未知执行状态由 Tool/addon 补充，Core 不自动重试副作用工具。
+### 4.2 确认失败关闭
 
-### 4.2 确认与同步封装
-
-确认暂停须提供调用 ID、工具名和有界参数 view。resume 匹配当前 turn 的调用，防止
-旧确认授权另一调用；同一确认只消费一次。建议零初始化的决定为无效或拒绝，修订
-当前 `AGENT_RESUME_ALLOW = 0` 的草案默认。
-
-同步 `agent_run()` 无确认交互时将需确认调用作为拒绝结果处理，不默认批准。交互应用
-使用 turn API；同步接口不留下隐藏且无法恢复的活动 turn。Policy 明确 DENY 不可被
-resume 覆盖。等待确认计入整体 deadline，恢复执行前重新检查 deadline 与 cancel。
+MVP 没有暂停或恢复能力。`AGENT_POLICY_CONFIRM` 或
+`AGENT_TOOL_REQUIRES_CONFIRM` 必须阻止 handler 执行，不得自动批准或留下待恢复
+的隐藏 turn。Tool guard 和完整 run 尚未实现，此处是后续实现的强制规则；
+需要异步人工确认的产品应在应用层管理该流程，未来再单独评审公开 resume API。
 
 ## 5. Model、Runtime 与 Transport
 
@@ -345,15 +328,14 @@ PSRAM 热缓存、checkpoint 和恢复策略都属于 Session Storage Provider�
 跨任务 cancel 必须有 Port 提供的同步保证；缺少该能力时只能使用串行调用配置，不能
 用 volatile 代替同步或仍宣称跨任务安全。取消与销毁的并发仍由应用禁止。
 
-| 操作 | CONFIGURING | READY | ACTIVE（含等待确认） |
+| 操作 | CONFIGURING | READY | ACTIVE（同步运行中） |
 |------|-------------|-------|---------------------|
 | Model 绑定、默认 limits 等可变配置 | 允许 | 空闲重配置允许 | BUSY |
 | Tool/Context/Skill 注册、注销、启停 | 允许 | 预分配容量内允许 | BUSY |
 | Policy/Event 替换、Session 修改 | 允许 | 允许 | BUSY |
-| turn_begin / run | 不允许 | 允许 | BUSY |
-| step/resume/end | 不允许 | 不允许 | 驱动任务按 turn 状态调用 |
+| run | 不允许 | 允许 | BUSY |
 | cancel | 无操作 | 无操作 | 有同步保证的跨任务请求 |
-| destroy | 允许 | 允许 | 禁止，先 end |
+| destroy | 允许 | 允许 | 禁止，等待 run 返回 |
 
 Runtime、workspace 和编译期容量在 init 后不变；表中的重配置不包含这些字段。
 网络 reader 只更新 addon 连接状态/入队，注册表 mutation 由驱动任务在 turn 之间执行。
@@ -380,6 +362,7 @@ ACTIVE 中的目录变更。
 | `memory_snapshot/restore/free`、Memory ops | V1 未实现；先与 Session 持久化、长期检索划清边界 |
 | Policy 注册链 | 多个独立能力包需贡献策略时再加，定义 DENY 优先、确认合并及移除规则 |
 | `agent_stop/reset`、ISR cancel | 按实际需求和状态契约评审，不靠名字预留能力 |
+| `agent_turn_begin/step/resume/end` | 需跨回调持有状态、确认 nonce 和可恢复资源；MVP 不公开，见 ADR 0020 |
 | 公共 Loop ops、router 管理器 | 第二种编排/路由实现出现前不公开；Model wrapper 可在扩展侧探索 |
 | 全异步 Model/Transport | 先定义完成通知、取消后排空、buffer 寿命与背压，再设计 API |
 
@@ -391,8 +374,8 @@ ACTIVE 中的目录变更。
 先以应用和失败路径验证契约，再冻结签名：
 
 - Mock + caller workspace 跑通 input -> final，Model binding 不要求额外 heap。
-- Tool -> result -> final、拒绝/确认/取消、动作成功后模型失败；输出交付失败不隐式
-  重执行。验证确认 ID、view 寿命与 deadline。
+- Tool -> result -> final、确认要求拒绝/取消、动作成功后模型失败；输出交付失败不隐式
+  重执行。验证无 handler 副作用、view 寿命与 deadline。
 - Profile 布局与 `agent_init()` 使用同一内部计算，覆盖对齐、恰好足够、少一字节、乘加溢出和
   初始化失败清理；实际布局超出 `agent_workspace_t` 时必须在构建期失败。
 - 远程目录上下线/重连、ACTIVE 拒绝 mutation、注销后才能释放 user_data。
@@ -405,8 +388,8 @@ ACTIVE 中的目录变更。
 1. 同步 [总体架构](../architecture.md)、[模块地图](../arch/README.md) 与 ADR 0006：
    生命周期/Composition 收敛、schema 输入、JSON 依赖边界及首批范围。
 2. 静态 Model binding 的结构/签名、owned 销毁责任、平台大缓冲 allocator 注入。
-3. step 最终输出/执行摘要、response 交付状态/所需长度、Tool 有界输出签名，及当前
-   `run.h` 中确认零值和 view 注释的变更。
+3. 同步 response 的执行/交付状态、Tool 有界输出签名、取消与确认失败关闭；
+   step/resume API 延后独立评审。
 4. 限制零值、硬上限布局、schema validator 支持范围及不支持规则的处理方式。
 5. config/ops 是否采用 `struct_size`/版本字段及兼容规则。字段本身不自动提供 ABI
    兼容；初期以同版本源码构建为基线，不给所有值类型机械添加版本开销。
@@ -424,9 +407,8 @@ ACTIVE 中的目录变更。
 - Model 保持不透明句柄，使用类型化 `agent_model_workspace_t` 的 `agent_model_init()` 支持
   caller-storage；`agent_model_create()` 使用显式 allocator。wrapper 是否调用 provider 的 destroy
   与 Agent 是否拥有 wrapper 是两个层次，成功才移交相应清理责任。
-- `step` 新增 final、执行摘要、完整待确认调用和确认 nonce；零值确认无效，必须同时
-  匹配 nonce 和 call ID。同步 response 分开记录 execution status 与 delivery status，
-  输出不足不得触发工具重执行。
+- 同步 response 分开记录 execution status 与 delivery status，输出不足不得触发
+  工具重执行；step/确认 nonce 不属于 MVP 公开接口。
 - Tool/Context 使用同步有界 sink。请求限制非 NULL 时完整覆盖默认值；时间限制 0
   表示不增加该项限制，工具调用上限 0 禁用工具，max_steps 必须大于 0。产品不可放宽的
   硬限制暂由应用 admission 检查，未机械增加另一套未验证的 Core 限制结构。

@@ -4,6 +4,9 @@
 
 本文定义 cAgentV2 的目标架构和首阶段实现边界，用于指导公共头文件、内部模块、
 测试和迁移工作。本文中的 C 接口是架构草案，不代表已经实现或形成稳定 ABI。
+其中 `agent_turn_begin/step/resume/end` 和通用 Plugin scope 属于后续候选，
+不是同步 MVP 公开接口；当前边界以 [ADR 0020](adr/0020-synchronous-run-mvp.md)
+和实际头文件为准。
 
 ## 2. 背景
 
@@ -78,7 +81,6 @@ Kernel 只负责无法安全外移的能力：
 - Session turn 和 Tool call/result 完整性；
 - cancel、deadline、错误与统计；
 - live event 派发；
-- 插件作用域和逆序清理。
 
 Model 协议、HTTP、文件系统、业务 Tool 和 Skill loader 不进入 Kernel。
 
@@ -697,76 +699,12 @@ NORMAL    根据预算策略裁剪、摘要或跳过
 OPTIONAL  放不下直接跳过
 ```
 
-## 15. 插件作用域
+## 15. 插件作用域（延后）
 
-### 15.1 事务式挂载
-
-```c
-typedef struct agent_plugin_scope agent_plugin_scope_t;
-
-int agent_plugin_scope_begin(agent_t *agent,
-                              agent_plugin_id_t id,
-                              agent_plugin_scope_t **scope);
-
-int agent_scope_add_tool(agent_plugin_scope_t *scope,
-                          const agent_tool_t *tool);
-
-int agent_scope_add_skill(agent_plugin_scope_t *scope,
-                           const agent_skill_t *skill);
-
-int agent_scope_add_context(agent_plugin_scope_t *scope,
-                             const agent_context_provider_t *provider);
-
-int agent_scope_add_policy(agent_plugin_scope_t *scope,
-                            const agent_policy_t *policy);
-
-int agent_plugin_scope_commit(agent_plugin_scope_t *scope);
-void agent_plugin_scope_abort(agent_plugin_scope_t *scope);
-```
-
-挂载中任意步骤失败时，作用域按相反顺序撤销此前注册。销毁或卸载插件时，同一作用域
-负责移除全部 Contribution。
-
-### 15.2 静态插件描述符
-
-```c
-typedef struct {
-    uint32_t abi_version;
-    uint32_t struct_size;
-
-    const char *name;
-    uint32_t flags;
-
-    size_t state_size;
-    size_t state_alignment;
-
-    int (*query_memory)(const void *config,
-                        agent_plugin_memory_t *memory);
-
-    int (*mount)(agent_plugin_scope_t *scope,
-                 void *state,
-                 const void *config);
-
-    int (*start)(void *state);
-    int (*stop)(void *state);
-    void (*unmount)(void *state);
-} agent_plugin_descriptor_t;
-```
-
-通用 descriptor 用于 Profile、内存规划和生命周期管理。普通开发者优先使用类型化
-封装：
-
-```c
-int agent_openai_model_mount(
-    agent_t *agent,
-    const agent_openai_model_config_t *config);
-
-int agent_jsonl_session_mount(
-    agent_t *agent,
-    const agent_jsonl_session_config_t *config);
-```
-
-第一阶段不支持 `RUNNING` 状态热卸载。
+当前版本不实现通用 Plugin scope、descriptor 或 mount/unmount API。应用直接通过
+类型化接口绑定 Provider、注册 Tool/Skill/Context/Policy；需要批量装配的能力包可在
+包内实现普通函数，并自行处理失败回滚。只有出现可验证的共同生命周期需求后，才重新
+评估事务式作用域；不能把本节早期草案当作现有接口。
 
 ## 16. 配置与装配
 

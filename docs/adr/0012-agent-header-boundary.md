@@ -3,6 +3,8 @@
 - 状态：提案
 - 日期：2026-09-26
 
+MVP 裁决见 ADR 0020：`agent.h` 聚合缩小后的 `run.h`；下文 step/resume 是后续候选，非当前公开 API。
+
 ## 背景
 
 cAgentV2 同时面向产品应用开发者、Model/Transport Provider 作者、平台 Port 作者和可选

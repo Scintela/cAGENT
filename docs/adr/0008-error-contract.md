@@ -3,6 +3,8 @@
 - 状态：已接受
 - 日期：2026-09-24
 
+本文提到的 `agent_turn_*`/step 返回语义是延后方案，不属于 ADR 0020 确定的同步 MVP。
+
 ## 背景
 
 cAgentV2 的 Core、Model Provider、Transport、Context、Tool 和 Session 需要在 ESP-IDF、
