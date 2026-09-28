@@ -76,6 +76,8 @@ int header_contract_fixture(agent_t* agent, agent_model_workspace_t* model_works
     agent_context_provider_t context = {AGENT_SV_LITERAL("state"), 0, false, sample_context, NULL};
     agent_model_t* model = NULL;
     agent_resume_t resume = {AGENT_RESUME_DENY, 1u, AGENT_SV_LITERAL("call")};
+    agent_event_type_t event_type = AGENT_EVENT_TURN_BEGIN;
+    agent_event_t event;
     agent_error_t (*init_fn)(agent_t**, agent_workspace_t*, const agent_config_t*) = agent_init;
     (void)core_workspace;
     (void)init_fn;
@@ -90,6 +92,8 @@ int header_contract_fixture(agent_t* agent, agent_model_workspace_t* model_works
     }
     (void)transport;
     (void)resume;
+    event.type = event_type;
+    (void)event.type;
     (void)agent_set_model(agent, model);
     (void)agent_register_tool(agent, &tool);
     (void)agent_register_context(agent, &context);

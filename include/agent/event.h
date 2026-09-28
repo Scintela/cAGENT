@@ -21,11 +21,11 @@ typedef enum {
     AGENT_EVENT_TOOL_END,       /* After handler returns, including failures. */
     AGENT_EVENT_CONFIRMATION,   /* Turn is waiting for authorization. */
     AGENT_EVENT_TURN_END        /* Terminal outcome, emitted once, including abort. */
-} agent_event_kind_t;
+} agent_event_type_t;
 
 /* Event snapshot; every referenced object expires when callback returns. */
 typedef struct {
-    agent_event_kind_t kind;          /* Event category. */
+    agent_event_type_t type;          /* Event category. */
     uint64_t timestamp_ms;            /* Runtime monotonic timestamp. */
     agent_string_view_t session_id;   /* Effective session ID. */
     agent_string_view_t trace_id;     /* Request trace ID. */
