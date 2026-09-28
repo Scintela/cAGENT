@@ -42,6 +42,7 @@ project(cagent VERSION 0.2.0 LANGUAGES C)
 
 option(AGENT_BUILD_MOCK_PROVIDER "Build the mock Model provider" OFF)
 option(AGENT_BUILD_OPENAI_PROVIDER "Build the OpenAI-compatible Model provider" OFF)
+option(AGENT_BUILD_JSON_CODEC "Build the private bounded jsmn JSON codec" OFF)
 
 include("${CMAKE_CURRENT_LIST_DIR}/cmake/AgentBuildConfig.cmake")
 agent_generate_build_config("${CMAKE_CURRENT_BINARY_DIR}/generated/include")
@@ -59,6 +60,10 @@ target_compile_definitions(cagent_core PUBLIC
 target_compile_features(cagent_core PUBLIC c_std_99)
 set_target_properties(cagent_core PROPERTIES C_STANDARD 99 C_STANDARD_REQUIRED ON
     C_EXTENSIONS OFF POSITION_INDEPENDENT_CODE ON)
+
+if(AGENT_BUILD_JSON_CODEC)
+    add_subdirectory(codecs/json)
+endif()
 
 if(AGENT_BUILD_MOCK_PROVIDER)
     add_subdirectory(providers/mock)
