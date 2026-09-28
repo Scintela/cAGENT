@@ -19,7 +19,6 @@ typedef enum {
     AGENT_EVENT_MODEL_END,      /* After provider returns, including failures. */
     AGENT_EVENT_TOOL_BEGIN,     /* Before handler invocation. */
     AGENT_EVENT_TOOL_END,       /* After handler returns, including failures. */
-    AGENT_EVENT_CONFIRMATION,   /* Turn is waiting for authorization. */
     AGENT_EVENT_TURN_END        /* Terminal outcome, emitted once, including abort. */
 } agent_event_type_t;
 

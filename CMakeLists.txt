@@ -12,10 +12,9 @@ set(AGENT_CORE_SOURCES
     src/core/error.c
     src/memory/memory_mgr.c
     src/model/model.c
-    src/plugin/plugin_scope.c
     src/policy/policy_chain.c
     src/run/react_loop.c
-    src/run/turn.c
+    src/run/cancel.c
     src/runtime/runtime.c
     src/session/session_codec.c
     src/session/session_manager.c

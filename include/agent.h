@@ -9,6 +9,7 @@
 #include <agent/error.h>
 #include <agent/event.h>
 #include <agent/policy.h>
+#include <agent/run.h>
 #include <agent/session.h>
 #include <agent/tool.h>
 #include <agent/types.h>

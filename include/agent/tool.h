@@ -18,7 +18,7 @@ typedef enum {
     AGENT_TOOL_HIDDEN = 1u << 1,          /* Not projected; model invocation rejected. */
     AGENT_TOOL_READ_ONLY = 1u << 2,       /* Provider claims no external mutation. */
     AGENT_TOOL_SIDE_EFFECT = 1u << 3,     /* May modify external state. */
-    AGENT_TOOL_REQUIRES_CONFIRM = 1u << 4 /* Explicit confirmation required. */
+    AGENT_TOOL_REQUIRES_CONFIRM = 1u << 4 /* Reject in synchronous MVP; never auto-approve. */
 } agent_tool_flags_t;
 
 /* Callback-only execution context; do not retain any member. */
@@ -27,7 +27,7 @@ typedef struct {
     agent_string_view_t session_id;     /* Effective session identifier. */
     agent_string_view_t trace_id;       /* Request trace identifier. */
     const agent_limits_t* limits;       /* Effective immutable limits. */
-    const agent_cancel_token_t* cancel; /* Borrowed turn token. */
+    const agent_cancel_token_t* cancel; /* Borrowed active-run token. */
     uint64_t deadline_ms;               /* Absolute runtime monotonic milliseconds, 0=none. */
     void* request_user_data;            /* Borrowed request application context. */
 } agent_tool_context_t;

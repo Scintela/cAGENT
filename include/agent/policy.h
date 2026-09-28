@@ -13,9 +13,9 @@ extern "C" {
 
 /* Policy outcome; zero initialization denies by default.  */
 typedef enum {
-    AGENT_POLICY_DENY = 0, /* Never execute; resume cannot override. */
+    AGENT_POLICY_DENY = 0, /* Never execute. */
     AGENT_POLICY_ALLOW,    /* Allowed unless the tool itself requires confirmation. */
-    AGENT_POLICY_CONFIRM   /* Require a one-shot explicit decision. */
+    AGENT_POLICY_CONFIRM   /* Synchronous MVP rejects; no pending approval state. */
 } agent_policy_decision_t;
 
 /* Execution origin; this draft exposes only the model-driven path.  */

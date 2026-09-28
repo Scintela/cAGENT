@@ -13,6 +13,7 @@ trap 'rm -f "$binary"' EXIT
     "$root/src/core/agent_event.c" \
     "$root/src/core/error.c" \
     "$root/src/model/model.c" \
+    "$root/src/run/cancel.c" \
     "$root/src/runtime/runtime.c" \
     -o "$binary"
 

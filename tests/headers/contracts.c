@@ -12,7 +12,6 @@
 
 static const agent_string_view_t literal = AGENT_SV_LITERAL("sample");
 static const agent_limits_t limits = AGENT_LIMITS_DEFAULT;
-typedef char confirmation_zero_must_not_allow[(AGENT_RESUME_ALLOW != 0) ? 1 : -1];
 typedef char policy_zero_must_deny[(AGENT_POLICY_DENY == 0) ? 1 : -1];
 typedef char projected_messages_must_be_positive[(AGENT_MAX_PROJECTED_MESSAGES > 0u) ? 1 : -1];
 
@@ -75,7 +74,6 @@ int header_contract_fixture(agent_t* agent, agent_model_workspace_t* model_works
                          NULL};
     agent_context_provider_t context = {AGENT_SV_LITERAL("state"), 0, false, sample_context, NULL};
     agent_model_t* model = NULL;
-    agent_resume_t resume = {AGENT_RESUME_DENY, 1u, AGENT_SV_LITERAL("call")};
     agent_event_type_t event_type = AGENT_EVENT_TURN_BEGIN;
     agent_event_t event;
     agent_error_t (*init_fn)(agent_t**, agent_workspace_t*, const agent_config_t*) = agent_init;
@@ -91,7 +89,6 @@ int header_contract_fixture(agent_t* agent, agent_model_workspace_t* model_works
         return status;
     }
     (void)transport;
-    (void)resume;
     event.type = event_type;
     (void)event.type;
     (void)agent_set_model(agent, model);

@@ -14,7 +14,7 @@ cc -std=c99 -Wall -Wextra -Werror -pedantic \
   -I"$root/tests/ports/openvela/fake" \
   "$root/tests/ports/openvela/contract.c" \
   "$root/ports/openvela/transport/src/transport.c" \
-  "$root/src/run/turn.c" \
+  "$root/src/run/cancel.c" \
   -o "$build_dir/contract"
 
 "$build_dir/contract"

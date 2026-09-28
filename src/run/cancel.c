@@ -2,9 +2,10 @@
  * SPDX-License-Identifier: MIT
  * SPDX-FileCopyrightText: 2026 tanglinjie
  */
-/* Cancellation token support; the turn state machine remains pending. */
+/* Cancellation token support; synchronous run dispatch remains pending. */
 
 #include "run/run_internal.h"
+#include "core/agent_internal.h"
 
 void agent_cancel_token_init(agent_cancel_token_t* token, const agent_sync_t* sync)
 {
@@ -42,4 +43,25 @@ bool agent_cancel_token_is_set(const agent_cancel_token_t* token)
         token->sync.leave(token->sync.context);
     }
     return requested;
+}
+
+agent_error_t agent_cancel(agent_t* agent)
+{
+    const agent_sync_t* sync;
+
+    if (agent == NULL)
+    {
+        return AGENT_ERROR_INVALID;
+    }
+    sync = &agent->config.runtime.cancel_sync;
+    if (sync->enter != NULL)
+    {
+        sync->enter(sync->context);
+    }
+    agent_cancel_token_request_locked(agent->active_cancel);
+    if (sync->leave != NULL)
+    {
+        sync->leave(sync->context);
+    }
+    return AGENT_OK;
 }

@@ -52,15 +52,13 @@ struct agent {
     agent_skill_registry_t* skills;
     void* session_storage;
     void* session_cursor;
-    agent_turn_t* turn;
-    agent_cancel_token_t* active_cancel;
+    agent_cancel_token_t* active_cancel; /* Guard with runtime.cancel_sync for cross-task access. */
     agent_arena_t scratch;
     agent_policy_callback_t policy;
     void* policy_context;
     agent_event_callback_t observer;
     void* observer_context;
     agent_stats_t stats;
-    uint64_t confirmation_sequence;
     bool in_callback;
 };
 

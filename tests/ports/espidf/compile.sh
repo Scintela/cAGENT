@@ -21,7 +21,7 @@ for bundle in off on; do
     "$root/tests/ports/espidf/contract.c" \
     "$root/ports/espidf/runtime/src/runtime.c" \
     "$root/ports/espidf/transport/src/transport.c" \
-    "$root/src/run/turn.c" \
+    "$root/src/run/cancel.c" \
     -o "$build_dir/contract-$bundle"
 
   "$build_dir/contract-$bundle"

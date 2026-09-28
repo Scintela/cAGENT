@@ -3,6 +3,7 @@
 #include <agent/model.h>
 
 #include "core/arena_internal.h"
+#include "core/agent_internal.h"
 
 #include <stdlib.h>
 
@@ -25,6 +26,20 @@ static void test_free(void* context, void* memory)
 }
 
 static unsigned int destroyed_models;
+static unsigned int sync_enters;
+static unsigned int sync_leaves;
+
+static void test_sync_enter(void* context)
+{
+    (void)context;
+    ++sync_enters;
+}
+
+static void test_sync_leave(void* context)
+{
+    (void)context;
+    ++sync_leaves;
+}
 
 static void test_destroy(void* context)
 {
@@ -54,6 +69,7 @@ int main(void)
     agent_limits_t invalid_limits = AGENT_LIMITS_DEFAULT;
     agent_response_t response;
     agent_stats_t stats;
+    agent_cancel_token_t token;
     unsigned char arena_bytes[8];
     agent_arena_t arena;
     void* arena_memory;
@@ -63,6 +79,8 @@ int main(void)
     config.runtime.now_ms = test_now_ms;
     config.runtime.allocator.alloc = test_alloc;
     config.runtime.allocator.free = test_free;
+    config.runtime.cancel_sync.enter = test_sync_enter;
+    config.runtime.cancel_sync.leave = test_sync_leave;
     if (agent_arena_init(&arena, arena_bytes, sizeof(arena_bytes)) != AGENT_OK ||
         agent_arena_take(&arena, sizeof(arena_bytes), 1u, &arena_memory) != AGENT_OK ||
         agent_arena_take(&arena, 1u, 1u, &arena_memory) != AGENT_ERROR_CAPACITY ||
@@ -78,6 +96,19 @@ int main(void)
     {
         return 2;
     }
+    if (agent_cancel(NULL) != AGENT_ERROR_INVALID || agent_cancel(agent) != AGENT_OK ||
+        sync_enters != 1u || sync_leaves != 1u)
+    {
+        return 11;
+    }
+    agent_cancel_token_init(&token, &config.runtime.cancel_sync);
+    agent->active_cancel = &token;
+    if (agent_cancel(agent) != AGENT_OK || !agent_cancel_token_is_set(&token) ||
+        sync_enters != 3u || sync_leaves != 3u)
+    {
+        return 12;
+    }
+    agent->active_cancel = NULL;
     if (agent_set_event_callback(agent, NULL, NULL) != AGENT_OK ||
         agent_get_stats(agent, &stats) != AGENT_OK)
     {

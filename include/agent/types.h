@@ -21,9 +21,7 @@ extern "C" {
 
 /* Opaque Agent; one driver task per instance.  */
 typedef struct agent agent_t;
-/* Opaque turn, borrowed from its Agent workspace.  */
-typedef struct agent_turn agent_turn_t;
-/* Cancellation token, valid only during its owning turn.  */
+/* Cancellation token, valid only during its active run. */
 typedef struct agent_cancel_token agent_cancel_token_t;
 
 /* Length-delimited text; no implicit NUL terminator. */
