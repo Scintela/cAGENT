@@ -5,7 +5,7 @@
 /* OpenVela webclient adapter contract tests with a minimal NuttX API fake. */
 
 #include <agent_openvela_transport.h>
-#include <agent/run.h>
+#include <agent.h>
 #include "run/run_internal.h"
 
 #include <netutils/webclient.h>

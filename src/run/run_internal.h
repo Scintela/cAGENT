@@ -5,7 +5,6 @@
 /* Private cancellation token state for the synchronous run. */
 #pragma once
 
-#include <agent/run.h>
 #include <agent/runtime.h>
 
 #ifdef __cplusplus

@@ -5,7 +5,7 @@
 /* NuttX webclient adapter with borrowed buffers and synchronous sink delivery. */
 
 #include <agent_openvela_transport.h>
-#include <agent/run.h>
+#include <agent.h>
 
 #include <netutils/webclient.h>
 

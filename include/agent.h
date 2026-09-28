@@ -9,7 +9,6 @@
 #include <agent/error.h>
 #include <agent/event.h>
 #include <agent/policy.h>
-#include <agent/run.h>
 #include <agent/session.h>
 #include <agent/tool.h>
 #include <agent/types.h>
@@ -35,6 +34,12 @@ void agent_destroy(agent_t* agent);
 /* Runs one complete turn synchronously; provider/tool callbacks may block. */
 agent_error_t agent_run(agent_t* agent, const agent_request_t* request,
                              agent_response_t* response);
+
+/* Requests cooperative cancellation of the active run; idle calls are no-ops. Not ISR-safe. */
+agent_error_t agent_cancel(agent_t* agent);
+
+/* Polls a borrowed active-run token; cross-task use needs runtime synchronization. */
+bool agent_cancel_token_is_set(const agent_cancel_token_t* token);
 
 /* Replaces default limits while idle; active turns and resource ceilings stay unchanged. */
 agent_error_t agent_set_limits(agent_t* agent, const agent_limits_t* limits);
