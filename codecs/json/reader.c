@@ -2,6 +2,10 @@
  * SPDX-License-Identifier: MIT
  * SPDX-FileCopyrightText: 2026 tanglinjie
  */
+#define JSMN_STATIC
+#include "jsmn.h"
+#undef JSMN_STATIC
+
 #include "json_internal.h"
 
 #include <limits.h>

@@ -34,6 +34,8 @@ jsmn 不等于完整 JSON 校验器。私有读层在 tokenization 前额外校�
 调用方还可以设置更小的上限；token 和输出缓冲耗尽均明确失败，不静默截断。
 `agent_json_writer_literal()` 只允许写入实现自身控制的语法片段；动态内容必须
 通过字符串编码或已验证文档的 raw-value 接口写入。
+jsmn 实现只在 `reader.c` 的翻译单元内以 `JSMN_STATIC` 编译，不向应用导出
+`jsmn_init` 或 `jsmn_parse`，允许应用另行链接自己的 jsmn 实现。
 
 ## 尚未解决的契约
 
@@ -63,6 +65,7 @@ codec 自身不调用 heap allocator；输入、token 数组、解码目标和�
 ## 验证
 
 `bash tests/json/compile.sh` 覆盖合法/畸形 JSON、Unicode、嵌套、路径、重复键、
-token 耗尽、writer 溢出及确定性随机输入。Host 下还需以 ASan/UBSan 运行。
+token 耗尽、writer 溢出、确定性随机输入，以及应用另带全局 jsmn 的链接测试。
+Host 下还需以 ASan/UBSan 运行。
 后续 Provider 阶段必须增加 OpenAI 请求、响应、SSE 与 Tool arguments 的
 协议级测试，并在 ESP-IDF、openvela、RT-Thread 目标上测栈、峰值 RAM 与固件增量。
