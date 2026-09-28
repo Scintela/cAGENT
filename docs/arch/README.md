@@ -11,7 +11,7 @@
 | Core Kernel | Lifecycle、Workspace、Registry、Event Dispatch、Cancel/Stats | `core.md` |
 | Execution / Orchestration | Loop、Run State Machine | `loop.md` |
 | Execution / Orchestration | Context Projection | `context.md` |
-| Capabilities | Model | `model.md` |
+| Capabilities | Model wrapper (`src/model/`) and optional implementations (`providers/`) | `model.md` |
 | Capabilities | Tool | `tool.md` |
 | Capabilities | Skill | `skill.md` |
 | Capabilities | Session | `session.md` |

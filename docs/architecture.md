@@ -942,47 +942,40 @@ include/agent/
 
 ## 22. 推荐目录结构
 
-以下是实现成熟后的目标目录，不完全代表当前仓库状态。当前已包含 `tests/` 和 `ports/`；
-`ports/` 仅建立可选包的责任边界，尚无可发布的平台 Adapter。Core 不再包含
-`src/runtime/port_*.c` 平台骨架。
+当前目录按通用 Core、可选 Model Provider 和平台 Port 分层。ESP-IDF/OpenVela Adapter
+已有 mock 测试，但尚未经真实网络/TLS 集成验证；下图不表示所有模块已经实现。
 
 ```text
 cAgentV2/
 ├── CMakeLists.txt
 ├── docs/
 ├── include/
+│   ├── agent.h
 │   └── agent/
 ├── src/
 │   ├── core/
-│   ├── registry/
+│   ├── model/             # 通用 wrapper、绑定与分发
 │   ├── run/
 │   ├── session/
-│   └── context/
-├── plugins/
-│   ├── model_mock/
-│   ├── model_openai/
-│   ├── transport_posix/
-│   └── storage_jsonl/
+│   ├── context/
+│   ├── tool/
+│   └── transport/         # 平台无关的 HTTP 契约转发
+├── providers/
+│   ├── mock/               # 测试 Provider，占位
+│   ├── openai/             # OpenAI-compatible，占位
+│   └── anthropic/          # 原生协议候选，尚不构建
 ├── ports/
 │   ├── host/
 │   ├── openvela/
 │   ├── espidf/
+│   ├── rtthread/
 │   └── stm32/
-├── compat/
-│   └── v1/
 └── tests/
 ```
 
-构建目标：
-
-```text
-cagent       V1，作为当前稳定参考
-agent_v2    V2 实验目标
-```
-
-V1 与 V2 都使用 `agent_` 前缀，因此二者不能在同一二进制中同时链接；迁移期通过独立构建目标隔离，必要时为 V1 临时加 `v1_` 前缀。
-V2 稳定后取代 V1 成为正式 `agent` 库，V1 目标转为 `agent_legacy`；`cAgentV2/` 不应永久成为
-嵌套工程。
+当前通用构建目标为 `cagent_core`；Host CMake 可选构建 `cagent_provider_mock`
+和 `cagent_provider_openai` 占位目标，Anthropic 尚无目标。具体协议实现与 Provider
+配置头以后在各自目录内完成；不能把空目标视为可用的云模型接入。
 
 ## 23. V1 迁移决策
 

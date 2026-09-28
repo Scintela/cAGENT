@@ -23,6 +23,7 @@ ADR 0006 中尚未同步的设计差异仍需评审，尤其是 Tool schema 的�
 | [architecture.md](architecture.md) | V2 总体架构、核心概念、模块边界、生命周期、内存模型、API 草案和迁移计划 |
 | [api/public-api.md](api/public-api.md) | 目标公共 API 清单、当前落地状态与待决接口 |
 | [arch/README.md](arch/README.md) | 模块责任地图与后续模块文档计划 |
+| [../providers/README.md](../providers/README.md) | 可选 Model Provider 的目录、构建目标与当前占位状态 |
 | [adr/0006-json-integration.md](adr/0006-json-integration.md) | cJSON 集成边界、内存策略与 Tool/OpenAI JSON 处理决定 |
 | [adr/0007-http-transport-adapters.md](adr/0007-http-transport-adapters.md) | HTTP Transport 的平台 Adapter、裁剪、同步语义和所有权提案 |
 | [adr/0008-error-contract.md](adr/0008-error-contract.md) | 跨平台错误类别、来源、远端失败、Tool 副作用事实与传播规则提案 |
@@ -38,6 +39,7 @@ ADR 0006 中尚未同步的设计差异仍需评审，尤其是 Tool schema 的�
 | [adr/0018-transport-portability.md](adr/0018-transport-portability.md) | HTTP/TLS Transport 通用契约、平台 Adapter、构建裁剪与 Provider 分层方案提案 |
 | [adr/0019-kconfig-integration.md](adr/0019-kconfig-integration.md) | Kconfig 集成边界：Core Profile 菜单、Port 包裁剪项、命名规范与等价通道提案 |
 | [adr/0020-synchronous-run-mvp.md](adr/0020-synchronous-run-mvp.md) | 同步运行 MVP 的公开边界、取消和确认失败关闭规则 |
+| [adr/0021-platform-cjson-reuse.md](adr/0021-platform-cjson-reuse.md) | 平台 cJSON 复用、构建依赖和 Core/Provider 的 JSON 边界提案 |
 
 ## 文档原则
 
