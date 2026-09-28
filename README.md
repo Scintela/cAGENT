@@ -17,6 +17,7 @@ Session Storage 仍未形成完整运行链。
 ```sh
 bash tests/headers/compile.sh
 bash tests/core/compile.sh
+bash tests/json/compile.sh
 bash tests/transport/compile.sh
 bash tests/ports/espidf/compile.sh
 bash tests/ports/openvela/compile.sh
@@ -47,6 +48,8 @@ Model Provider 位于独立的 `providers/` 目录，Core 只编译 `src/model/m
 Mock/OpenAI CMake 选项目前仅用于独立编译占位源码，不代表协议实现已完成；Anthropic
 目录还没有构建目标。顶层 ESP-IDF component 当前只编译 Core，Provider 的 ESP-IDF
 组件集成需在实现具体 Provider 时补充。
+Host 可用 `-DAGENT_BUILD_JSON_CODEC=ON` 单独编译私有 jsmn codec；它尚未接入
+OpenAI Provider，也不会改变 Core 的 JSON 依赖边界。
 
 ## 许可证
 

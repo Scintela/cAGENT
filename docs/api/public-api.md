@@ -122,7 +122,8 @@ ReAct 或产品 Profile，而不是逐项设置全部容量宏；细项只在 Cu
 
 应用使用 `agent_workspace_t` 取得正确大小与对齐，不猜测 `unsigned char[]` 的长度。Core
 workspace 包含 Agent、固定 registry、session binding/cursor、turn 状态与可复用 scratch；不包含
-完整 Session 历史、借用字符串、Model Provider、cJSON DOM、TLS/HTTP 缓冲或应用线程栈。后者
+完整 Session 历史、借用字符串、Model Provider、JSON codec 的输入/token/输出缓冲、
+TLS/HTTP 缓冲或应用线程栈。后者
 必须作为产品外部内存预算单独测量。
 
 Core 在 init 时先预留 registry、session binding/cursor 等跨 turn 状态，再建立一个 turn scratch arena。
@@ -135,7 +136,7 @@ JSON buffer 属于外部 Provider workspace。仅有一个 `AGENT_CORE_WORKSPACE
 
 `agent_init()` 只绑定固定 workspace、初始化 pool 并验证运行期配置，不在主路径申请 heap。
 运行时复用 scratch/容量槽，不再每轮创建 request arena。该规则不承诺 Provider/codec/Transport
-全链路零分配，cJSON 例外见 §6.2。
+全链路零分配；私有 JSON codec 的边界见 §6.2。
 
 Tiny/Default/Device ReAct 是构建 Profile，不是 `agent_config_tiny()` 之类运行期容量切换。
 同一静态库构建只对应一组 Core 容量；不同产品容量需要重建 Profile。
@@ -269,13 +270,13 @@ Tool 自身或显式 validator 必须验证 required、范围、设备约束等�
 支持的 schema 子集需有测试，不支持规则不能被声称已验证。重复键、嵌入 NUL、未知
 字段策略须统一，避免 Policy 与 Tool 对同一输入产生不同解释。
 
-继续采用 cJSON 作为首版 codec 私有依赖，不暴露 `cJSON *`。准确边界是：Core 不绑定
-JSON 库类型、不构造厂商请求；公共接口可携带通用 JSON view。若 Tool 参数 codec
-在运行时用 cJSON，其临时分配同样是需测量的外部内存，不能宣称整个执行链零 heap。
+首版私有 codec 采用 jsmn token 数组和有界读写层，不暴露 jsmn 类型。准确边界是：
+Core 不绑定 JSON 库类型、不构造厂商请求；公共接口可携带通用 JSON view。
+codec 自身不申请 heap，但 Provider、Transport 和 TLS 的外部内存仍须单独测量。
 
-此项是对 [ADR 0006](../adr/0006-json-integration.md) 的修订提案，尚未同步其中
-“descriptor 是唯一来源”的已接受决定。实现 schema API 前必须统一两份文档，不能
-同时执行冲突要求；本提案不改变选择 cJSON 的决定。
+[ADR 0022](../adr/0022-bounded-json-codec.md) 取代 ADR 0006 的默认 cJSON 选择。
+当前 `input_schema_json` 是首版事实输入；类型化 descriptor 与统一 schema 子集
+校验尚未实现，须另行裁决，不得根据旧 ADR 推断这些能力已经具备。
 
 ### 6.3 Tool 输出
 

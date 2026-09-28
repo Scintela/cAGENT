@@ -13,8 +13,9 @@ OpenVela Port 已有实现和 mock 测试；`agent_run()` 的完整 Model/Tool/S
 声明已可链接运行或 ABI 稳定，设备上的网络与 TLS 行为仍需验证。
 
 运行头文件检查：`bash tests/headers/compile.sh`；可通过 `CC`、`CXX` 选择编译器。
-接口收敛以 [public-api.md](api/public-api.md) 及其头文件快照说明为准；总体架构和
-ADR 0006 中尚未同步的设计差异仍需评审，尤其是 Tool schema 的权威输入形式。
+接口收敛以 [public-api.md](api/public-api.md) 及其头文件快照说明为准；
+Tool schema 的权威输入形式仍待单独裁决。JSON codec 当前状态见 ADR 0022，
+ADR 0006 和 0021 保留为历史/备选方案记录。
 
 ## 当前文档
 
@@ -24,7 +25,7 @@ ADR 0006 中尚未同步的设计差异仍需评审，尤其是 Tool schema 的�
 | [api/public-api.md](api/public-api.md) | 目标公共 API 清单、当前落地状态与待决接口 |
 | [arch/README.md](arch/README.md) | 模块责任地图与后续模块文档计划 |
 | [../providers/README.md](../providers/README.md) | 可选 Model Provider 的目录、构建目标与当前占位状态 |
-| [adr/0006-json-integration.md](adr/0006-json-integration.md) | cJSON 集成边界、内存策略与 Tool/OpenAI JSON 处理决定 |
+| [adr/0006-json-integration.md](adr/0006-json-integration.md) | 历史 cJSON 默认方案；已由 ADR 0022 取代 |
 | [adr/0007-http-transport-adapters.md](adr/0007-http-transport-adapters.md) | HTTP Transport 的平台 Adapter、裁剪、同步语义和所有权提案 |
 | [adr/0008-error-contract.md](adr/0008-error-contract.md) | 跨平台错误类别、来源、远端失败、Tool 副作用事实与传播规则提案 |
 | [adr/0009-types-boundary.md](adr/0009-types-boundary.md) | 公共 `types.h` 的跨模块类型边界、Model 类型迁移与 include 规则提案 |
@@ -39,7 +40,8 @@ ADR 0006 中尚未同步的设计差异仍需评审，尤其是 Tool schema 的�
 | [adr/0018-transport-portability.md](adr/0018-transport-portability.md) | HTTP/TLS Transport 通用契约、平台 Adapter、构建裁剪与 Provider 分层方案提案 |
 | [adr/0019-kconfig-integration.md](adr/0019-kconfig-integration.md) | Kconfig 集成边界：Core Profile 菜单、Port 包裁剪项、命名规范与等价通道提案 |
 | [adr/0020-synchronous-run-mvp.md](adr/0020-synchronous-run-mvp.md) | 同步运行 MVP 的公开边界、取消和确认失败关闭规则 |
-| [adr/0021-platform-cjson-reuse.md](adr/0021-platform-cjson-reuse.md) | 平台 cJSON 复用、构建依赖和 Core/Provider 的 JSON 边界提案 |
+| [adr/0021-platform-cjson-reuse.md](adr/0021-platform-cjson-reuse.md) | 平台 cJSON 复用备选方案，未作为当前默认实现 |
+| [adr/0022-bounded-json-codec.md](adr/0022-bounded-json-codec.md) | 私有 jsmn codec 的构建、内存与验证边界 |
 
 ## 文档原则
 

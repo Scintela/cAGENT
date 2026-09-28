@@ -1,8 +1,11 @@
 # ADR 0021: 复用平台 cJSON 的构建与模块边界
 
-- 状态：提案（待确认）
+- 状态：未采纳为默认方案；见 [ADR 0022](0022-bounded-json-codec.md)
 - 日期：2026-09-28
 - 关联：[ADR 0006](0006-json-integration.md)、[ADR 0014](0014-memory-domains.md)
+
+本文保留平台 cJSON 复用方案的评估记录；当前已实现的默认候选是私有 jsmn
+codec。cJSON 后端尚未实现，不能通过构建选项选择。
 
 ## 背景
 
