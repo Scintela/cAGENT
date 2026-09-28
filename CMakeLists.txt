@@ -61,13 +61,9 @@ set_target_properties(cagent_core PROPERTIES C_STANDARD 99 C_STANDARD_REQUIRED O
     C_EXTENSIONS OFF POSITION_INDEPENDENT_CODE ON)
 
 if(AGENT_BUILD_MOCK_PROVIDER)
-    add_library(cagent_provider_mock STATIC src/model/model_mock.c)
-    target_include_directories(cagent_provider_mock PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
-    target_link_libraries(cagent_provider_mock PUBLIC cagent_core)
+    add_subdirectory(providers/mock)
 endif()
 
 if(AGENT_BUILD_OPENAI_PROVIDER)
-    add_library(cagent_provider_openai STATIC src/model/model_openai.c)
-    target_include_directories(cagent_provider_openai PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
-    target_link_libraries(cagent_provider_openai PUBLIC cagent_core)
+    add_subdirectory(providers/openai)
 endif()
