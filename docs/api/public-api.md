@@ -51,9 +51,8 @@ MCP、远程 Node、业务设备 Tool Pack 继续作为独立 addon。
 
 | 头文件 | 范围 |
 |--------|------|
-| `agent.h` | 生命周期和同步运行，聚合基础类型、配置、Tool、Policy、Event、Session |
+| `agent.h` | 生命周期、同步运行与取消；聚合基础类型、配置、Tool、Policy、Event、Session |
 | `agent/types.h`、`error.h`、`config.h` | 最小公共值类型、错误、编译期容量与默认配置 |
-| `agent/run.h` | 同步运行的协作取消与 token 查询；由 `agent.h` 聚合 |
 | `agent/tool.h`、`policy.h` | 设备工具与授权契约 |
 | `agent/event.h`、`session.h` | 观测与有界会话管理 |
 | `agent/model.h`、`runtime.h`、`transport.h` | 能力绑定与扩展接口；按需包含 |
@@ -162,8 +161,8 @@ Token 预算不能替代输出字节上限，也不能假定 provider/model 一�
 
 ## 4. 同步运行与结果
 
-MVP 只公开 `agent_run(agent, request, response)` 作为一次请求的同步入口。`run.h`
-只保留 `agent_cancel(agent)` 和 `agent_cancel_token_is_set(token)`；不公开 turn 句柄、
+MVP 只公开 `agent_run(agent, request, response)` 作为一次请求的同步入口。`agent.h`
+同时声明 `agent_cancel(agent)` 和 `agent_cancel_token_is_set(token)`；不公开 turn 句柄、
 step 或 resume。同步调用返回后不留下活动运行。完整执行链仍在实现中。
 
 input/session/trace view 与 user_data 由调用方保持有效直到 `agent_run()` 返回；

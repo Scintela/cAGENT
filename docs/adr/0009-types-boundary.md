@@ -67,13 +67,14 @@ Model、Tool、Context、Run、Event、Session 和 Runtime 共享必要的值类
 ```text
 error.h
   -> types.h
-       -> runtime.h / config.h / run.h / tool.h / context.h / session.h / event.h
+       -> runtime.h / config.h / tool.h / context.h / session.h / event.h
+       -> agent.h (同步运行与取消)
        -> model.h (Model transcript and Tool projection)
             -> transport.h and provider-specific extensions
 ```
 
 这是 source-level include 方向，不承诺二进制 ABI。`types.h` 不得 include `model.h`、
-`tool.h`、`run.h`、`context.h`、`session.h`、`event.h` 或平台头。领域头可 include
+`tool.h`、`context.h`、`session.h`、`event.h` 或平台头。领域头可 include
 `types.h`，但不得通过间接 include 假定某个类型存在。
 
 ### 类型放置判定
@@ -110,7 +111,7 @@ error.h
 Tool call 同时是 Model 输出、Run confirmation 和 Event 载荷。让 Model、Run、Event 都
 依赖完整 Tool 注册/执行 API 会扩大依赖面；保留在 `types.h`。
 
-### 将 limits、request、response 与统计全部放入 `run.h`
+### 将 limits、request、response 与统计全部放入独立运行头
 
 它们语义上与 turn 有关，但 Config、Context、Tool 和 Event 都直接使用其中的一部分。
 单独为这些 POD 创建更多基础头没有实际运行时收益，且 `config.h` 与领域头的 include 图
@@ -134,8 +135,8 @@ Tool call 同时是 Model 输出、Run confirmation 和 Event 载荷。让 Model
 
 ## 评审重点
 
-1. `agent_turn_t` 与 `agent_cancel_token_t` 是否应继续作为跨领域前置声明保留在 `types.h`；
-   当前判断是“保留”，以避免 Model/Tool/Context 为一个不透明指针依赖完整 `run.h`。
+1. `agent_cancel_token_t` 继续作为跨领域前置声明保留在 `types.h`，避免
+   Model/Tool/Context 仅为不透明指针依赖 `agent.h`；`agent_turn_t` 不属于同步 MVP。
 2. `agent_request_t`、`agent_response_t`、`agent_limits_t` 与统计是否继续集中在 `types.h`；
    当前判断是“保留”，避免首版过度拆头。
 3. `agent_tool_call_view_t` 是否继续作为跨领域事实，而不下沉到 `tool.h`；当前判断是“保留”。

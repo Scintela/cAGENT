@@ -3,7 +3,7 @@
 - 状态：提案
 - 日期：2026-09-26
 
-MVP 裁决见 ADR 0020：`agent.h` 聚合缩小后的 `run.h`；下文 step/resume 是后续候选，非当前公开 API。
+MVP 裁决见 ADR 0020：`agent.h` 直接声明同步运行和取消接口，不保留 `run.h`；下文 step/resume 是后续候选，非当前公开 API。
 
 ## 背景
 
@@ -13,7 +13,7 @@ Transport、Context、Storage 和未来 Plugin 的扩展契约；若 `agent.h` �
 嵌入式应用又需要手工发现并包含过多基础头。
 
 当前根头 `include/agent.h` 聚合配置、错误、基础类型、Tool、Policy、Event、Session 和版本，
-并声明 Core 生命周期、同步运行和默认 limits 更新。`run.h`、`model.h`、`context.h`、`skill.h`
+并声明 Core 生命周期、同步运行、取消和默认 limits 更新。`model.h`、`context.h`、`skill.h`
 和 `transport.h` 独立存在。需要明确该布局不是偶然 include 顺序，也不意味着根头是所有
 功能、所有平台和所有 Provider 的完整聚合入口。
 
@@ -42,7 +42,7 @@ Session、运行同步请求和读取结果。聚合只影响编译期声明可�
 | 需求 | 应显式包含的头 | 原因 |
 |---|---|---|
 | Model 创建、绑定、Provider ops | `agent/model.h` | Model 是外部、可替换 Provider。 |
-| 分步 turn、确认与取消 token | `agent/run.h` | 仅高级驱动器需要显式状态机。 |
+| 分步 turn、确认 | 后续候选 | 同步 MVP 不公开；取消 token 查询在 `agent.h`。 |
 | 动态 Context Provider | `agent/context.h` | 可选 Context 贡献，不是最小运行必需项。 |
 | Skill 注册 | `agent/skill.h` | 可选领域指导内容。 |
 | Runtime 服务细节 | `agent/runtime.h` | `config.h` 为配置成员而依赖它；应用不得依赖该间接 include。 |
@@ -74,6 +74,8 @@ void agent_destroy(agent_t* agent);
 
 agent_error_t agent_run(agent_t* agent, const agent_request_t* request,
                         agent_response_t* response);
+agent_error_t agent_cancel(agent_t* agent);
+bool agent_cancel_token_is_set(const agent_cancel_token_t* token);
 agent_error_t agent_set_limits(agent_t* agent, const agent_limits_t* limits);
 ```
 
@@ -81,13 +83,12 @@ agent_error_t agent_set_limits(agent_t* agent, const agent_limits_t* limits);
 `config.h` 与 header tests 的同一容量模型，不能重新引入并行的 raw workspace
 或运行期容量表路径。
 
-领域 API 继续由所属头拥有：Model binding 在 `model.h`，turn step/resume/cancel 在 `run.h`，
-Tool 注册在 `tool.h`，Context/Skill/Session/Policy/Event 操作在各自头中。不得仅因某个
+领域 API 继续由所属头拥有：Model binding 在 `model.h`，Tool 注册在 `tool.h`，
+Context/Skill/Session/Policy/Event 操作在各自头中。取消与同步运行同属根头；不得仅因某个
 类型已被根头聚合，就将新的领域函数添加到 `agent.h`。
 
-`agent_run()` 是唯一保留在根头的运行便利函数，因为它是最小同步产品路径：内部等价于
-begin/step/resume/end 的单一状态机封装，而非第二套 Loop 实现。需要用户确认、UI 逐步展示、
-外部调度或细粒度取消的应用必须显式使用 `run.h`。
+`agent_run()` 是最小同步产品路径，`agent_cancel()` 请求协作取消，Provider/Tool
+通过 `agent_cancel_token_is_set()` 在安全点轮询。分步驱动与暂停确认仍为后续候选。
 
 ### 生命周期与 workspace 语义
 
@@ -189,7 +190,7 @@ Core 无法通用地终止 HTTP、TLS、RTOS 线程或已发生的设备副作�
 ## 验证要求
 
 - `#include <agent.h>` 可独立在 C99 和 C++11 编译，并包含常用应用 API；
-- `model.h`、`run.h`、`context.h`、`skill.h`、`transport.h` 均可不依赖 `agent.h` 独立包含；
+- `model.h`、`context.h`、`skill.h`、`transport.h` 均可不依赖 `agent.h` 独立包含；
 - 最小本地/Mock Model 样例不链接 HTTP/TLS/JSON/平台网络依赖；
 - caller workspace 的 init、各 build Profile 的 workspace 大小/对齐、可选 heap create 和
   destroy 所有权均有测试；

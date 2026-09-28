@@ -5,9 +5,9 @@
 
 ## 决定
 
-首版只公开 `agent_run()` 作为一次用户请求的同步入口。`agent/run.h` 暂时只保留
-`agent_cancel()` 与供 Model/Tool 查询的 `agent_cancel_token_is_set()`；`agent.h`
-包含 `run.h`，普通应用无需额外包含头文件。`agent_turn_t`、`begin/step/resume/end`、
+首版只公开 `agent_run()` 作为一次用户请求的同步入口。`agent.h` 直接声明
+`agent_cancel()` 与供 Model/Tool 查询的 `agent_cancel_token_is_set()`，不保留独立
+`agent/run.h`。`agent_turn_t`、`begin/step/resume/end`、
 step 结果、运行阶段枚举和确认 nonce 不进入 MVP 公共契约。内部可以使用私有状态机，
 但不能把内部阶段误称为已实现的公开步进能力。
 
@@ -30,8 +30,8 @@ Live Event 仍保留 TURN/MODEL/TOOL 的边界与 `status`，本轮摘要由
 
 普通智能家居查询和设备控制可在应用工作任务中调用同步 `agent_run()`。暂停确认
 需要持有借用输入、参数与工作区，定义超时、取消、重入及恢复后的授权校验；在这些
-契约及测试未完成前公开接口，增加误用面而不增加可用能力。保留小型 `run.h` 是为
-Model/Tool 取消轮询提供稳定依赖边界，并不意味着首版提供可暂停的 turn。
+契约及测试未完成前公开接口，增加误用面而不增加可用能力。Model/Tool 按需包含
+`agent.h` 查询取消；不因此引入可暂停的 turn。
 
 ADR 0012、0015 和 `docs/api/public-api.md` 中的 step/resume 方案作为后续候选，
 不再代表 MVP 公开 API。若真实产品需要异步人工确认，须另行裁决其状态与内存模型、
