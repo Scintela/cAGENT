@@ -8,3 +8,8 @@
 *.a
 *.so
 *.d
+
+# Docusaurus website build output
+/docs/website/build/
+/docs/website/.docusaurus/
+node_modules/

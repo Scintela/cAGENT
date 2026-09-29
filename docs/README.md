@@ -1,51 +1,41 @@
-# cAgentV2 文档索引
+# cAgentV2 文档
 
-本目录保存 cAgentV2 的架构、接口和演进文档。cAgentV2 以当前 cAGENT V1 为行为
-参考，目标是构建一个静态可组合、资源可预算、类型安全、运行可追踪的嵌入式 Agent
-微内核，可由 ESP-IDF、openvela、RT-Thread 和 Host 系统的不同 port 使用同一套
-公共 API 和行为契约。
+本目录包含文档站点（`website/`）与中文内容（`zh/`），经 Docusaurus 构建后发布
+（配置见 `website/docusaurus.config.js`）。中文为默认语言，英文逐步补齐。
 
-## 仓库状态（2026-09）
+## 目录结构
 
-本仓库仍在 MVP 实现阶段：Core 生命周期、部分 Model/Transport 封装、ESP-IDF 与
-OpenVela Port 已有实现和 mock 测试；`agent_run()` 的完整 Model/Tool/Session 执行链
-仍未落地。Memory、通用 Plugin 与持久化 Storage 继续延后。头文件可编译不代表所有
-声明已可链接运行或 ABI 稳定，设备上的网络与 TLS 行为仍需验证。
-
-运行头文件检查：`bash tests/headers/compile.sh`；可通过 `CC`、`CXX` 选择编译器。
-接口收敛以 [public-api.md](api/public-api.md) 及其头文件快照说明为准；
-Tool schema 的权威输入形式仍待单独裁决。JSON codec 当前状态见 ADR 0022，
-ADR 0006 和 0021 保留为历史/备选方案记录。
-
-## 当前文档
-
-| 文档 | 内容 |
+| 路径 | 内容 |
 |------|------|
-| [architecture.md](architecture.md) | V2 总体架构、核心概念、模块边界、生命周期、内存模型、API 草案和迁移计划 |
-| [api/public-api.md](api/public-api.md) | 目标公共 API 清单、当前落地状态与待决接口 |
-| [arch/README.md](arch/README.md) | 模块责任地图与后续模块文档计划 |
-| [../providers/README.md](../providers/README.md) | 可选 Model Provider 的目录、构建目标与当前占位状态 |
-| [adr/0006-json-integration.md](adr/0006-json-integration.md) | 历史 cJSON 默认方案；已由 ADR 0022 取代 |
-| [adr/0007-http-transport-adapters.md](adr/0007-http-transport-adapters.md) | HTTP Transport 的平台 Adapter、裁剪、同步语义和所有权提案 |
-| [adr/0008-error-contract.md](adr/0008-error-contract.md) | 跨平台错误类别、来源、远端失败、Tool 副作用事实与传播规则提案 |
-| [adr/0009-types-boundary.md](adr/0009-types-boundary.md) | 公共 `types.h` 的跨模块类型边界、Model 类型迁移与 include 规则提案 |
-| [adr/0010-context-projection.md](adr/0010-context-projection.md) | Context 的编排、模型投影、资源预算、Memory 边界与 Provider 契约提案 |
-| [adr/0011-configuration-boundaries.md](adr/0011-configuration-boundaries.md) | 编译期容量 Profile、运行期 limits、workspace 与可替换 Model Provider 的边界提案 |
-| [adr/0012-agent-header-boundary.md](adr/0012-agent-header-boundary.md) | `agent.h` 的应用入口、聚合范围、生命周期与同步运行边界提案 |
-| [adr/0013-text-representation.md](adr/0013-text-representation.md) | 公共 API 文本表示候选方案：NUL 字符串、长度视图、混合边界、双轨 API 与 `_Generic` |
-| [adr/0014-memory-domains.md](adr/0014-memory-domains.md) | Core workspace、Session、turn scratch、Provider/Transport 与外部库的内存域和分配边界提案 |
-| [adr/0015-event-model.md](adr/0015-event-model.md) | Live Event 观测模型：边界事件集合、单回调契约、push/pull 分工、双通道与 OTel 映射提案 |
-| [adr/0016-session-history-storage.md](adr/0016-session-history-storage.md) | Session 完整 turn 历史的投影窗口、Storage Provider 所有权、JSONL/Flash/NVS 持久化与 PSRAM 缓存边界提案 |
-| [adr/0017-runtime-portability.md](adr/0017-runtime-portability.md) | Runtime 最小平台服务、时钟/同步/allocator 契约和跨系统 Port 组织方案提案 |
-| [adr/0018-transport-portability.md](adr/0018-transport-portability.md) | HTTP/TLS Transport 通用契约、平台 Adapter、构建裁剪与 Provider 分层方案提案 |
-| [adr/0019-kconfig-integration.md](adr/0019-kconfig-integration.md) | Kconfig 集成边界：Core Profile 菜单、Port 包裁剪项、命名规范与等价通道提案 |
-| [adr/0020-synchronous-run-mvp.md](adr/0020-synchronous-run-mvp.md) | 同步运行 MVP 的公开边界、取消和确认失败关闭规则 |
-| [adr/0021-platform-cjson-reuse.md](adr/0021-platform-cjson-reuse.md) | 平台 cJSON 复用备选方案，未作为当前默认实现 |
-| [adr/0022-bounded-json-codec.md](adr/0022-bounded-json-codec.md) | 私有 jsmn codec 的构建、内存与验证边界 |
+| `zh/` | 中文文档（站点默认语言）：首页、总体架构、模块责任地图、公共 API 草案与全部 ADR。 |
+| `website/` | Docusaurus 应用：配置、侧边栏、主题与英文翻译（`website/i18n/en/`）。未翻译页面在站点上保持原 URL 并回退显示中文原文。 |
+| `logs/`、`plan/` | 开发过程记录，不进入站点。 |
 
-## 文档原则
+站点采用 docs-only 模式：页面 URL 与 `zh/` 下文件路径一致
+（`/architecture`、`/adr/0022-...` 等），首页即 `zh/index.md`。
 
-- 先定义边界、所有权和失败语义，再实现模块。
-- 公共 API 草案在实现前必须完成使用示例和生命周期检查。
-- V1 作为行为参考和迁移来源，不直接复制未经测试的实现。
-- 文档中的接口在进入公共头文件前仍可调整；稳定后需要遵守 ABI 兼容策略。
+## 本地预览
+
+需要 Node 18+（本仓库开发机用 fnm 管理）：
+
+```sh
+cd docs/website
+npm install
+npm start            # 开发服务器，http://localhost:3000/cAgentV2/，热更新
+# 或构建后静态预览：
+npm run build && npm run serve
+```
+
+CI（`.github/workflows/docs.yml`）在 `docs/` 变更时自动构建并发布到
+GitHub Pages，无需部署分支。本地搜索基于 lunr +
+[nodejieba](https://github.com/yanyiwu/nodejieba) 中文分词。
+
+## 写作约定
+
+- 新增 ADR：沿用四位递增编号与 `NNNN-kebab-case.md` 命名，放入 `zh/adr/`，
+  并同步更新 `zh/adr/index.md` 的索引表与 `website/sidebars.js` 的导航。
+- 新增页面：放入 `zh/`（翻译放入 `website/i18n/en/` 对应路径，缺省回退中文），
+  并在 `website/sidebars.js` 登记。
+- 站内页面之间使用相对链接；指向仓库源码的链接使用 GitHub 绝对 URL。
+- 正文中的 `<`、`{` 等字符要放在行内代码或代码块里，否则 MDX 会当作 JSX 语法
+  导致构建失败（现有文档已全部符合）。

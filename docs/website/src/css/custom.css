@@ -1,0 +1,8 @@
+/* cAgentV2 站点主题微调 */
+:root {
+  --ifm-color-primary: #20608f;
+  --ifm-color-primary-dark: #1d5681;
+  --ifm-color-primary-darker: #1b5179;
+  --ifm-color-primary-darkest: #174364;
+  --ifm-color-primary-light: #2a6fa3;
+}
