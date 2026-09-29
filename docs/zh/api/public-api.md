@@ -385,7 +385,7 @@ ACTIVE 中的目录变更。
 
 定稿前必须完成以下决定，不能由实现者分别猜测：
 
-1. 同步 [总体架构](../architecture.md)、[模块地图](../arch/README.md) 与 ADR 0006：
+1. 同步 [总体架构](../architecture.md)、[模块地图](../arch/module-map.md) 与 ADR 0006：
    生命周期/Composition 收敛、schema 输入、JSON 依赖边界及首批范围。
 2. 静态 Model binding 的结构/签名、owned 销毁责任、平台大缓冲 allocator 注入。
 3. 同步 response 的执行/交付状态、Tool 有界输出签名、取消与确认失败关闭；
