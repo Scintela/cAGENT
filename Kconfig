@@ -216,6 +216,11 @@ config AGENT_SESSION_JSONL
     bool "JSONL Session provider with application-supplied file operations"
     default n
 
+config AGENT_SESSION_POSIX_FILES
+    bool "POSIX file adapter for JSONL Session storage"
+    depends on AGENT_SESSION_JSONL
+    default n
+
 endmenu
 
 menu "cAgent Model Providers"

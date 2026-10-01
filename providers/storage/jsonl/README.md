@@ -70,3 +70,8 @@ call `agent_set_session_storage()` while the Agent is idle. ESP-IDF builds can
 enable `CONFIG_AGENT_SESSION_JSONL` and supply their own filesystem callbacks.
 The Host contract test provides a real POSIX temporary-directory adapter; no
 POSIX headers are part of the library backend.
+
+For applications with a compatible filesystem, the optional
+[`ports/posix/storage/`](../../../ports/posix/storage/README.md) package now
+provides production file operations. It does not mount a filesystem or
+replace the JSONL provider's caller-owned buffers.

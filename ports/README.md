@@ -7,6 +7,7 @@ Each package may provide either or both of these independent adapters:
 
 - Runtime: populates `agent_runtime_t` with a monotonic clock and optional short cancel sync or log callback.
 - Transport: implements `agent_transport_ops_t` using the platform HTTP/TLS stack.
+- Storage file adapter: implements optional JSONL file operations over a selected filesystem.
 
 Port state, SDK headers, Kconfig/CMake metadata, network buffers, TLS state, and connection pools
 remain inside the selected package. They never enter `src/` or `agent_workspace_t`.
@@ -18,7 +19,12 @@ ports/<platform>/
   README.md
   runtime/                        # Optional Runtime subpackage.
   transport/                      # Optional HTTP/TLS Transport subpackage.
+  storage/                        # Optional Session file adapter, when needed.
 ```
+
+`ports/posix/storage/` is a shared, opt-in implementation for compatible
+filesystem interfaces; platform-specific storage code is not required solely
+for directory symmetry.
 
 Ports may share one `include/` directory for short, prefixed public headers while keeping Runtime
 and Transport source directories separate. This permits a Runtime-only Port on a networkless device

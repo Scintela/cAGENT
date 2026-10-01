@@ -49,14 +49,30 @@ if(COMMAND idf_component_register)
         list(APPEND _agent_public_includes providers/storage/jsonl/include)
         list(APPEND _agent_private_includes providers/storage/jsonl/src)
     endif()
+    if(CONFIG_AGENT_SESSION_POSIX_FILES)
+        if(NOT CONFIG_AGENT_SESSION_JSONL)
+            message(FATAL_ERROR "POSIX Session files require CONFIG_AGENT_SESSION_JSONL")
+        endif()
+        list(APPEND _agent_sources ports/posix/storage/src/session_files.c)
+        list(APPEND _agent_public_includes ports/posix/storage/include)
+        list(APPEND _agent_private_requires vfs)
+    endif()
     if(CONFIG_AGENT_PROVIDER_OPENAI OR CONFIG_AGENT_SESSION_JSONL)
         list(APPEND _agent_sources codecs/json/reader.c codecs/json/writer.c)
         list(APPEND _agent_private_includes codecs/json codecs/json/vendor/jsmn)
     endif()
-    idf_component_register(
-        SRCS ${_agent_sources}
-        INCLUDE_DIRS ${_agent_public_includes}
-        PRIV_INCLUDE_DIRS ${_agent_private_includes})
+    if(_agent_private_requires)
+        idf_component_register(
+            SRCS ${_agent_sources}
+            INCLUDE_DIRS ${_agent_public_includes}
+            PRIV_INCLUDE_DIRS ${_agent_private_includes}
+            PRIV_REQUIRES ${_agent_private_requires})
+    else()
+        idf_component_register(
+            SRCS ${_agent_sources}
+            INCLUDE_DIRS ${_agent_public_includes}
+            PRIV_INCLUDE_DIRS ${_agent_private_includes})
+    endif()
     target_compile_definitions(${COMPONENT_LIB} PUBLIC
         AGENT_BUILD_CONFIG_HEADER="agent_build_config.h")
     target_compile_features(${COMPONENT_LIB} PUBLIC c_std_99)
@@ -70,6 +86,7 @@ option(AGENT_BUILD_OPENAI_PROVIDER "Build the OpenAI-compatible Model provider" 
 option(AGENT_BUILD_JSON_CODEC "Build the private bounded jsmn JSON codec" OFF)
 option(AGENT_BUILD_SESSION_RAM "Build the volatile caller-storage Session provider" OFF)
 option(AGENT_BUILD_SESSION_JSONL "Build the file-ops-injected JSONL Session provider" OFF)
+option(AGENT_BUILD_POSIX_SESSION_FILES "Build the optional POSIX JSONL file adapter" OFF)
 
 include("${CMAKE_CURRENT_LIST_DIR}/cmake/AgentBuildConfig.cmake")
 agent_generate_build_config("${CMAKE_CURRENT_BINARY_DIR}/generated/include")
@@ -106,4 +123,8 @@ endif()
 
 if(AGENT_BUILD_SESSION_JSONL)
     add_subdirectory(providers/storage/jsonl)
+endif()
+
+if(AGENT_BUILD_POSIX_SESSION_FILES)
+    add_subdirectory(ports/posix/storage)
 endif()
