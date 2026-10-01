@@ -68,6 +68,11 @@ const config = {
   themeConfig: {
     navbar: {
       title: 'cAgentV2',
+      logo: {
+        alt: 'Scintela',
+        src: 'img/logo-light.png',
+        srcDark: 'img/logo-dark.png',
+      },
       items: [
         {
           type: 'localeDropdown',
@@ -85,7 +90,7 @@ const config = {
       copyright: 'cAgentV2 contributors · MIT License',
     },
   },
-  favicon: 'img/favicon.svg',
+  favicon: 'img/favicon.png',
 };
 
 module.exports = config;
