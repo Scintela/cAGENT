@@ -34,6 +34,10 @@
 | [0021 平台 cJSON 复用](0021-platform-cjson-reuse.md) | 平台 cJSON 复用备选方案，未作为当前默认实现 |
 | [0022 有界 JSON codec](0022-bounded-json-codec.md) | 私有 jsmn codec 的构建、内存与验证边界 |
 | [0023 文件型 Memory、Soul 与 Skill](0023-file-backed-memory-soul-skill.md) | Markdown 来源的归属、显式注册、文件 I/O 解耦与有界 Context 投影提案 |
+| [0024 Session 到 Memory 的提取](0024-session-to-memory-extraction.md) | 保留原始 Session，以规则、Tool 或可选后台任务生成有来源的长期记忆 |
+| [0025 内置 Tool 边界](0025-builtin-tools-boundary.md) | 默认零内置 Tool；按需提供受限的 Skill/Memory 工具，摘要归内部任务 |
+| [0026 Session 文件 I/O 适配器](0026-session-file-io-adapters.md) | 共用 JSONL 后端，按需提供可选文件适配器；平台差异只做薄层 |
+| [0027 最小 Markdown Memory 布局](0027-minimal-markdown-memory-layout.md) | Soul、User、长期 Memory 和每日笔记四类文件的作用域、加载与更新边界 |
 
 新增 ADR 时：沿用四位递增编号与 `NNNN-kebab-case.md` 命名，并将条目追加到
 上表。
