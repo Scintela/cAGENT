@@ -39,3 +39,5 @@ GitHub Pages，无需部署分支。本地搜索基于 lunr +
 - 站内页面之间使用相对链接；指向仓库源码的链接使用 GitHub 绝对 URL。
 - 正文中的 `<`、`{` 等字符要放在行内代码或代码块里，否则 MDX 会当作 JSX 语法
   导致构建失败（现有文档已全部符合）。
+
+> 📖 在线文档 / Online docs: <https://scintela.github.io/cAGENT/>
