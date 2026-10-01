@@ -41,7 +41,7 @@ ESP-IDF Adapter 通过 `agent_port_espidf_transport_init(out, state, config)` �
 联网 Model Provider 在其专属配置中借用该 Transport，Agent 再绑定 Model；
 `agent_config_t` 不含 Transport 字段。OpenAI Provider 已实现同步非流式 Chat Completions
 请求与响应转换，并通过专属配置借用 Transport；配置及缓冲区契约见
-[`providers/model/openai/README.md`](../../../providers/model/openai/README.md)。Core 的 `agent_run()`
+[`providers/model/openai/README.md`](https://github.com/Scintela/cAGENT/blob/main/providers/model/openai/README.md)。Core 的 `agent_run()`
 仍未实现完整 ReAct 链路，不能把 Provider 可用误认为端到端 Agent 对话已经可用。
 
 ## 方案比较

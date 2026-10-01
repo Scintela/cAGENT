@@ -41,7 +41,7 @@ Optional Memory provider ──┘                    Provider wire encoding
 | system prompt / Agent 指令 | 应用配置或 Core 复制的配置 | 选择、计入预算、输出最终 `system_prompt` | 映射到目标模型请求字段 |
 | Session 历史 | Session Storage Provider | 维护当前 turn 事务、按预算查询完整历史 turn group、投影 `agent_message_view_t[]` | 编码目标协议的 messages |
 | Tool 定义与 schema | 应用持有或 Tool Registry 的受控副本 | 筛选可见 Tool、Policy 检查、投影 `agent_tool_view_t[]` | 编码目标协议的 tools/function schema |
-| Skill | 应用提供、Registry 注册 | 按启用状态与优先级选择，写入 Context | 不解释 Skill 领域含义 |
+| Skill | 应用提供、Registry 注册 | 按注册模式投影：INLINE 全文或 ON_DEMAND 摘要（[ADR 0028](0028-skill-projection-modes.md)） | 不解释 Skill 领域含义 |
 | 动态 Context | Context Provider / 应用 | 调用、排序、限制输出、处理失败 | 不直接读取设备或应用状态 |
 | 长期 Memory | 可选的外部 Memory Provider | 将选中的结果作为受限 Context 贡献 | 不保存或检索长期记忆 |
 | OpenAI JSON / HTTP body | Model Provider | 不持有、不生成 | 序列化、发送、解析和释放/复用临时 buffer |

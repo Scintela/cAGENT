@@ -51,7 +51,7 @@ JSONL 后端使用 `agent_session_jsonl_file_ops_t` 的 `size/read/append/trunca
 以及会话管理回调。应用负责把长度限定的 `session_id` 安全映射到独立文件；后端不直接
 使用 POSIX 或平台文件系统 API。`agent_session_jsonl_config_t` 接收互不重叠的写行、
 读行、解码、token、消息视图、Tool 调用视图与 ID 缓冲。记录版本、文件操作语义和
-容量限制见 [JSONL 后端说明](../../../providers/storage/jsonl/README.md)。
+容量限制见 [JSONL 后端说明](https://github.com/Scintela/cAGENT/blob/main/providers/storage/jsonl/README.md)。
 
 内部 `session_internal.h` 的调用顺序是 `agent_session_turn_open()`、若干次
 `agent_session_append()`、每次模型请求前的 `agent_session_project()`，最后

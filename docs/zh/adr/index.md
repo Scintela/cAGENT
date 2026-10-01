@@ -38,6 +38,7 @@
 | [0025 内置 Tool 边界](0025-builtin-tools-boundary.md) | 默认零内置 Tool；按需提供受限的 Skill/Memory 工具，摘要归内部任务 |
 | [0026 Session 文件 I/O 适配器](0026-session-file-io-adapters.md) | 共用 JSONL 后端，按需提供可选文件适配器；平台差异只做薄层 |
 | [0027 最小 Markdown Memory 布局](0027-minimal-markdown-memory-layout.md) | Soul、User、长期 Memory 和每日笔记四类文件的作用域、加载与更新边界 |
+| [0028 Skill 投影双模式](0028-skill-projection-modes.md) | 注册期以 enum 声明 INLINE 全文或 ON_DEMAND 摘要；摘要层优先保障，读取 Tool 留在核心外 |
 
 新增 ADR 时：沿用四位递增编号与 `NNNN-kebab-case.md` 命名，并将条目追加到
 上表。
