@@ -119,3 +119,5 @@ Markdown 加载、记忆检索与完整 turn 事务的语义不同，见 ADR 002
 适配器已在每个目标文件系统上完成验证。当前已有可选的
 `ports/posix/storage/` 实现与 Host 契约测试；ESP-IDF、OpenVela/NuttX、
 RT-Thread 的目标文件系统兼容性和掉电耐久性仍待真机验证。
+ESP-IDF 已提供可选的 `ports/espidf/storage/` 装配层，但其 Host 测试
+不能替代真实 VFS 挂载与介质验收。

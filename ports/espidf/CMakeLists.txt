@@ -17,15 +17,23 @@ if(CONFIG_AGENT_PORT_ESPIDF_TRANSPORT)
     endif()
 endif()
 
+if(CONFIG_AGENT_PORT_ESPIDF_STORAGE)
+    if(NOT CONFIG_AGENT_SESSION_JSONL OR NOT CONFIG_AGENT_SESSION_POSIX_FILES)
+        message(FATAL_ERROR "ESP-IDF Storage requires JSONL and POSIX Session files")
+    endif()
+    list(APPEND _agent_port_sources storage/src/storage.c)
+    list(APPEND _agent_private_requires vfs)
+endif()
+
 if(_agent_private_requires)
     idf_component_register(
         SRCS ${_agent_port_sources}
-        INCLUDE_DIRS runtime/include transport/include
+        INCLUDE_DIRS runtime/include transport/include storage/include
         REQUIRES cagent
         PRIV_REQUIRES ${_agent_private_requires})
 else()
     idf_component_register(
         SRCS ${_agent_port_sources}
-        INCLUDE_DIRS runtime/include transport/include
+        INCLUDE_DIRS runtime/include transport/include storage/include
         REQUIRES cagent)
 endif()

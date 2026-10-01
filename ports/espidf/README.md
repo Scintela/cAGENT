@@ -1,13 +1,16 @@
 # ESP-IDF Port
 
-This optional Port is split into [runtime/](runtime/README.md) and
-[transport/](transport/README.md). It owns ESP-IDF headers and component metadata; neither
+This optional Port is split into [runtime/](runtime/README.md),
+[transport/](transport/README.md), and [storage/](storage/README.md). It owns ESP-IDF headers and component metadata; none of them
 subpackage is part of the Core build.
 
-Both subpackages own their source and include directories. Their public headers are
-`runtime/include/agent_espidf_runtime.h` and `transport/include/agent_espidf_transport.h`.
+Each subpackage owns its source and include directory. Its public headers include
+`runtime/include/agent_espidf_runtime.h`, `transport/include/agent_espidf_transport.h`,
+and `storage/include/agent_espidf_session_files.h`.
 They are validated with a C99 mock SDK; an
 ESP-IDF hardware integration target is still required before claiming a supported SDK release.
+Storage additionally needs target-filesystem durability testing; Host tests alone cannot
+establish power-loss guarantees.
 
 For an ESP-IDF application, expose the Core component as `components/cagent` and add this directory
 to the component search path. The Port component requires the Core component named `cagent`;

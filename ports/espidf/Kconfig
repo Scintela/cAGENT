@@ -13,4 +13,12 @@ config AGENT_PORT_ESPIDF_TRANSPORT
     help
       Add the esp_http_client based synchronous HTTP transport.
 
+config AGENT_PORT_ESPIDF_STORAGE
+    bool "Build ESP-IDF JSONL Session file binding"
+    depends on AGENT_SESSION_JSONL && AGENT_SESSION_POSIX_FILES
+    default n
+    help
+      Bind JSONL file operations to an application-mounted ESP-IDF VFS
+      directory. The library does not mount or format the filesystem.
+
 endmenu
