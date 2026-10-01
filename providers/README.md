@@ -1,4 +1,6 @@
-# Model Providers
+# Providers
+
+## Model Providers
 
 `src/model/` contains the provider-neutral wrapper and binding logic. Each optional
 directory here owns a wire protocol or a test implementation, built separately from
@@ -7,16 +9,26 @@ contracts; they do not include `src/model/model_internal.h` or platform SDK head
 
 | Directory | Status | Build target |
 |---|---|---|
-| `openai/` | Placeholder for an OpenAI-compatible HTTP/JSON provider | `cagent_provider_openai`, opt-in on host CMake |
+| `openai/` | Synchronous non-streaming Chat Completions provider | `cagent::provider_openai`, opt-in on host CMake or ESP-IDF Kconfig |
 | `mock/` | Placeholder for deterministic tests | `cagent_provider_mock`, opt-in on host CMake |
 | `anthropic/` | Unimplemented native-protocol candidate | None |
 
-The current optional targets compile placeholder translation units; they do not
-provide a usable Model. An OpenAI-compatible endpoint can share the OpenAI provider.
+The OpenAI provider can complete a request through any synchronous HTTP Transport;
+see [OpenAI provider](openai/README.md) for buffers, lifetime, and build integration.
+The Mock target remains a placeholder. An OpenAI-compatible endpoint can share the OpenAI provider.
 Add a native Anthropic implementation only when its distinct protocol is needed.
 Model credentials, request/response buffers, and Transport bindings belong to the
 provider or application, not to the Core or `agent_model_workspace_t`.
 
-Platform HTTP/TLS implementations remain in `ports/`. ESP-IDF component packaging
-for providers is not implemented yet; the top-level ESP-IDF component builds Core
-only. Do not enable an empty provider target as a substitute for a real backend.
+Platform HTTP/TLS implementations remain in `ports/`. The top-level ESP-IDF
+component includes OpenAI sources only with `CONFIG_AGENT_PROVIDER_OPENAI=y`.
+The Provider can also be built against application-owned Transport ops on other
+platforms; no SDK headers enter the Provider.
+
+## Session Storage Providers
+
+`session_ram/` is an optional, volatile reference backend for the public
+`agent/session.h` Storage contract. It uses caller-owned arrays and payload
+buffers, has no implicit heap or filesystem dependency, and returns a capacity
+error rather than deleting history when full. It does not implement power-loss
+recovery. See the [Session development log](../docs/zh/development/session.md).

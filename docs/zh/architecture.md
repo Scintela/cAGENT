@@ -962,7 +962,7 @@ cAgentV2/
 │   └── transport/         # 平台无关的 HTTP 契约转发
 ├── providers/
 │   ├── mock/               # 测试 Provider，占位
-│   ├── openai/             # OpenAI-compatible，占位
+│   ├── openai/             # Chat Completions 非流式 Provider
 │   └── anthropic/          # 原生协议候选，尚不构建
 ├── ports/
 │   ├── host/

@@ -6,9 +6,9 @@ OpenVela、RT-Thread 等系统上复用同一套应用接口。项目采用平�
 提供。
 
 > **当前仍处于基础实现阶段**：Core workspace、生命周期、Runtime/Transport 契约、
-> ESP-IDF/OpenVela 适配器和私有 JSON codec 已有代码与 Host 测试；同步
-> `agent_run()` 尚未实现 ReAct 流程，OpenAI/Mock Provider、Session Storage 等
-> 仍是占位或待实现模块。目前不能用它完成端到端 LLM 对话。
+> ESP-IDF/OpenVela 适配器、私有 JSON codec、OpenAI 非流式 Provider 与
+> Session RAM Storage 契约已有代码和 Host 测试；同步 `agent_run()` 尚未实现
+> ReAct 流程，文件系统 Session 持久化尚未实现。目前不能用它完成端到端 LLM 对话。
 
 ## 架构
 
@@ -36,6 +36,7 @@ HTTP/TLS 实现或 OpenAI JSON 格式。应用在构建时选择所需组件，�
 Model Provider 自行持有 Transport。
 
 架构与模块边界的完整说明见[总体架构设计](architecture.md)。
+Session 的现有接口与数据流见[开发日志](development/session.md)。
 
 ## 资源与配置
 
@@ -82,6 +83,7 @@ bash tests/json/compile.sh
 bash tests/transport/compile.sh
 bash tests/ports/espidf/compile.sh
 bash tests/ports/openvela/compile.sh
+bash tests/session/compile.sh
 ```
 
 这些脚本使用 Host 编译器和模拟平台头文件验证当前契约；JSON 测试还检查与应用

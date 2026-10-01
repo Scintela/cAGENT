@@ -5,9 +5,11 @@ OpenVela、RT-Thread 等系统上复用同一套应用接口。项目采用平�
 可选 Model Provider 和平台 Port；容量在构建期确定，实例资源与依赖在初始化期提供。
 
 **当前仍处于基础实现阶段**：Core workspace、生命周期、Runtime/Transport 契约、
-ESP-IDF/OpenVela 适配器和私有 JSON codec 已有代码与 Host 测试；同步
-`agent_run()` 尚未实现 ReAct 流程，OpenAI/Mock Provider、Session Storage 等仍是
-占位或待实现模块。目前不能用它完成端到端 LLM 对话。
+ESP-IDF/OpenVela 适配器、私有 JSON codec 和 OpenAI 非流式 Provider 已有代码与
+Host 测试；Session 已有格式无关的 Storage 契约和可选 RAM 后端，但文件持久化与同步
+`agent_run()` 的 ReAct 流程尚未实现，Mock Provider 仍是占位。目前不能通过 Core 完成
+端到端 LLM 对话。
+Session 的 API、内存与数据流见[开发日志](docs/zh/development/session.md)。
 
 ## 架构
 
@@ -41,7 +43,7 @@ Model Provider 自行持有 Transport。当前的 JSON codec 使用内嵌 jsmn �
 |------|------|
 | [`include/`](include/) | 公共 C API 与构建容量配置。 |
 | [`src/`](src/) | 平台无关的 Core、Model wrapper、Runtime/Transport 转发及各领域模块。部分模块尚未实现。 |
-| [`providers/`](providers/) | 可选 Model Provider；目前 Mock/OpenAI 为占位目标，Anthropic 仅保留目录。 |
+| [`providers/`](providers/) | 可选 Model 与 Session Storage Provider；OpenAI 支持非流式 Chat Completions，Session RAM 后端易失，Mock/Anthropic 尚未实现。 |
 | [`codecs/json/`](codecs/json/) | 可选的有界 JSON reader/writer；上游 jsmn 位于 `vendor/jsmn/`。 |
 | [`ports/`](ports/) | 可选的平台 Runtime 和 HTTP/TLS Adapter；ESP-IDF/OpenVela 已有实现，Host/RT-Thread/STM32 仍需完善。 |
 | [`tests/`](tests/) | 公共头、Core、JSON、Transport 与 Port 的 Host 契约测试。 |
@@ -74,8 +76,8 @@ allocator 和跨任务取消同步按需注入。使用联网 Model 时，再选
 
 | 目标 | 当前接入方式 |
 |------|--------------|
-| Host / 普通 CMake | 默认只构建 Core；由应用实现 Runtime，按需单独启用 JSON codec。尚无 Host HTTP Port。 |
-| ESP-IDF | 将仓库作为 `components/cagent`，把 `ports/espidf` 加入组件搜索路径；由 Kconfig 分别选择 Runtime 与基于 `esp_http_client` 的 Transport。 |
+| Host / 普通 CMake | 默认只构建 Core；由应用实现 Runtime，按需启用 JSON codec 与 OpenAI Provider。尚无 Host HTTP Port。 |
+| ESP-IDF | 将仓库作为 `components/cagent`，把 `ports/espidf` 加入组件搜索路径；由 Kconfig 分别选择 Runtime、基于 `esp_http_client` 的 Transport 与可选 OpenAI Provider。 |
 | OpenVela / NuttX | 在应用 Kconfig 中引入 `ports/openvela/Kconfig`，在 NuttX 构建中加入 `ports/openvela`；按需选择 Runtime 和 `netutils/webclient` Transport。HTTPS 还需要应用提供验证证书链与主机名的 TLS 实现。 |
 | RT-Thread / STM32 | Port 尚未实现；应用可自行填充 Runtime/Transport ops，并把平台实现放在 Core 之外。 |
 
@@ -129,7 +131,8 @@ int main(void)
 ```
 
 接入平台时钟后，这是当前可运行的最小生命周期示例，并非对话示例；`agent_run()` 仍返回
-`AGENT_ERROR_NOT_SUPPORTED`。完整的 Model/Tool 链路需等 Provider 与 ReAct 实现。
+`AGENT_ERROR_NOT_SUPPORTED`。完整的 Model/Tool 链路还需 ReAct 实现。
+Provider 的配置和缓冲区契约见 [OpenAI Provider](providers/openai/README.md)。
 现有可执行契约见 [Core 生命周期测试](tests/core/lifecycle.c)。
 
 在 Host 上运行测试：
@@ -141,6 +144,8 @@ bash tests/json/compile.sh
 bash tests/transport/compile.sh
 bash tests/ports/espidf/compile.sh
 bash tests/ports/openvela/compile.sh
+bash tests/providers/openai/compile.sh
+bash tests/session/compile.sh
 ```
 
 这些测试验证当前接口及模拟 Port 的行为，不能代替真实设备上的网络和 TLS 联调。

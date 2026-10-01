@@ -33,6 +33,7 @@
 | [0020 同步运行 MVP](0020-synchronous-run-mvp.md) | 同步运行 MVP 的公开边界、取消和确认失败关闭规则 |
 | [0021 平台 cJSON 复用](0021-platform-cjson-reuse.md) | 平台 cJSON 复用备选方案，未作为当前默认实现 |
 | [0022 有界 JSON codec](0022-bounded-json-codec.md) | 私有 jsmn codec 的构建、内存与验证边界 |
+| [0023 文件型 Memory、Soul 与 Skill](0023-file-backed-memory-soul-skill.md) | Markdown 来源的归属、显式注册、文件 I/O 解耦与有界 Context 投影提案 |
 
 新增 ADR 时：沿用四位递增编号与 `NNNN-kebab-case.md` 命名，并将条目追加到
 上表。

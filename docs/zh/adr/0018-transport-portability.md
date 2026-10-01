@@ -39,8 +39,10 @@ Agent Core
 ESP-IDF Adapter 通过 `agent_port_espidf_transport_init(out, state, config)` 把自己的
 `request` 实现绑定到 `out->ops`，并把调用方持有的状态放入 `out->context`。应用初始化后，
 联网 Model Provider 在其专属配置中借用该 Transport，Agent 再绑定 Model；
-`agent_config_t` 不含 Transport 字段。本路径中的 OpenAI Provider 配置与完整调用链尚未实现，
-不能把已有 Ops 和 Port 误认为端到端 LLM 请求已经可用。
+`agent_config_t` 不含 Transport 字段。OpenAI Provider 已实现同步非流式 Chat Completions
+请求与响应转换，并通过专属配置借用 Transport；配置及缓冲区契约见
+[`providers/openai/README.md`](../../../providers/openai/README.md)。Core 的 `agent_run()`
+仍未实现完整 ReAct 链路，不能把 Provider 可用误认为端到端 Agent 对话已经可用。
 
 ## 方案比较
 
