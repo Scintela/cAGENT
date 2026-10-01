@@ -2,26 +2,67 @@
  * SPDX-License-Identifier: MIT
  * SPDX-FileCopyrightText: 2026 tanglinjie
  */
-/* Bounded in-memory conversations, not durable storage. Interface draft; declarations do not imply an implemented feature. */
+/* Format-independent, borrowed Session Storage and conversation controls. */
 #pragma once
 
 #include <agent/error.h>
-#include <agent/types.h>
+#include <agent/model.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* Clear an existing conversation while retaining its identity/slot. Returns: AGENT_OK; NOT_FOUND, INVALID or BUSY. Does not create a missing session or erase external storage. */
+/* A complete model-safe turn, borrowed only during a recent() callback. */
+typedef struct {
+    const agent_message_view_t* messages;
+    size_t message_count;
+} agent_session_group_view_t;
+
+typedef agent_error_t (*agent_session_visit_fn)(void* context,
+                                                 const agent_session_group_view_t* group);
+
+typedef enum {
+    AGENT_SESSION_TURN_COMPLETE = 1,
+    AGENT_SESSION_TURN_ABORTED = 2
+} agent_session_turn_outcome_t;
+
+/* All calls are synchronous. finish() consumes the transaction even on error. */
+typedef struct {
+    agent_error_t (*begin)(void* context, agent_string_view_t session_id, void** transaction);
+    agent_error_t (*append)(void* context, void* transaction,
+                            const agent_message_view_t* message);
+    agent_error_t (*finish)(void* context, void* transaction,
+                            agent_session_turn_outcome_t outcome);
+    /* Visit at most max_candidates complete groups, newest first. */
+    agent_error_t (*recent)(void* context, agent_string_view_t session_id,
+                            size_t max_candidates, agent_session_visit_fn visit,
+                            void* visit_context);
+    agent_error_t (*clear)(void* context, agent_string_view_t session_id);
+    agent_error_t (*clear_all)(void* context);
+    agent_error_t (*remove)(void* context, agent_string_view_t session_id);
+    agent_error_t (*count)(void* context, size_t* count);
+} agent_session_storage_ops_t;
+
+/* Ops are copied at bind; context remains application-owned until Agent destruction. */
+typedef struct {
+    agent_session_storage_ops_t ops;
+    void* context;
+} agent_session_storage_t;
+
+/* Bind or replace an idle Agent's Storage; NULL disables historical storage. */
+agent_error_t agent_set_session_storage(agent_t* agent,
+                                        const agent_session_storage_t* storage);
+
+/* Clear one persisted conversation; Storage determines retained identity semantics. */
 agent_error_t agent_session_clear(agent_t* agent, agent_string_view_t session_id);
 
-/* Clear all existing conversations without releasing identity slots. Returns: AGENT_OK; INVALID or BUSY. An empty manager is a successful no-op. */
+/* Clear all persisted conversations. */
 agent_error_t agent_session_clear_all(agent_t* agent);
 
-/* Remove one identity and its history, releasing its slot. */
+/* Remove one persisted conversation and its identity. */
 agent_error_t agent_session_remove(agent_t* agent, agent_string_view_t session_id);
 
-/* Count allocated identities, including empty retained conversations. Returns: AGENT_OK or INVALID. */
+/* Count identities known to the selected Storage. */
 agent_error_t agent_session_count(const agent_t* agent, size_t* count);
 
 #ifdef __cplusplus

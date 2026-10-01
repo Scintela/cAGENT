@@ -5,7 +5,7 @@
 /* Cancellation token support; synchronous run dispatch remains pending. */
 
 #include "run/run_internal.h"
-#include "core/agent_internal.h"
+#include "core/core_internal.h"
 
 void agent_cancel_token_init(agent_cancel_token_t* token, const agent_sync_t* sync)
 {

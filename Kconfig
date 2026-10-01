@@ -205,3 +205,19 @@ config AGENT_DEFAULT_MAX_HISTORY_TURNS
     default 0
 
 endmenu
+
+menu "cAgent Session Storage"
+
+config AGENT_SESSION_RAM
+    bool "Volatile caller-storage Session provider"
+    default n
+
+endmenu
+
+menu "cAgent Model Providers"
+
+config AGENT_PROVIDER_OPENAI
+    bool "OpenAI-compatible Chat Completions provider"
+    default n
+
+endmenu

@@ -5,7 +5,7 @@
 /* Model wrapper storage, validation, ownership, and synchronous dispatch. */
 
 #include "model/model_internal.h"
-#include "core/agent_internal.h"
+#include "core/core_internal.h"
 
 #include <string.h>
 

@@ -14,26 +14,21 @@
 extern "C" {
 #endif
 
-typedef struct agent_session_manager agent_session_manager_t;
 typedef struct agent_session_turn agent_session_turn_t;
 
-/* Legacy RAM manager; replace with Storage Provider binding before implementation. */
-agent_error_t agent_session_manager_init(agent_session_manager_t** manager,
-                                         agent_arena_t* arena);
-agent_error_t agent_session_turn_open(agent_session_manager_t* manager,
-                                           agent_string_view_t session_id,
-                                           agent_string_view_t input,
-                                           agent_session_turn_t** transaction);
-agent_error_t agent_session_reserve_tool_result(agent_session_turn_t* transaction,
-                                                     agent_string_view_t call_id,
-                                                     size_t max_result_bytes);
+/* Current-turn facts and source text live in the caller's turn scratch. */
+agent_error_t agent_session_turn_open(agent_session_turn_t** transaction,
+                                      agent_arena_t* arena,
+                                      const agent_session_storage_t* storage,
+                                      agent_string_view_t session_id,
+                                      agent_string_view_t input);
 agent_error_t agent_session_append(agent_session_turn_t* transaction,
-                                        const agent_message_view_t* message);
-void agent_session_turn_finish(agent_session_turn_t* transaction, agent_error_t status,
-                               const agent_run_summary_t* summary);
+                                   const agent_message_view_t* message);
+agent_error_t agent_session_turn_finish(agent_session_turn_t* transaction,
+                                        agent_session_turn_outcome_t outcome);
 agent_error_t agent_session_project(const agent_session_turn_t* transaction,
-                                         agent_arena_t* arena,
-                                         const agent_message_view_t** messages, size_t* count);
+                                    agent_arena_t* arena, uint32_t max_history_turns,
+                                    const agent_message_view_t** messages, size_t* count);
 
 #ifdef __cplusplus
 }

@@ -6,8 +6,8 @@ cmake_minimum_required(VERSION 3.16)
 set(AGENT_CORE_SOURCES
     src/context/context_builder.c
     src/context/context_registry.c
-    src/core/agent_core.c
-    src/core/agent_event.c
+    src/core/lifecycle.c
+    src/core/event.c
     src/core/arena.c
     src/core/error.c
     src/memory/memory_mgr.c
@@ -16,7 +16,6 @@ set(AGENT_CORE_SOURCES
     src/run/react_loop.c
     src/run/cancel.c
     src/runtime/runtime.c
-    src/session/session_codec.c
     src/session/session_manager.c
     src/session/session_storage.c
     src/skill/skill_registry.c
@@ -28,10 +27,28 @@ set(AGENT_CORE_SOURCES
 if(COMMAND idf_component_register)
     include("${CMAKE_CURRENT_LIST_DIR}/cmake/AgentBuildConfig.cmake")
     agent_generate_build_config("${CMAKE_CURRENT_BINARY_DIR}/generated")
+    set(_agent_sources ${AGENT_CORE_SOURCES})
+    set(_agent_public_includes "include" "${CMAKE_CURRENT_BINARY_DIR}/generated")
+    set(_agent_private_includes "src")
+    if(CONFIG_AGENT_PROVIDER_OPENAI)
+        list(APPEND _agent_sources
+            providers/openai/src/model_openai.c
+            providers/openai/src/openai_request.c
+            providers/openai/src/openai_response.c
+            codecs/json/reader.c
+            codecs/json/writer.c)
+        list(APPEND _agent_public_includes providers/openai/include)
+        list(APPEND _agent_private_includes
+            providers/openai/src codecs/json codecs/json/vendor/jsmn)
+    endif()
+    if(CONFIG_AGENT_SESSION_RAM)
+        list(APPEND _agent_sources providers/session_ram/src/session_ram.c)
+        list(APPEND _agent_public_includes providers/session_ram/include)
+    endif()
     idf_component_register(
-        SRCS ${AGENT_CORE_SOURCES}
-        INCLUDE_DIRS "include" "${CMAKE_CURRENT_BINARY_DIR}/generated"
-        PRIV_INCLUDE_DIRS "src")
+        SRCS ${_agent_sources}
+        INCLUDE_DIRS ${_agent_public_includes}
+        PRIV_INCLUDE_DIRS ${_agent_private_includes})
     target_compile_definitions(${COMPONENT_LIB} PUBLIC
         AGENT_BUILD_CONFIG_HEADER="agent_build_config.h")
     target_compile_features(${COMPONENT_LIB} PUBLIC c_std_99)
@@ -43,6 +60,7 @@ project(cagent VERSION 0.2.0 LANGUAGES C)
 option(AGENT_BUILD_MOCK_PROVIDER "Build the mock Model provider" OFF)
 option(AGENT_BUILD_OPENAI_PROVIDER "Build the OpenAI-compatible Model provider" OFF)
 option(AGENT_BUILD_JSON_CODEC "Build the private bounded jsmn JSON codec" OFF)
+option(AGENT_BUILD_SESSION_RAM "Build the volatile caller-storage Session provider" OFF)
 
 include("${CMAKE_CURRENT_LIST_DIR}/cmake/AgentBuildConfig.cmake")
 agent_generate_build_config("${CMAKE_CURRENT_BINARY_DIR}/generated/include")
@@ -71,4 +89,8 @@ endif()
 
 if(AGENT_BUILD_OPENAI_PROVIDER)
     add_subdirectory(providers/openai)
+endif()
+
+if(AGENT_BUILD_SESSION_RAM)
+    add_subdirectory(providers/session_ram)
 endif()

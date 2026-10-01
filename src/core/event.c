@@ -4,7 +4,7 @@
  */
 /* Synchronous event observer and statistics access. */
 
-#include "core/agent_internal.h"
+#include "core/core_internal.h"
 
 void agent_core_emit(agent_t* agent, const agent_event_t* event)
 {

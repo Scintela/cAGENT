@@ -344,22 +344,13 @@ static agent_error_t parse_value(json_cursor_t* cursor, size_t depth)
     return AGENT_OK;
 }
 
-agent_error_t agent_json_parse(agent_string_view_t input, jsmntok_t* tokens,
-                               size_t token_capacity, size_t max_depth,
-                               agent_json_document_t* document)
+static agent_error_t validate_input(agent_string_view_t input, size_t max_depth)
 {
     json_cursor_t cursor;
-    jsmn_parser parser;
     agent_error_t status;
-    int count;
 
-    if (!document) {
-        return AGENT_ERROR_INVALID;
-    }
-    memset(document, 0, sizeof(*document));
-    if (!input.data || input.size == 0u || !tokens || token_capacity == 0u ||
-        token_capacity > UINT_MAX || input.size > INT_MAX || max_depth == 0u ||
-        max_depth > 32u) {
+    if (!input.data || input.size == 0u || input.size > INT_MAX ||
+        max_depth == 0u || max_depth > 32u) {
         return AGENT_ERROR_INVALID;
     }
     cursor.data = (const unsigned char*)input.data;
@@ -373,6 +364,44 @@ agent_error_t agent_json_parse(agent_string_view_t input, jsmntok_t* tokens,
     skip_space(&cursor);
     if (cursor.pos != cursor.size) {
         return AGENT_ERROR_PARSE;
+    }
+    return AGENT_OK;
+}
+
+agent_error_t agent_json_validate_object(agent_string_view_t input, size_t max_depth)
+{
+    size_t pos = 0u;
+    agent_error_t status = validate_input(input, max_depth);
+
+    if (status != AGENT_OK) {
+        return status;
+    }
+    while (pos < input.size &&
+           (input.data[pos] == ' ' || input.data[pos] == '\t' ||
+            input.data[pos] == '\r' || input.data[pos] == '\n')) {
+        ++pos;
+    }
+    return pos < input.size && input.data[pos] == '{' ? AGENT_OK : AGENT_ERROR_PARSE;
+}
+
+agent_error_t agent_json_parse(agent_string_view_t input, jsmntok_t* tokens,
+                               size_t token_capacity, size_t max_depth,
+                               agent_json_document_t* document)
+{
+    jsmn_parser parser;
+    agent_error_t status;
+    int count;
+
+    if (!document) {
+        return AGENT_ERROR_INVALID;
+    }
+    memset(document, 0, sizeof(*document));
+    if (!tokens || token_capacity == 0u || token_capacity > UINT_MAX) {
+        return AGENT_ERROR_INVALID;
+    }
+    status = validate_input(input, max_depth);
+    if (status != AGENT_OK) {
+        return status;
     }
     jsmn_init(&parser);
     count = jsmn_parse(&parser, input.data, input.size, tokens,

@@ -3,7 +3,7 @@
 #include <agent/model.h>
 
 #include "core/arena_internal.h"
-#include "core/agent_internal.h"
+#include "core/core_internal.h"
 
 #include <stdlib.h>
 

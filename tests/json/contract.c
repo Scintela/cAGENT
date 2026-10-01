@@ -76,6 +76,17 @@ static void test_limits(void)
            AGENT_ERROR_INVALID);
 }
 
+static void test_object_validation(void)
+{
+    assert(agent_json_validate_object(SV(" {\"on\":true} \n"), 16u) == AGENT_OK);
+    assert(agent_json_validate_object(SV("[1]"), 16u) == AGENT_ERROR_PARSE);
+    assert(agent_json_validate_object(SV("{\"on\":true} trailing"), 16u) ==
+           AGENT_ERROR_PARSE);
+    assert(agent_json_validate_object(SV("{\"nested\":{}}"), 1u) ==
+           AGENT_ERROR_LIMIT);
+    assert(agent_json_validate_object(SV("{}"), 0u) == AGENT_ERROR_INVALID);
+}
+
 static void test_paths_and_decoding(void)
 {
     agent_json_document_t document;
@@ -197,6 +208,7 @@ int main(void)
     test_valid_values();
     test_invalid_values();
     test_limits();
+    test_object_validation();
     test_paths_and_decoding();
     test_writer();
     test_random_smoke();

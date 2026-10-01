@@ -50,8 +50,8 @@ struct agent {
     agent_tool_registry_t* tools;
     agent_context_registry_t* contexts;
     agent_skill_registry_t* skills;
-    void* session_storage;
-    void* session_cursor;
+    agent_session_storage_t session_storage;
+    bool has_session_storage;
     agent_cancel_token_t* active_cancel; /* Guard with runtime.cancel_sync for cross-task access. */
     agent_arena_t scratch;
     agent_policy_callback_t policy;

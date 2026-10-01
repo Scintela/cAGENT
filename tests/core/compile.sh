@@ -9,8 +9,8 @@ trap 'rm -f "$binary"' EXIT
 "$cc" -std=c99 -Wall -Wextra -Werror -I"$root/include" -I"$root/src" \
     "$root/tests/core/lifecycle.c" \
     "$root/src/core/arena.c" \
-    "$root/src/core/agent_core.c" \
-    "$root/src/core/agent_event.c" \
+    "$root/src/core/lifecycle.c" \
+    "$root/src/core/event.c" \
     "$root/src/core/error.c" \
     "$root/src/model/model.c" \
     "$root/src/run/cancel.c" \

@@ -4,7 +4,7 @@
  */
 /* Core workspace layout and minimal lifecycle. */
 
-#include "core/agent_internal.h"
+#include "core/core_internal.h"
 #include "model/model_internal.h"
 #include "runtime/runtime_internal.h"
 
