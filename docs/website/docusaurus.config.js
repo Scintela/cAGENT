@@ -14,8 +14,8 @@ const config = {
   tagline: '面向嵌入式与 Host 的跨平台 C 语言 Agent 库',
   // TODO: 推送 GitHub 前将 "username" 替换为实际用户名/组织名（本文件共 2 处：
   // 下面的 url 和 themeConfig.navbar 里的 GitHub 链接）
-  url: 'https://username.github.io',
-  baseUrl: '/cAgentV2/',
+  url: 'https://scintela.github.io',
+  baseUrl: '/cAGENT/',
 
   // 中文为默认语言，英文翻译位于 docs/website/i18n/en/，
   // 未翻译页面自动回退显示中文原文。

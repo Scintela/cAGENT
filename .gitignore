@@ -13,3 +13,7 @@
 /docs/website/build/
 /docs/website/.docusaurus/
 node_modules/
+
+# Internal planning & logs
+docs/plan/
+docs/logs/
