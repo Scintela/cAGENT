@@ -8,12 +8,12 @@ trap 'rm -f "$binary"' EXIT
 
 "$cc" -std=c99 -Wall -Wextra -Werror \
     -I"$root/include" -I"$root/src" \
-    -I"$root/providers/openai/include" -I"$root/providers/openai/src" \
+    -I"$root/providers/model/openai/include" -I"$root/providers/model/openai/src" \
     -I"$root/codecs/json" -I"$root/codecs/json/vendor/jsmn" \
     "$root/tests/providers/openai/contract.c" \
-    "$root/providers/openai/src/model_openai.c" \
-    "$root/providers/openai/src/openai_request.c" \
-    "$root/providers/openai/src/openai_response.c" \
+    "$root/providers/model/openai/src/model_openai.c" \
+    "$root/providers/model/openai/src/openai_request.c" \
+    "$root/providers/model/openai/src/openai_response.c" \
     "$root/codecs/json/reader.c" \
     "$root/codecs/json/writer.c" \
     "$root/src/core/lifecycle.c" \
@@ -26,5 +26,5 @@ trap 'rm -f "$binary"' EXIT
 "$binary"
 
 "${CXX:-c++}" -std=c++11 -Wall -Wextra -Werror \
-    -I"$root/include" -I"$root/providers/openai/include" \
+    -I"$root/include" -I"$root/providers/model/openai/include" \
     -include agent_openai_model.h -x c++ -fsyntax-only /dev/null

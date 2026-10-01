@@ -10,7 +10,7 @@
 |---|---|---|
 | Core Session (`src/session/session_manager.c`) | 维护当前 turn 的 user/assistant/Tool 因果顺序；复制本轮消息；选择并校验历史 turn | Core turn scratch |
 | Storage 契约 (`include/agent/session.h`) | 定义同步写入、完成/中止、按界读取和清理操作 | 不拥有具体数据 |
-| RAM 后端 (`providers/session_ram/`) | 在应用给定的数组与字节缓冲中保存完整和中止的 turn | 独立于 Core workspace；掉电即失 |
+| RAM 后端 (`providers/storage/ram/`) | 在应用给定的数组与字节缓冲中保存完整和中止的 turn | 独立于 Core workspace；掉电即失 |
 | Model Provider | 将 `agent_message_view_t[]` 编码为具体模型协议 | Provider 自有缓冲 |
 
 `src/session/session_codec.c` 的“二进制快照 + CRC”只是旧骨架，现已移出构建并删除。

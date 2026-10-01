@@ -25,7 +25,7 @@ codec。cJSON 后端尚未实现，不能通过构建选项选择。
 [RT-Thread cJSON 软件包](https://github.com/RT-Thread-packages/cJSON/blob/master/SConscript)。
 
 当前 `cagent_core` 的源码列表包含 `src/tool/tool_schema.c`，但该文件仍是占位实现；
-`providers/openai` 也是占位实现，尚未接入 cJSON。公共 `agent_tool_t` 与
+`providers/model/openai` 使用私有 JSON codec，未接入 cJSON。公共 `agent_tool_t` 与
 `agent_tool_view_t` 目前提供借用的 `input_schema_json`，**没有**已经实现的类型化
 schema descriptor。这与 ADR 0006 中“类型化 descriptor 是规范来源”的目标不同，
 不能把目标设计写成当前行为。

@@ -32,18 +32,18 @@ if(COMMAND idf_component_register)
     set(_agent_private_includes "src")
     if(CONFIG_AGENT_PROVIDER_OPENAI)
         list(APPEND _agent_sources
-            providers/openai/src/model_openai.c
-            providers/openai/src/openai_request.c
-            providers/openai/src/openai_response.c
+            providers/model/openai/src/model_openai.c
+            providers/model/openai/src/openai_request.c
+            providers/model/openai/src/openai_response.c
             codecs/json/reader.c
             codecs/json/writer.c)
-        list(APPEND _agent_public_includes providers/openai/include)
+        list(APPEND _agent_public_includes providers/model/openai/include)
         list(APPEND _agent_private_includes
-            providers/openai/src codecs/json codecs/json/vendor/jsmn)
+            providers/model/openai/src codecs/json codecs/json/vendor/jsmn)
     endif()
     if(CONFIG_AGENT_SESSION_RAM)
-        list(APPEND _agent_sources providers/session_ram/src/session_ram.c)
-        list(APPEND _agent_public_includes providers/session_ram/include)
+        list(APPEND _agent_sources providers/storage/ram/src/session_ram.c)
+        list(APPEND _agent_public_includes providers/storage/ram/include)
     endif()
     idf_component_register(
         SRCS ${_agent_sources}
@@ -84,13 +84,13 @@ if(AGENT_BUILD_JSON_CODEC)
 endif()
 
 if(AGENT_BUILD_MOCK_PROVIDER)
-    add_subdirectory(providers/mock)
+    add_subdirectory(providers/model/mock)
 endif()
 
 if(AGENT_BUILD_OPENAI_PROVIDER)
-    add_subdirectory(providers/openai)
+    add_subdirectory(providers/model/openai)
 endif()
 
 if(AGENT_BUILD_SESSION_RAM)
-    add_subdirectory(providers/session_ram)
+    add_subdirectory(providers/storage/ram)
 endif()

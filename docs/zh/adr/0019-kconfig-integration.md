@@ -72,7 +72,7 @@ ports/espidf/
   CMakeLists.txt
   Kconfig                         # ESP-IDF Runtime/Transport source selection
 
-providers/openai/
+providers/model/openai/
   CMakeLists.txt
   Kconfig                         # OpenAI Provider 与所需 codec
 

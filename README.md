@@ -132,7 +132,7 @@ int main(void)
 
 接入平台时钟后，这是当前可运行的最小生命周期示例，并非对话示例；`agent_run()` 仍返回
 `AGENT_ERROR_NOT_SUPPORTED`。完整的 Model/Tool 链路还需 ReAct 实现。
-Provider 的配置和缓冲区契约见 [OpenAI Provider](providers/openai/README.md)。
+Provider 的配置和缓冲区契约见 [OpenAI Provider](providers/model/openai/README.md)。
 现有可执行契约见 [Core 生命周期测试](tests/core/lifecycle.c)。
 
 在 Host 上运行测试：
