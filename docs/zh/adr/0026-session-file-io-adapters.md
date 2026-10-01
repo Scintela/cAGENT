@@ -121,3 +121,5 @@ Markdown 加载、记忆检索与完整 turn 事务的语义不同，见 ADR 002
 RT-Thread 的目标文件系统兼容性和掉电耐久性仍待真机验证。
 ESP-IDF 已提供可选的 `ports/espidf/storage/` 装配层，但其 Host 测试
 不能替代真实 VFS 挂载与介质验收。
+OpenVela 也有可选的 `ports/openvela/storage/` 装配层；目标 NuttX 文件系统
+的编译、恢复和掉电测试仍未完成。

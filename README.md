@@ -28,7 +28,7 @@ Public API (include/agent.h, include/agent/*.h)
   |     +-- JSON codec (codecs/json/)  私有有界读写器，可选编译
   |     +-- Transport ops
   |
-  +-- Platform Ports (ports/)     Runtime 与 HTTP/TLS 的平台实现
+  +-- Platform Ports (ports/)     Runtime、HTTP/TLS 与 Session 文件 I/O 适配
 ```
 
 上图表示模块职责，不代表所有执行路径均已实现。Core 不直接包含平台 SDK、
@@ -45,7 +45,7 @@ Model Provider 自行持有 Transport。当前的 JSON codec 使用内嵌 jsmn �
 | [`src/`](src/) | 平台无关的 Core、Model wrapper、Runtime/Transport 转发及各领域模块。部分模块尚未实现。 |
 | [`providers/`](providers/) | 可选 Model 与 Session Storage Provider；OpenAI 支持非流式 Chat Completions，Session RAM 后端易失，Mock/Anthropic 尚未实现。 |
 | [`codecs/json/`](codecs/json/) | 可选的有界 JSON reader/writer；上游 jsmn 位于 `vendor/jsmn/`。 |
-| [`ports/`](ports/) | 可选的平台 Runtime 和 HTTP/TLS Adapter；ESP-IDF/OpenVela 已有实现，Host/RT-Thread/STM32 仍需完善。 |
+| [`ports/`](ports/) | 可选的平台 Runtime、HTTP/TLS 和 Session 文件 I/O Adapter；ESP-IDF/OpenVela 已有实现，Host/RT-Thread/STM32 仍需完善。 |
 | [`tests/`](tests/) | 公共头、Core、JSON、Transport 与 Port 的 Host 契约测试。 |
 | [`docs/`](docs/) | 中文文档（`zh/`）与 Docusaurus 站点（`website/`），含全部 ADR；设计文档中的目标能力不等于已实现能力。 |
 
@@ -77,15 +77,17 @@ allocator 和跨任务取消同步按需注入。使用联网 Model 时，再选
 | 目标 | 当前接入方式 |
 |------|--------------|
 | Host / 普通 CMake | 默认只构建 Core；由应用实现 Runtime，按需启用 JSON codec 与 OpenAI Provider。尚无 Host HTTP Port。 |
-| ESP-IDF | 将仓库作为 `components/cagent`，把 `ports/espidf` 加入组件搜索路径；由 Kconfig 分别选择 Runtime、基于 `esp_http_client` 的 Transport 与可选 OpenAI Provider。 |
-| OpenVela / NuttX | 在应用 Kconfig 中引入 `ports/openvela/Kconfig`，在 NuttX 构建中加入 `ports/openvela`；按需选择 Runtime 和 `netutils/webclient` Transport。HTTPS 还需要应用提供验证证书链与主机名的 TLS 实现。 |
+| ESP-IDF | 将仓库作为 `components/cagent`，把 `ports/espidf` 加入组件搜索路径；由 Kconfig 分别选择 Runtime、基于 `esp_http_client` 的 Transport、Session 文件 I/O 和可选 OpenAI Provider。 |
+| OpenVela / NuttX | 在应用 Kconfig 中引入 `ports/openvela/Kconfig`，在 NuttX 构建中加入 `ports/openvela`；按需选择 Runtime、`netutils/webclient` Transport 和 Session 文件 I/O。HTTPS 还需要应用提供验证证书链与主机名的 TLS 实现。 |
 | RT-Thread / STM32 | Port 尚未实现；应用可自行填充 Runtime/Transport ops，并把平台实现放在 Core 之外。 |
 
 Core 不强制依赖 Kconfig，也不会根据平台宏自动选择 Backend。平台适配所需的 SDK
 头文件和链接依赖由相应 Port 承担；未选择的 Port 不进入 Core。具体构建入口见
 [Port 集成说明](ports/README.md)、[ESP-IDF Port](ports/espidf/README.md) 和
-[OpenVela Port](ports/openvela/README.md)。目前平台测试使用模拟 SDK；真实设备上的
-HTTP/TLS、栈和峰值内存仍需由产品集成验证。
+[OpenVela Port](ports/openvela/README.md)。Session 文件 I/O Port 仅绑定应用已挂载的
+文件系统，还需单独启用 JSONL Provider 与 JSON codec；不负责挂载、格式化或掉电恢复策略。
+目前平台测试使用模拟 SDK；真实设备上的 HTTP/TLS、文件系统掉电恢复、栈和峰值内存
+仍需由产品集成验证。
 
 ## 快速开始
 

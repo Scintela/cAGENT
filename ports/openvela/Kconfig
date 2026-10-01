@@ -15,4 +15,12 @@ config AGENT_PORT_OPENVELA_TRANSPORT
       Add the synchronous NuttX webclient HTTP adapter. HTTPS additionally
       needs an application-supplied authenticated webclient TLS implementation.
 
+config AGENT_PORT_OPENVELA_STORAGE
+    bool "Build OpenVela JSONL Session file binding"
+    depends on AGENT_SESSION_JSONL
+    default n
+    help
+      Bind JSONL file operations to an application-mounted NuttX filesystem.
+      This option also compiles the shared POSIX file implementation.
+
 endmenu
