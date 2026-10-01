@@ -146,6 +146,7 @@ bash tests/ports/espidf/compile.sh
 bash tests/ports/openvela/compile.sh
 bash tests/providers/openai/compile.sh
 bash tests/session/compile.sh
+bash tests/session/jsonl_compile.sh
 ```
 
 这些测试验证当前接口及模拟 Port 的行为，不能代替真实设备上的网络和 TLS 联调。

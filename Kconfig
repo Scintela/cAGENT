@@ -212,6 +212,10 @@ config AGENT_SESSION_RAM
     bool "Volatile caller-storage Session provider"
     default n
 
+config AGENT_SESSION_JSONL
+    bool "JSONL Session provider with application-supplied file operations"
+    default n
+
 endmenu
 
 menu "cAgent Model Providers"

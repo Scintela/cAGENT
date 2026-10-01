@@ -152,6 +152,10 @@ turn scratch，且不能自然支持 Flash/NVS/PSRAM；拒绝。
 - JSONL、Flash journal 和 NVS Provider 对同一规范化完整 turn 记录产生一致的投影语义；
 - 断电恢复后，带副作用 Tool 的 abort/未知状态不会被伪装为未执行。
 
+当前可选的 JSONL 后端采用“一行一个已结束 turn”，仅满足已提交历史的有界恢复；
+执行中的 Tool 意图不会在动作前落盘，因此**尚不满足**上一条对副作用追溯的要求。
+需要该保证的产品不得仅凭此后端宣称掉电安全，应增加预写日志或等价事务协议。
+
 ## 迁移说明
 
 本 ADR 优先于 ADR 0010、0011、0014、公共 API 文档和总体架构中关于“Session event/payload

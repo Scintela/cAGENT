@@ -106,8 +106,8 @@ Session 必须保留消息角色与 Tool 配对，Tool 必须保留结构化 sch
 - 产品须分别预算 Soul/Skill 文件缓冲、Memory 检索状态、Session 后端和
   Core turn scratch；共用文件系统不等于共用内存或保留策略。
 - 当前 `memory.h` 没有稳定操作，Skill registry 与 Context Builder 尚未
-  实现完整流程。本文是目标架构，不表示 Markdown loader、JSONL Session
-  后端或完整 `agent_run()` 投影链路已经完成。
+  实现完整流程。JSONL Session 后端可选构建，但它不实现 Markdown loader，
+  也不表示完整 `agent_run()` 投影链路已经完成。
 
 ## 待裁决
 

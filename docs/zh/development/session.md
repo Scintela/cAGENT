@@ -1,8 +1,9 @@
 # Session 模块开发日志
 
 - 日期：2026-09-30
-- 范围：Storage 契约、当前 turn 校验、历史投影和可选 RAM 后端
-- 状态：模块契约可单独测试；`agent_run()` 尚未接入，文件系统持久化尚未实现
+- 更新：2026-10-01
+- 范围：Storage 契约、当前 turn 校验、历史投影、可选 RAM 与 JSONL 后端
+- 状态：模块契约及 JSONL 文件读写可单独测试；`agent_run()` 尚未接入
 
 ## 设计边界
 
@@ -11,6 +12,7 @@
 | Core Session (`src/session/session_manager.c`) | 维护当前 turn 的 user/assistant/Tool 因果顺序；复制本轮消息；选择并校验历史 turn | Core turn scratch |
 | Storage 契约 (`include/agent/session.h`) | 定义同步写入、完成/中止、按界读取和清理操作 | 不拥有具体数据 |
 | RAM 后端 (`providers/storage/ram/`) | 在应用给定的数组与字节缓冲中保存完整和中止的 turn | 独立于 Core workspace；掉电即失 |
+| JSONL 后端 (`providers/storage/jsonl/`) | 通过上层注入的文件操作保存完整 turn JSON 行，逆序有界读取 | 独立的行、解码和 token 缓冲；无 Core 文件系统依赖 |
 | Model Provider | 将 `agent_message_view_t[]` 编码为具体模型协议 | Provider 自有缓冲 |
 
 `src/session/session_codec.c` 的“二进制快照 + CRC”只是旧骨架，现已移出构建并删除。
@@ -44,6 +46,12 @@ payload 字节缓冲和一次读取用的 view 数组。`agent_session_ram_t` �
 无 Tool 的产品可把 `calls/read_calls` 设为 `NULL`，对应容量设为 0。
 RAM 后端一次只允许一个活动事务，内部不加锁；若多个 Agent 共用该实例，应用必须串行化
 访问，或给每个 Agent 使用独立实例。
+
+JSONL 后端使用 `agent_session_jsonl_file_ops_t` 的 `size/read/append/truncate/sync`
+以及会话管理回调。应用负责把长度限定的 `session_id` 安全映射到独立文件；后端不直接
+使用 POSIX 或平台文件系统 API。`agent_session_jsonl_config_t` 接收互不重叠的写行、
+读行、解码、token、消息视图、Tool 调用视图与 ID 缓冲。记录版本、文件操作语义和
+容量限制见 [JSONL 后端说明](../../../providers/storage/jsonl/README.md)。
 
 内部 `session_internal.h` 的调用顺序是 `agent_session_turn_open()`、若干次
 `agent_session_append()`、每次模型请求前的 `agent_session_project()`，最后
@@ -84,7 +92,7 @@ RAM 总预算约为各描述符数组的 `sizeof * capacity` 之和，加上 pay
 ## 数据流
 
 ```text
-Application: 配置 Core workspace + RAM Storage workspace，绑定 Storage
+Application: 配置 Core workspace + 独立 Storage workspace，绑定 RAM 或 JSONL Storage
 Core turn_open: 复制 session_id/user 到 scratch → Storage begin + append(user)
 每个模型步骤: Core 校验 assistant Tool call → Storage append → Tool 执行
              Core 校验匹配的 Tool result → Storage append → 再调用模型
@@ -110,18 +118,22 @@ RAM 后端当前不自动做长期保留与淘汰，因此容量满时产品必�
 - `ABORTED` 组不会被正常历史投影。它可保留已提交的 Tool call 等审计事实，但 RAM 后端
   掉电即失，不能证明设备动作可在重启后追溯。
 
-若产品要求 Tool 副作用具备掉电追溯，未来持久化后端必须在执行 Tool 之前确认调用意图
-已经稳定写入，并在结束时写入可恢复的完成/中止标记。损坏尾部、重放幂等性、实际介质
-flush 语义、文件系统原子性及磨损控制均不由当前 RAM 后端保证。`agent_run()` 尚未实现，
-因此上述执行顺序是集成契约，不是已经贯通的产品流程。
+当前 JSONL 后端在 `finish()` 才写入完整 turn 行；已完成记录可在重新初始化后读取，
+无换行的损坏尾部在下一次 `begin()` 前清理。它**不能**在 Tool 执行前持久化调用意图，
+所以掉电时不能追溯执行中的副作用 Tool。若产品需要该保证，必须增加预写日志或其他
+事务协议，并单独验证具体文件系统的同步语义。`agent_run()` 尚未实现，因此上述执行
+顺序是集成契约，不是已经贯通的产品流程。
 
 ## 构建与验证
 
 Host CMake 可设置 `AGENT_BUILD_SESSION_RAM=ON` 构建 `cagent::session_ram`；Core 始终
 编译 Session 契约。ESP-IDF 可通过 `CONFIG_AGENT_SESSION_RAM` 选择同一后端。
+JSONL 后端需同时启用 `AGENT_BUILD_JSON_CODEC=ON` 和 `AGENT_BUILD_SESSION_JSONL=ON`，
+构建目标为 `cagent::session_jsonl`；ESP-IDF 可启用 `CONFIG_AGENT_SESSION_JSONL`。
 
 ```sh
 bash tests/session/compile.sh
+bash tests/session/jsonl_compile.sh
 ```
 
 契约测试覆盖深拷贝、跨模型步骤重复 Tool ID、Tool result 配对、完整/中止组、历史顺序、
@@ -130,7 +142,7 @@ bash tests/session/compile.sh
 ## 下一阶段
 
 1. 在 ReAct Loop 接入 `turn_open/append/project/finish`，使运行时真正消费此契约。
-2. 基于目标平台的文件/Flash 能力实现 JSONL 或分块日志后端；增加截断尾部、掉电恢复、
-   提交失败和副作用 Tool 的重启测试。
+2. 为需要执行中 Tool 副作用追溯的产品设计预写事务日志，并验证目标文件系统的掉电恢复；
+   当前整 turn JSONL 行不能提供这一保证。
 3. 根据实际存储后端验证是否需要公共耐久等级、用户身份隔离及保留策略 API；不提前把
    文件系统或 JSONL 类型写入 Core 接口。

@@ -32,3 +32,8 @@ platforms; no SDK headers enter the Provider.
 buffers, has no implicit heap or filesystem dependency, and returns a capacity
 error rather than deleting history when full. It does not implement power-loss
 recovery. See the [Session development log](../docs/zh/development/session.md).
+
+`storage/jsonl/` is an optional file-backed implementation of the same contract.
+It accepts application-owned file callbacks and bounded buffers, so neither it
+nor Core depends on POSIX or a platform SDK. See [JSONL Storage](storage/jsonl/README.md)
+for its record, durability, and recovery limits.

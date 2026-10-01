@@ -34,16 +34,24 @@ if(COMMAND idf_component_register)
         list(APPEND _agent_sources
             providers/model/openai/src/model_openai.c
             providers/model/openai/src/openai_request.c
-            providers/model/openai/src/openai_response.c
-            codecs/json/reader.c
-            codecs/json/writer.c)
+            providers/model/openai/src/openai_response.c)
         list(APPEND _agent_public_includes providers/model/openai/include)
-        list(APPEND _agent_private_includes
-            providers/model/openai/src codecs/json codecs/json/vendor/jsmn)
+        list(APPEND _agent_private_includes providers/model/openai/src)
     endif()
     if(CONFIG_AGENT_SESSION_RAM)
         list(APPEND _agent_sources providers/storage/ram/src/session_ram.c)
         list(APPEND _agent_public_includes providers/storage/ram/include)
+    endif()
+    if(CONFIG_AGENT_SESSION_JSONL)
+        list(APPEND _agent_sources
+            providers/storage/jsonl/src/session_jsonl.c
+            providers/storage/jsonl/src/jsonl_record.c)
+        list(APPEND _agent_public_includes providers/storage/jsonl/include)
+        list(APPEND _agent_private_includes providers/storage/jsonl/src)
+    endif()
+    if(CONFIG_AGENT_PROVIDER_OPENAI OR CONFIG_AGENT_SESSION_JSONL)
+        list(APPEND _agent_sources codecs/json/reader.c codecs/json/writer.c)
+        list(APPEND _agent_private_includes codecs/json codecs/json/vendor/jsmn)
     endif()
     idf_component_register(
         SRCS ${_agent_sources}
@@ -61,6 +69,7 @@ option(AGENT_BUILD_MOCK_PROVIDER "Build the mock Model provider" OFF)
 option(AGENT_BUILD_OPENAI_PROVIDER "Build the OpenAI-compatible Model provider" OFF)
 option(AGENT_BUILD_JSON_CODEC "Build the private bounded jsmn JSON codec" OFF)
 option(AGENT_BUILD_SESSION_RAM "Build the volatile caller-storage Session provider" OFF)
+option(AGENT_BUILD_SESSION_JSONL "Build the file-ops-injected JSONL Session provider" OFF)
 
 include("${CMAKE_CURRENT_LIST_DIR}/cmake/AgentBuildConfig.cmake")
 agent_generate_build_config("${CMAKE_CURRENT_BINARY_DIR}/generated/include")
@@ -93,4 +102,8 @@ endif()
 
 if(AGENT_BUILD_SESSION_RAM)
     add_subdirectory(providers/storage/ram)
+endif()
+
+if(AGENT_BUILD_SESSION_JSONL)
+    add_subdirectory(providers/storage/jsonl)
 endif()
