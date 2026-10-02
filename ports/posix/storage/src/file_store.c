@@ -178,7 +178,7 @@ static agent_error_t posix_read(void* context, agent_string_view_t name, uint64_
     while (status == AGENT_OK && done < capacity) {
         size_t amount = capacity - done;
         ssize_t count;
-        if (amount > (size_t)SSIZE_MAX) amount = (size_t)SSIZE_MAX;
+        if (amount > (size_t)INT_MAX) amount = (size_t)INT_MAX;
         count = read(fd, (unsigned char*)output + done, amount);
         if (count < 0 && errno == EINTR) continue;
         if (count < 0) status = AGENT_ERROR_IO;
@@ -197,7 +197,7 @@ static agent_error_t write_bytes(int fd, const void* data, size_t bytes)
     while (done < bytes) {
         size_t amount = bytes - done;
         ssize_t count;
-        if (amount > (size_t)SSIZE_MAX) amount = (size_t)SSIZE_MAX;
+        if (amount > (size_t)INT_MAX) amount = (size_t)INT_MAX;
         count = write(fd, (const unsigned char*)data + done, amount);
         if (count < 0 && errno == EINTR) continue;
         if (count <= 0) return AGENT_ERROR_IO;

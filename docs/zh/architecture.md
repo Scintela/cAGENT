@@ -960,10 +960,10 @@ cAgentV2/
 │   ├── model/mock        测试用脚本化 completion（占位）
 │   ├── storage/jsonl     Session 记录格式
 │   ├── storage/ram       易失后端
+│   ├── storage/files     字节文件契约、有界读取辅助；不解释领域格式
 │   └── skill/loader      Markdown + front-matter 加载（ADR 0029 通用层，未实现）
 ├── ports/             可选：平台适配
-│   ├── posix/storage     Session 文件适配
-│   ├── posix/skills      Skill 目录枚举与定长读（ADR 0029 薄层，未实现）
+│   ├── posix/storage     共享字节文件 I/O，兼容旧 Session 文件入口
 │   ├── espidf/           runtime、transport、storage
 │   └── openvela/         runtime、transport、storage
 ├── tests/  docs/  examples/
@@ -983,6 +983,8 @@ cAgentV2/
 Session 命名空间与 Skill 注册语义由各自领域组件维护。共享文件契约、预制平台
 实现及接入步骤以 [ADR 0031](adr/0031-prefabricated-platform-file-storage.md) 为准，
 用 JSONL Session 与 USER 文件有界读取验证；可选通用组件统一放在 `providers/`。
+现有文件 Port 可以提供读取和枚举，不再为尚未实现的 Skill/Memory 各预建一份
+物理 I/O 目录；领域解析与注册逻辑仍由各自可选组件承担。
 
 ESP-IDF/OpenVela Adapter 已有 mock 测试，但尚未经真实网络/TLS 与文件系统掉电恢复的
 集成验证；上图不表示所有列出的模块已经实现。

@@ -1,6 +1,6 @@
 # ADR 0031: 预制平台文件存储与读取
 
-- 状态：提案（目标架构明确，文件契约与实现待验证）
+- 状态：采纳（字节文件层与两条消费链路已实现；平台真机与掉电验证待完成）
 - 日期：2026-10-02
 - 关联：[ADR 0014](0014-memory-domains.md)、[ADR 0016](0016-session-history-storage.md)、[ADR 0023](0023-file-backed-memory-soul-skill.md)、[ADR 0026](0026-session-file-io-adapters.md)、[ADR 0027](0027-minimal-markdown-memory-layout.md)、[ADR 0029](0029-official-skill-file-loader.md)、[ADR 0030](0030-shared-file-io-boundary.md)
 
@@ -52,8 +52,8 @@ Application
                                   应用已挂载的文件系统与介质
 ```
 
-图中的 Memory 接入、Skill loader 和统一文件契约均为目标能力，不表示已实现。
-初期 `USER.md` 读取可以先作为单文件辅助供应用使用，不要求立即公开 Memory ops。
+统一文件契约、JSONL 文件适配及 `USER.md` 有界读取辅助已实现。
+图中的 Memory 接入与 Skill loader 仍为目标能力，不表示已实现；不立即公开 Memory ops。
 
 ### 各层责任
 
@@ -74,8 +74,8 @@ Session 保留策略。`clear_all/count` 继续按 Session 命名空间实现，
 
 采用 ops + context、初始化期注入和调用方持有状态的方式。文件接口属于可选
 文件组件的公共契约，不通过 `agent.h` 强制引入，也不要求给 `agent_config_t`
-新增全局 filesystem 指针。具体函数签名、句柄表示和操作表组织在实现验证时
-定稿；本文不声明已存在 `agent_file_ops_t` 等新公共类型。
+新增全局 filesystem 指针。首版采用 `agent_file_store_ops_t` 与
+`agent_file_store_t`，公开于可选包 `providers/storage/files/include/agent_file_store.h`。
 公共文件契约只使用库基础类型和平台无关的上下文，不暴露 POSIX `FILE*`、
 描述符要求或平台 SDK 结构体；这些细节由 Port 持有和转换。
 
@@ -84,7 +84,7 @@ Session 保留策略。`clear_all/count` 继续按 Session 命名空间实现，
 | 文件信息与有界读取 | Session 回放、Soul/User/Memory、Skill；偏移、容量、实际读取字节与 EOF 的语义须明确 |
 | 有界目录枚举 | Skill 导入、每日笔记选择、Session 统计；名称借用期明确，领域组件负责过滤和稳定排序 |
 | 追加、截断、同步 | JSONL Session 提交和尾部恢复；消费者绑定时校验必要操作 |
-| 整文件替换 | USER/Memory 更新的候选能力；单独约定旧/新版本可见性、失败结果与恢复 |
+| 整文件替换 | 字节级能力已实现，使用 `published` 区分发布前与发布后错误；Memory 更新授权仍待领域实现 |
 | 删除 | 授权清理；文件选择范围由领域适配器或应用决定 |
 
 只读消费者只要求读取能力；目录枚举和各类写入按需提供，缺少必要操作时在
@@ -118,8 +118,9 @@ Memory 实现选择明确的逻辑文件，Skill loader 使用授权枚举结果
 ## 内存、资源与生命周期
 
 应用持有文件 Port 状态、配置上下文、路径/枚举工作缓冲及领域内容缓冲。
-具体 ops 表可以按值复制或借用，但必须在签名定稿时明确；所有 context 在
-消费者使用期间有效。读取写入缓冲默认只在同步操作期间借用，后端不得在
+`agent_file_store_t` 借用不可变 ops 指针和 context；Session 适配器按值复制
+这个绑定，但不接管后端所有权。所有 context 在消费者使用期间有效。
+读取写入缓冲只在同步操作期间借用，后端不得在
 返回后继续访问。持有的文件、目录句柄必须有关闭路径和失败清理规则。
 
 文件和领域缓冲不计入 Core workspace；Skill 正文的常驻缓冲必须活到注销。
@@ -154,7 +155,7 @@ include/agent/
 providers/storage/files/            可选文件契约与有界读取辅助
 providers/storage/jsonl/
   src/session_jsonl.c               现有格式、提交与回放
-  src/session_files.c               候选：统一文件契约到现有 Session file ops 的适配
+  src/file_store_bind.c             已实现：统一文件契约到现有 Session file ops 的适配
 providers/skill/loader/             候选：ADR 0029 通用加载层
 providers/memory/                   候选：形成领域需求后再确定子目录
 ports/
@@ -163,7 +164,7 @@ ports/
   openvela/storage/                 预制 OpenVela 文件入口与实际平台差异
 ```
 
-可选通用交付物集中在 `providers/`，平台实现位于 `ports/`。目录为实施候选，
+可选通用交付物集中在 `providers/`，平台实现位于 `ports/`。未实现目录仍为候选，
 不预建空模块。不同平台可以复用兼容的 POSIX 代码，也可以
 提供专属实现；各平台提供可选的入口、依赖声明与集成说明。共享源码在一个
 构建组合中只编译一次。
@@ -195,7 +196,7 @@ C 配置头和 CMake 可以独立选择组件，Kconfig 作为平台集成入口
    容量失败、文件变化、借用期和资源清理。
 4. 提供 ESP-IDF、OpenVela 的官方文件入口和可选构建；分别在目标文件系统验证
    读、追加、截断、同步、枚举及重启恢复。Host 测试不代替真机结论。
-5. 根据真实更新需求加入整文件替换、Memory 缓存失效等能力，再裁决 Memory
+5. 字节层已加入整文件替换；根据真实更新需求加入 Memory 缓存失效等能力，再裁决 Memory
    公共操作；不把普通文件读取辅助当作完整 Memory 管理。
 
 验收还需覆盖短读写和失败注入、目录枚举容量、Session 清理不触及 Markdown
@@ -211,6 +212,29 @@ C 配置头和 CMake 可以独立选择组件，Kconfig 作为平台集成入口
 本方案中分别调整为目标相关的隔离与耐久保证、两条最小消费者链路验证。
 不同读写需求可以共享部分机制，不据此永久否决共享物理层。
 
-仍待实现前裁决：文件句柄与目录上下文的表示；读取/EOF 和 ops 所有权的最终
-签名；目标文件系统清单与支持声明；整文件替换的失败结果及保证选择。
-本文未修改公共头文件，也不表示 Memory 或 Skill 文件功能已实现。
+## 首版落地与限制
+
+- 文件名限定为单组件，拒绝 NUL、分隔符、点目录及私有 `.cagent-` 前缀。
+  子目录绑定独立实例；用户范围由应用提供可信根，不能由模型参数选择。
+- `read` 允许短读，成功读取零字节表示 EOF；`read_exact` 适配 JSONL 精确读。
+  整文件读取检查容量、EOF 与最终大小，只检测可观察的变化，不能替代串行访问。
+- `visit` 的名称只在回调期间有效，枚举无序；禁止从回调重入后端。
+  Session count/clear_all 留在适配器内，仅匹配编码后的 Session 文件名。
+- POSIX 后端每次操作关闭资源。路径工作缓冲及独立领域缓冲由应用提供；
+  替换需要同时容纳目标路径和临时路径，容量不足不修改目标文件。
+- 替换采用写临时文件、文件 fsync、关闭、rename，随后按配置同步目录。
+  rename 后 `published=true`，后续同步错误也保留此结果。旧文件不先清空；
+  替换后的权限为 0600，不保留旧元数据。掉电临时文件的维护归应用。
+- `read_only` 用缺失写操作表达；`sync_directory` 启用时在 init 验证目录 fsync。
+  不支持所需调用时明确返回错误，不宣称普通 fsync 已证明介质掉电可靠性。
+- Host/OpenVela profile 使用 lstat 并拒绝叶子符号链接。ESP-IDF VFS profile 使用
+  stat，限定为不提供符号链接的文件系统。全部 profile 要求根和祖先目录可信且
+  稳定，不承诺抵御不可信并发目录替换；更强隔离需要另一个后端。
+- 旧 Session 文件入口保留兼容。新入口不依赖 JSON/JSONL；JSONL 与文件层同时
+  构建时提供独立 bridge，未选择时不增加 Core 依赖。
+
+实现和使用示例见 [文件存储开发记录](../development/file-storage.md)。Host 上已验证
+有界 USER 读取、Session 回放与残尾修复、清理隔离和系统调用失败路径；OpenVela
+共享文件源也使用本机已有 NuttX 头与 RISC-V 工具链完成编译检查。平台文件系统
+清单、完整原生固件链接及实际重启/掉电结果仍需验证。Memory、Skill 文件加载与
+Context 集成不在本次字节文件层的完成范围内。

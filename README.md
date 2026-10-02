@@ -6,8 +6,8 @@ OpenVela、RT-Thread 等系统上复用同一套应用接口。项目采用平�
 
 **当前仍处于基础实现阶段**：Core workspace、生命周期、Runtime/Transport 契约、
 ESP-IDF/OpenVela 适配器、私有 JSON codec 和 OpenAI 非流式 Provider 已有代码与
-Host 测试；Session 已有格式无关的 Storage 契约和可选 RAM 后端，但文件持久化与同步
-`agent_run()` 的 ReAct 流程尚未实现，Mock Provider 仍是占位。目前不能通过 Core 完成
+Host 测试；Session 已有格式无关的 Storage 契约、可选 RAM/JSONL 后端和共享文件读写，
+但同步 `agent_run()` 的 ReAct 流程尚未实现，Mock Provider 仍是占位。目前不能通过 Core 完成
 端到端 LLM 对话。
 Session 的 API、内存与数据流见[开发日志](docs/zh/development/session.md)。
 
@@ -28,7 +28,10 @@ Public API (include/agent.h, include/agent/*.h)
   |     +-- JSON codec (codecs/json/)  私有有界读写器，可选编译
   |     +-- Transport ops
   |
-  +-- Platform Ports (ports/)     Runtime、HTTP/TLS 与 Session 文件 I/O 适配
+  +-- File Providers (providers/storage/)  RAM、JSONL、字节文件契约与有界读取
+  |     +-- Platform file ops      USER/Memory/Skill 文件访问的共用基础
+  |
+  +-- Platform Ports (ports/)     Runtime、HTTP/TLS 与文件 I/O 适配
 ```
 
 上图表示模块职责，不代表所有执行路径均已实现。Core 不直接包含平台 SDK、
@@ -43,7 +46,7 @@ Model Provider 自行持有 Transport。当前的 JSON codec 使用内嵌 jsmn �
 |------|------|
 | [`include/`](include/) | 公共 C API 与构建容量配置。 |
 | [`src/`](src/) | 平台无关的 Core、Model wrapper、Runtime/Transport 转发及各领域模块。部分模块尚未实现。 |
-| [`providers/`](providers/) | 可选 Model 与 Session Storage Provider；OpenAI 支持非流式 Chat Completions，Session RAM 后端易失，Mock/Anthropic 尚未实现。 |
+| [`providers/`](providers/) | 可选 Model、RAM/JSONL Session Storage、共享字节文件契约和有界读取辅助；Mock/Anthropic 尚未实现。 |
 | [`codecs/json/`](codecs/json/) | 可选的有界 JSON reader/writer；上游 jsmn 位于 `vendor/jsmn/`。 |
 | [`ports/`](ports/) | 可选的平台 Runtime、HTTP/TLS 和 Session 文件 I/O Adapter；ESP-IDF/OpenVela 已有实现，Host/RT-Thread/STM32 仍需完善。 |
 | [`tests/`](tests/) | 公共头、Core、JSON、Transport 与 Port 的 Host 契约测试。 |
@@ -65,6 +68,7 @@ Model Provider 自行持有 Transport。当前的 JSON codec 使用内嵌 jsmn �
 容量及所有权的设计细节见 [配置边界](docs/zh/adr/0011-configuration-boundaries.md)、
 [内存域](docs/zh/adr/0014-memory-domains.md) 与
 [JSON codec](docs/zh/adr/0022-bounded-json-codec.md)。
+文件读取、替换与 Session 接入见 [文件存储开发记录](docs/zh/development/file-storage.md)。
 
 ## 在不同系统和平台移植
 
@@ -86,6 +90,7 @@ Core 不强制依赖 Kconfig，也不会根据平台宏自动选择 Backend。�
 [Port 集成说明](ports/README.md)、[ESP-IDF Port](ports/espidf/README.md) 和
 [OpenVela Port](ports/openvela/README.md)。Session 文件 I/O Port 仅绑定应用已挂载的
 文件系统，还需单独启用 JSONL Provider 与 JSON codec；不负责挂载、格式化或掉电恢复策略。
+共享文件入口独立于 JSONL，可只用于 `USER.md` 等有界读取；详细配置见各 Port 的 storage 文档。
 目前平台测试使用模拟 SDK；真实设备上的 HTTP/TLS、文件系统掉电恢复、栈和峰值内存
 仍需由产品集成验证。
 
@@ -149,6 +154,10 @@ bash tests/ports/openvela/compile.sh
 bash tests/providers/openai/compile.sh
 bash tests/session/compile.sh
 bash tests/session/jsonl_compile.sh
+bash tests/providers/files/compile.sh
+bash tests/ports/posix/file_store_compile.sh
+bash tests/ports/posix/file_store_faults.sh
+bash tests/build/file_store/compile.sh
 ```
 
 这些测试验证当前接口及模拟 Port 的行为，不能代替真实设备上的网络和 TLS 联调。

@@ -47,3 +47,17 @@ cc -std=c99 -Wall -Wextra -Werror -pedantic \
   -I"$root/ports/openvela/storage/include" \
   -include agent_openvela_session_files.h -x c++ -fsyntax-only /dev/null
 printf '%s\n' 'PASS: OpenVela Session Storage binding (Host filesystem contract).'
+
+"${CC:-cc}" -std=c99 -Wall -Wextra -Werror -pedantic -DTEST_OPENVELA=1 \
+  -I"$root/include" -I"$root/providers/storage/files/include" \
+  -I"$root/ports/posix/storage/include" -I"$root/ports/openvela/storage/include" \
+  "$root/tests/ports/file_store_binding.c" \
+  "$root/providers/storage/files/src/file_store.c" \
+  "$root/ports/posix/storage/src/file_store.c" \
+  "$root/ports/openvela/storage/src/file_store.c" -o "$build_dir/file_store"
+"$build_dir/file_store"
+"${CXX:-c++}" -std=c++11 -Wall -Wextra -Werror \
+  -I"$root/include" -I"$root/providers/storage/files/include" \
+  -I"$root/ports/posix/storage/include" -I"$root/ports/openvela/storage/include" \
+  -include agent_openvela_file_store.h -x c++ -fsyntax-only /dev/null
+printf '%s\n' 'PASS: OpenVela byte-file binding (Host filesystem contract).'

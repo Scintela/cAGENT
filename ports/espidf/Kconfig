@@ -13,6 +13,16 @@ config AGENT_PORT_ESPIDF_TRANSPORT
     help
       Add the esp_http_client based synchronous HTTP transport.
 
+config AGENT_PORT_ESPIDF_FILE_STORE
+    bool "Build ESP-IDF shared byte-file store"
+    depends on AGENT_FILE_STORE && AGENT_POSIX_FILE_STORE
+    depends on VFS_SUPPORT_IO && VFS_SUPPORT_DIR
+    default n
+    help
+      Bind a trusted application-mounted VFS directory to byte-file ops.
+      Supports bounded text loading and optional JSONL binding. No mount or
+      format operations are performed. Validate filesystem calls on target.
+
 config AGENT_PORT_ESPIDF_STORAGE
     bool "Build ESP-IDF JSONL Session file binding"
     depends on AGENT_SESSION_JSONL && AGENT_SESSION_POSIX_FILES

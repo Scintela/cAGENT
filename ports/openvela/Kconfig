@@ -15,6 +15,16 @@ config AGENT_PORT_OPENVELA_TRANSPORT
       Add the synchronous NuttX webclient HTTP adapter. HTTPS additionally
       needs an application-supplied authenticated webclient TLS implementation.
 
+config AGENT_PORT_OPENVELA_FILE_STORE
+    bool "Build OpenVela shared byte-file store"
+    depends on AGENT_FILE_STORE
+    depends on !DISABLE_MOUNTPOINT
+    default n
+    help
+      Bind one trusted mounted directory to byte-file operations. This
+      independently selectable package has no JSONL or JSON dependency.
+      Validate filesystem support and durability on the target device.
+
 config AGENT_PORT_OPENVELA_STORAGE
     bool "Build OpenVela JSONL Session file binding"
     depends on AGENT_SESSION_JSONL

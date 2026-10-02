@@ -45,3 +45,22 @@ cc -std=c99 -Wall -Wextra -Werror -pedantic \
   -I"$root/ports/espidf/storage/include" \
   -include agent_espidf_session_files.h -x c++ -fsyntax-only /dev/null
 printf '%s\n' 'PASS: ESP-IDF Session Storage binding (Host VFS contract).'
+
+"${CC:-cc}" -std=c99 -Wall -Wextra -Werror -pedantic \
+  -DTEST_ESPIDF=1 -DAGENT_POSIX_FILE_STORE_NO_SYMLINKS=1 \
+  -I"$root/include" -I"$root/providers/storage/files/include" \
+  -I"$root/ports/posix/storage/include" -I"$root/ports/espidf/storage/include" \
+  "$root/tests/ports/file_store_binding.c" \
+  "$root/providers/storage/files/src/file_store.c" \
+  "$root/ports/posix/storage/src/file_store.c" \
+  "$root/ports/espidf/storage/src/file_store.c" -o "$build_dir/file_store"
+"$build_dir/file_store"
+if nm -u "$build_dir/file_store" | rg -q ' lstat'; then
+  printf 'FAIL: ESP-IDF profile must not require lstat\n' >&2
+  exit 1
+fi
+"${CXX:-c++}" -std=c++11 -Wall -Wextra -Werror \
+  -I"$root/include" -I"$root/providers/storage/files/include" \
+  -I"$root/ports/posix/storage/include" -I"$root/ports/espidf/storage/include" \
+  -include agent_espidf_file_store.h -x c++ -fsyntax-only /dev/null
+printf '%s\n' 'PASS: ESP-IDF byte-file binding (Host no-symlink VFS profile).'
