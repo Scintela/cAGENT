@@ -942,39 +942,53 @@ include/agent/
 
 ## 22. 推荐目录结构
 
-当前目录按通用 Core、可选 Model Provider 和平台 Port 分层。ESP-IDF/OpenVela Adapter
-已有 mock 测试，但尚未经真实网络/TLS 集成验证；下图不表示所有模块已经实现。
+目录按"必需性"和"是否认识平台"两个维度分层。一条规则即可读出全部归属：
+
+> `src/` 装每个构建都存在的 Kernel 机制；`providers/` 装可选的协议与格式实现（不认识
+> 平台）；`ports/` 装可选的平台适配（认识 SDK）。同一功能的通用部分与平台部分分居
+> `providers/` 与 `ports/`，ADR 0029 的两层加载器结构即按此落地。
 
 ```text
 cAgentV2/
-├── CMakeLists.txt
-├── docs/
-├── include/
-│   ├── agent.h
-│   └── agent/
-├── src/
-│   ├── core/
-│   ├── model/             # 通用 wrapper、绑定与分发
-│   ├── run/
-│   ├── session/
-│   ├── context/
-│   ├── tool/
-│   └── transport/         # 平台无关的 HTTP 契约转发
-├── providers/
-│   ├── mock/               # 测试 Provider，占位
-│   ├── openai/             # Chat Completions 非流式 Provider
-│   └── anthropic/          # 原生协议候选，尚不构建
-├── ports/
-│   ├── host/
-│   ├── openvela/
-│   ├── espidf/
-│   ├── rtthread/
-│   └── stm32/
-└── tests/
+├── include/agent/     Kernel 唯一公共入口；不随 Profile 变化
+├── src/               Kernel：每个构建都存在，无平台依赖
+│                      生命周期、workspace、session 事务、model wrapper、
+│                      skill registry（机制）、arena、cancel、error、event
+├── codecs/json/       可选：有界 JSON 读写器，被多个协议实现共用
+├── providers/         可选：协议与格式实现，不认识平台
+│   ├── model/openai      Chat Completions 非流式
+│   ├── model/mock        测试用脚本化 completion（占位）
+│   ├── storage/jsonl     Session 记录格式
+│   ├── storage/ram       易失后端
+│   └── skill/loader      Markdown + front-matter 加载（ADR 0029 通用层，未实现）
+├── ports/             可选：平台适配
+│   ├── posix/storage     Session 文件适配
+│   ├── posix/skills      Skill 目录枚举与定长读（ADR 0029 薄层，未实现）
+│   ├── espidf/           runtime、transport、storage
+│   └── openvela/         runtime、transport、storage
+├── tests/  docs/  examples/
+└── CMakeLists.txt
 ```
 
-当前通用构建目标为 `cagent_core`；Host CMake 可选构建 `cagent_provider_mock`
-和 `cagent_provider_openai` 占位目标，Anthropic 尚无目标。具体协议实现与 Provider
+两条归属判据，用于新增模块时判断落点：
+
+1. **`src/` 只收"每个构建都存在"的机制。**可选模块不进 `src/`，否则构建裁剪、代码
+   体积为零的承诺（如未注册加载器时代码体积为零）与 ABI 边界都会松动。Skill 加载器
+   是可选格式实现，因此归 `providers/`；`src/skill/` 只保留注册表机制，是加载器的
+   下游而非其实现位置。
+2. **认识的平台 API 决定 `providers/` 还是 `ports/`。**通用逻辑层不触碰平台 SDK、可在
+   Host 完整测试，归 `providers/`；枚举、定长读、路径与错误映射归 `ports/`。同一功能
+   的两层分居两地是设计结果，不是冗余，合并才是有问题的。
+
+Session 命名空间与 Skill 注册语义由各自领域组件维护。共享文件契约、预制平台
+实现及接入步骤以 [ADR 0031](adr/0031-prefabricated-platform-file-storage.md) 为准，
+用 JSONL Session 与 USER 文件有界读取验证；可选通用组件统一放在 `providers/`。
+
+ESP-IDF/OpenVela Adapter 已有 mock 测试，但尚未经真实网络/TLS 与文件系统掉电恢复的
+集成验证；上图不表示所有列出的模块已经实现。
+
+当前通用构建目标为 `cagent_core`；Host CMake 可选构建 `cagent_provider_mock` 和
+`cagent_provider_openai` 占位目标，Anthropic 尚无目标。具体协议实现与 Provider
 配置头以后在各自目录内完成；不能把空目标视为可用的云模型接入。
 
 ## 23. V1 迁移决策

@@ -60,6 +60,7 @@ initializer 保持现状语义，注册行为向后兼容。
 | INLINE 层溢出 | 维持 ADR 0010 语义：非 `required` 按优先级跳过，`required` 溢出失败。 |
 | 摘要层生成 | 由 Core 生成，条目为 `name + description`，并附指向读取 Tool 的固定引导语，保证跨产品的模型行为一致。`name` 即读取标识（注册期已保证唯一），不新增 id 字段。 |
 | 悬空组合 | Core 不校验"注册了 `ON_DEMAND` 却没有读取 Tool"——Core 无法可靠识别哪个注册 Tool 承担该职责。后果显式可诊断：模型调用不存在的 Tool 得到 `AGENT_ERROR_NOT_FOUND`。 |
+| 公共只读查询 | 为核心外读取 Tool 与官方加载器（ADR 0029）提供单一真相，杜绝影子注册表：按名取内容的 const 查询（签名随实现定稿）。语义：driver task、**ACTIVE 期间同样可读**——registry 在 ACTIVE 状态不可被变更（生命周期状态机保证），视图借用期至注销；非 ISR-safe。 |
 
 ## 与其他 ADR 的关系
 

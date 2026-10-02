@@ -114,7 +114,8 @@ Session 必须保留消息角色与 Tool 配对，Tool 必须保留结构化 sch
 1. Soul 是每个 Agent 固定一份，还是按用户或 Session 切换？这决定加载时机、
    缓存键与跨用户隔离规则。
 2. Soul 与 Skill 的 Markdown 是否需要元数据，以及具体目录和版本约定？
-   应在真实加载器设计时确定，不由 Core 预设。
+   应在真实加载器设计时确定，不由 Core 预设（加载器的交付裁决见
+   [ADR 0029](0029-official-skill-file-loader.md)，格式冻结仍待其触发条件）。
 3. Memory 需要只读检索，还是还要写入、更新、遗忘和掉电一致性？据此确定
    是否公开独立的 Memory ops。
 

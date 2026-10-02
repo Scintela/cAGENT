@@ -39,6 +39,9 @@
 | [0026 Session 文件 I/O 适配器](0026-session-file-io-adapters.md) | 共用 JSONL 后端，按需提供可选文件适配器；平台差异只做薄层 |
 | [0027 最小 Markdown Memory 布局](0027-minimal-markdown-memory-layout.md) | Soul、User、长期 Memory 和每日笔记四类文件的作用域、加载与更新边界 |
 | [0028 Skill 投影双模式](0028-skill-projection-modes.md) | 注册期以 enum 声明 INLINE 全文或 ON_DEMAND 摘要；摘要层优先保障，读取 Tool 留在核心外 |
+| [0029 官方可选 Skill 文件加载器](0029-official-skill-file-loader.md) | 可选包两层结构、三触发条件后实现；默认严格回滚、best_effort 显式选择；顺序/信任/查询前置齐备 |
+| [0030 可选共享文件 I/O 边界](0030-shared-file-io-boundary.md) | 共享物理 I/O 的早期评估；后续平台预制方案与迁移节奏见 ADR 0031 |
+| [0031 预制平台文件存储与读取](0031-prefabricated-platform-file-storage.md) | 提案：统一可选文件契约、ESP-IDF/OpenVela 预制实现、领域接入与分能力保证；用 JSONL Session 和 USER 读取验证 |
 
 新增 ADR 时：沿用四位递增编号与 `NNNN-kebab-case.md` 命名，并将条目追加到
 上表。
