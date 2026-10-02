@@ -85,8 +85,10 @@
 ### 当前接口缺口与分阶段落地
 
 目前 `agent_session_storage_ops_t.recent()` 只能按 Session ID 读取最近 N 个完整
-group，回调不提供稳定 turn ID 或前向游标；`memory.h` 还没有稳定操作。因此
-现有 API 可以做小窗口试验，却不足以可靠地增量扫描长历史并恢复提取进度。
+group，回调不提供稳定 turn ID 或前向游标。后续
+[ADR 0032](0032-memory-domain-management.md) 已补整文 Memory 读取、替换与
+遗忘契约，但没有来源索引与增量提取器。因此现有 API 可以做小窗口试验，
+仍不足以可靠地增量扫描长历史并恢复提取进度。
 
 1. 先用应用明确输入或 Tool 建立最小 Memory 写入、检索与删除闭环；保留原始
    Session，不修改 `agent_run()` 的成功语义。

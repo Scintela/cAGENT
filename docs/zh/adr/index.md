@@ -42,6 +42,7 @@
 | [0029 官方可选 Skill 文件加载器](0029-official-skill-file-loader.md) | 可选包两层结构、三触发条件后实现；默认严格回滚、best_effort 显式选择；顺序/信任/查询前置齐备 |
 | [0030 可选共享文件 I/O 边界](0030-shared-file-io-boundary.md) | 共享物理 I/O 的早期评估；后续平台预制方案与迁移节奏见 ADR 0031 |
 | [0031 预制平台文件存储与读取](0031-prefabricated-platform-file-storage.md) | 已实现可选字节文件契约、JSONL bridge、USER 有界读取与平台入口，删除旧平台入口；真机文件系统和掉电保证待验证 |
+| [0032 Memory 领域管理](0032-memory-domain-management.md) | 已实现独立 Memory ops、借用绑定与可选 Markdown 后端；有界快照、Soul 拒写及显式变更结果，Context 自动接入未完成 |
 
 新增 ADR 时：沿用四位递增编号与 `NNNN-kebab-case.md` 命名，并将条目追加到
 上表。

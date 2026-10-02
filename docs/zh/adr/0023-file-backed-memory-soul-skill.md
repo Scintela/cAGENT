@@ -105,9 +105,10 @@ Session 必须保留消息角色与 Tool 配对，Tool 必须保留结构化 sch
 - 文件系统只出现在应用、Port 或可选文件后端；Agent Core 与介质解耦。
 - 产品须分别预算 Soul/Skill 文件缓冲、Memory 检索状态、Session 后端和
   Core turn scratch；共用文件系统不等于共用内存或保留策略。
-- 当前 `memory.h` 没有稳定操作，Skill registry 与 Context Builder 尚未
-  实现完整流程。JSONL Session 后端可选构建，但它不实现 Markdown loader，
-  也不表示完整 `agent_run()` 投影链路已经完成。
+- `memory.h` 已引入独立领域 ops、借用绑定与整文读写，可选 Markdown 后端
+  已实现，见 [ADR 0032](0032-memory-domain-management.md)。Skill registry 与
+  Context Builder 尚未实现完整流程；JSONL 不承担 Markdown 加载，也不表示
+  完整 `agent_run()` 投影链路已经完成。
 
 ## 待裁决
 
@@ -116,8 +117,8 @@ Session 必须保留消息角色与 Tool 配对，Tool 必须保留结构化 sch
 2. Soul 与 Skill 的 Markdown 是否需要元数据，以及具体目录和版本约定？
    应在真实加载器设计时确定，不由 Core 预设（加载器的交付裁决见
    [ADR 0029](0029-official-skill-file-loader.md)，格式冻结仍待其触发条件）。
-3. Memory 需要只读检索，还是还要写入、更新、遗忘和掉电一致性？据此确定
-   是否公开独立的 Memory ops。
+3. 基础整文读取、替换与遗忘已由 ADR 0032 裁决；相关性检索、事实条目更新和
+   多文档一致性仍需后续真实需求，不因领域 ops 已存在就预建。
 
 ## 验证要求
 

@@ -41,5 +41,15 @@ for its record, durability, and recovery limits.
 `storage/files/` owns the optional byte-file contract and bounded helpers shared
 by file consumers. It has no Session or Markdown semantics. Platform backends
 remain under `ports/*/storage/`; JSONL attaches through its optional file-store
-bridge. See [File Store](storage/files/README.md). Future Skill/Memory loaders
-also belong under `providers/`, but are not implemented by this file layer.
+bridge. See [File Store](storage/files/README.md). Skill loaders also belong under
+`providers/`, but are not implemented by this file layer.
+
+## Memory Providers
+
+`src/memory/` owns the public Memory domain binding and lifecycle checks, not file
+formats. `memory/markdown/` is an optional whole-document provider over File Store:
+Soul is read-only through ordinary Memory operations; User, facts and dated notes
+can be read/replaced/forgotten with caller buffers and explicit mutation outcomes.
+It has no heap/cache, JSON dependency or automatic Context/ReAct integration.
+See [Markdown Memory](memory/markdown/README.md). Custom RAM/NVS implementations
+can implement `agent_memory_ops_t` without using File Store.

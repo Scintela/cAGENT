@@ -7,7 +7,8 @@ OpenVela、RT-Thread 等系统上复用同一套应用接口。项目采用平�
 
 > **当前仍处于基础实现阶段**：Core workspace、生命周期、Runtime/Transport 契约、
 > ESP-IDF/OpenVela 适配器、私有 JSON codec、OpenAI 非流式 Provider 与
-> Session RAM/JSONL Storage、共享 File Store 已有代码和 Host 测试；同步
+> Session RAM/JSONL Storage、共享 File Store、Memory 领域与可选 Markdown 后端
+> 已有代码和 Host 测试；同步
 > `agent_run()` 尚未实现 ReAct 流程。目前不能用它完成端到端 LLM 对话，
 > ESP-IDF/OpenVela 文件系统持久化仍需真实挂载、重启和掉电验收。
 
@@ -31,6 +32,9 @@ Public API (include/agent.h, include/agent/*.h)
   +-- Storage Providers          RAM/JSONL Session、共享字节文件契约，可选编译
   |     +-- File Store ops        USER/MEMORY 等普通文件读取，不等于领域管理
   |
+  +-- Memory Provider            文档分类与整文操作，不自动接入 Context
+  |     +-- File Store ops        复用平台字节 I/O，Core 只见 Memory ops
+  |
   +-- Platform Ports (ports/)     Runtime、HTTP/TLS 与文件 I/O 的平台实现
 ```
 
@@ -43,6 +47,7 @@ Model Provider 自行持有 Transport。
 Session 的现有接口与数据流见[开发日志](development/session.md)。
 文件存储见[实施记录](development/file-storage.md)和
 [核验日志](development/file-storage-review.md)。
+Memory 的接口、数据流和实施边界见[开发记录](development/memory.md)。
 
 ## 资源与配置
 
@@ -91,6 +96,8 @@ bash tests/ports/espidf/compile.sh
 bash tests/ports/openvela/compile.sh
 bash tests/session/compile.sh
 bash tests/session/jsonl_compile.sh
+bash tests/memory/compile.sh
+bash tests/providers/memory_markdown/compile.sh
 bash tests/providers/files/compile.sh
 bash tests/ports/posix/file_store_compile.sh
 bash tests/ports/posix/file_store_faults.sh

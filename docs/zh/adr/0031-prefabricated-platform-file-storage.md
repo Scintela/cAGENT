@@ -14,7 +14,7 @@
 解耦，ESP-IDF 与 OpenVela 的 storage 装配层绑定同一份 POSIX Session 文件
 实现，已有 Host 契约测试；目标文件系统兼容性与掉电保证仍待验证。该历史实现
 包含 Session ID 编码、文件过滤和批量清理，不能直接当作 Markdown 文件接口。
-当前 `memory.h` 没有稳定操作，Skill registry、Context 和官方加载器也尚未
+本 ADR 初始提出时 `memory.h` 没有稳定操作，Skill registry、Context 和官方加载器也尚未
 形成完整运行链路。
 
 ADR 0030 从代码复用角度讨论共享物理 I/O。本文进一步提出交付目标：预制
@@ -53,7 +53,9 @@ Application
 ```
 
 统一文件契约、JSONL 文件适配及 `USER.md` 有界读取辅助已实现。
-图中的 Memory 接入与 Skill loader 仍为目标能力，不表示已实现；不立即公开 Memory ops。
+本 ADR 的字节层实现不直接公开 Memory ops。后续独立契约与 Markdown 后端
+已在 [ADR 0032](0032-memory-domain-management.md) 实现；图中的自动 Context
+接入与 Skill loader 仍为目标能力。
 
 ### 各层责任
 
@@ -62,7 +64,7 @@ Application
 | Application | 挂载与卸载、分区、根目录、用户身份、读写授权、内存、保留与磨损策略 |
 | Core Session | 当前 turn 事务、Tool 调用/结果配对、完整历史的有界投影 |
 | JSONL Provider 与 Session 文件适配 | 记录格式、尾部修复、ID 到文件名映射、Session 统计和清理范围 |
-| 文件型 Memory 实现 | Soul/User 快照、Memory 条目选择、授权更新与缓存失效；具体领域接口另行定稿 |
+| 文件型 Memory 实现 | 文档分类、有界快照、整文替换与遗忘，基础接口见 ADR 0032；检索与 Context 接入后续裁决 |
 | Skill loader | 元数据解析、内容所有权、显式注册与失败回滚；遵守 ADR 0029 的完整加载器触发条件 |
 | Platform file Port | 文件访问、平台错误转换、资源管理、实际支持的隔离和同步机制 |
 
@@ -84,7 +86,7 @@ Session 保留策略。`clear_all/count` 继续按 Session 命名空间实现，
 | 文件信息与有界读取 | Session 回放、Soul/User/Memory、Skill；偏移、容量、实际读取字节与 EOF 的语义须明确 |
 | 有界目录枚举 | Skill 导入、每日笔记选择、Session 统计；名称借用期明确，领域组件负责过滤和稳定排序 |
 | 追加、截断、同步 | JSONL Session 提交和尾部恢复；消费者绑定时校验必要操作 |
-| 整文件替换 | 字节级能力已实现，使用 `published` 区分发布前与发布后错误；Memory 更新授权仍待领域实现 |
+| 整文件替换 | 使用 `published` 区分发布前与发布后错误；Memory 的 Soul 拒写与变更结果由 ADR 0032 实现，业务授权仍由应用负责 |
 | 删除 | 授权清理；文件选择范围由领域适配器或应用决定 |
 
 只读消费者只要求读取能力；目录枚举和各类写入按需提供，缺少必要操作时在
@@ -155,13 +157,13 @@ Session 批量清理不提供跨文件事务，失败时允许部分文件已删
 ```text
 include/agent/
   session.h                         现有 Core Session 契约
-  memory.h                          现有空边界，领域接口待定
+  memory.h                          独立领域契约，后续实现见 ADR 0032
 providers/storage/files/            可选文件契约与有界读取辅助
 providers/storage/jsonl/
   src/session_jsonl.c               现有格式、提交与回放
   src/file_store_bind.c             已实现：统一文件契约到现有 Session file ops 的适配
 providers/skill/loader/             候选：ADR 0029 通用加载层
-providers/memory/                   候选：形成领域需求后再确定子目录
+providers/memory/markdown/          后续已实现：整文读取、替换与遗忘
 ports/
   posix/storage/                    可复用物理字节 I/O，无 Session 专属入口
   espidf/storage/                   预制 ESP-IDF 文件入口与实际平台差异
@@ -184,8 +186,8 @@ C 配置头和 CMake 可以独立选择组件，Kconfig 作为平台集成入口
 3. 用文件实例配置 Session 文件适配与 JSONL Provider，绑定现有 Core Storage。
 4. 有界读取 `USER.md`，在应用管理的稳定缓冲中形成资料快照；待 Context 链路
    可用后作为用户资料贡献进入本轮投影。
-5. 后续按需求接入 Soul、Memory 和 Skill；保存经授权的更新，在 turn 边界刷新
-   快照。应用关闭消费者后归还资源并卸载文件系统。
+5. Soul/Memory 可通过 ADR 0032 的可选 Provider 保存经授权的更新；自动 Context
+   接入和 Skill 加载后续按需求实现。应用关闭消费者后归还资源并卸载文件系统。
 
 库不自动挂载、格式化、创建产品分区或扫描启用 Skill。应用仍负责业务内容和
 授权；官方文件组件承担可复用的机械性文件访问工作。
@@ -200,8 +202,8 @@ C 配置头和 CMake 可以独立选择组件，Kconfig 作为平台集成入口
    容量失败、文件变化、借用期和资源清理。
 4. 提供 ESP-IDF、OpenVela 的官方文件入口和可选构建；分别在目标文件系统验证
    读、追加、截断、同步、枚举及重启恢复。Host 测试不代替真机结论。
-5. 字节层已加入整文件替换；根据真实更新需求加入 Memory 缓存失效等能力，再裁决 Memory
-   公共操作；不把普通文件读取辅助当作完整 Memory 管理。
+5. 字节层整文件替换与独立 Memory 基础操作已实现；Memory 后端无文本缓存，
+   后续按需求接入 Context 与检索，不把普通文件读取辅助当作完整 Memory 管理。
 
 验收还需覆盖短读写和失败注入、目录枚举容量、Session 清理不触及 Markdown
 文件、只读能力拒绝写入、不同用户内容隔离、句柄泄漏以及声明支持的掉电恢复。
@@ -243,5 +245,5 @@ C 配置头和 CMake 可以独立选择组件，Kconfig 作为平台集成入口
 实现和使用示例见 [文件存储开发记录](../development/file-storage.md)。Host 上已验证
 有界 USER 读取、Session 回放与残尾修复、清理隔离和系统调用失败路径；OpenVela
 共享文件源也使用本机已有 NuttX 头与 RISC-V 工具链完成编译检查。平台文件系统
-清单、完整原生固件链接及实际重启/掉电结果仍需验证。Memory、Skill 文件加载与
-Context 集成不在本次字节文件层的完成范围内。
+清单、完整原生固件链接及实际重启/掉电结果仍需验证。Memory 领域管理另由
+ADR 0032 实现，不计入本次字节文件层；Skill 文件加载与 Context 集成仍未完成。

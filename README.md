@@ -7,9 +7,11 @@ OpenVela、RT-Thread 等系统上复用同一套应用接口。项目采用平�
 **当前仍处于基础实现阶段**：Core workspace、生命周期、Runtime/Transport 契约、
 ESP-IDF/OpenVela 适配器、私有 JSON codec 和 OpenAI 非流式 Provider 已有代码与
 Host 测试；Session 已有格式无关的 Storage 契约、可选 RAM/JSONL 后端和共享文件读写，
+Memory 已有独立领域绑定与可选 Markdown 整文后端，
 但同步 `agent_run()` 的 ReAct 流程尚未实现，Mock Provider 仍是占位。目前不能通过 Core 完成
 端到端 LLM 对话。
 Session 的 API、内存与数据流见[开发日志](docs/zh/development/session.md)。
+Memory 的 API、借用寿命与写入结果见[开发日志](docs/zh/development/memory.md)。
 
 ## 架构
 
@@ -31,6 +33,9 @@ Public API (include/agent.h, include/agent/*.h)
   +-- File Providers (providers/storage/)  RAM、JSONL、字节文件契约与有界读取
   |     +-- Platform file ops      USER/Memory/Skill 文件访问的共用基础
   |
+  +-- Memory Provider            Soul/User/Memory/笔记分类与整文操作，可选编译
+  |     +-- File Store ops        复用平台 I/O，不自动进入 Context
+  |
   +-- Platform Ports (ports/)     Runtime、HTTP/TLS 与文件 I/O 适配
 ```
 
@@ -46,7 +51,7 @@ Model Provider 自行持有 Transport。当前的 JSON codec 使用内嵌 jsmn �
 |------|------|
 | [`include/`](include/) | 公共 C API 与构建容量配置。 |
 | [`src/`](src/) | 平台无关的 Core、Model wrapper、Runtime/Transport 转发及各领域模块。部分模块尚未实现。 |
-| [`providers/`](providers/) | 可选 Model、RAM/JSONL Session Storage、共享字节文件契约和有界读取辅助；Mock/Anthropic 尚未实现。 |
+| [`providers/`](providers/) | 可选 Model、RAM/JSONL Session Storage、Markdown Memory、共享字节文件契约和有界读取辅助；Mock/Anthropic 尚未实现。 |
 | [`codecs/json/`](codecs/json/) | 可选的有界 JSON reader/writer；上游 jsmn 位于 `vendor/jsmn/`。 |
 | [`ports/`](ports/) | 可选的平台 Runtime、HTTP/TLS 和 Session 文件 I/O Adapter；ESP-IDF/OpenVela 已有实现，Host/RT-Thread/STM32 仍需完善。 |
 | [`tests/`](tests/) | 公共头、Core、JSON、Transport 与 Port 的 Host 契约测试。 |
@@ -69,6 +74,9 @@ Model Provider 自行持有 Transport。当前的 JSON codec 使用内嵌 jsmn �
 [内存域](docs/zh/adr/0014-memory-domains.md) 与
 [JSON codec](docs/zh/adr/0022-bounded-json-codec.md)。
 文件读取、替换与 Session 接入见 [文件存储开发记录](docs/zh/development/file-storage.md)。
+Markdown Memory 可通过 `AGENT_BUILD_MARKDOWN_MEMORY=ON`（依赖
+`AGENT_BUILD_FILE_STORE=ON`）或 ESP-IDF 的 `CONFIG_AGENT_MEMORY_MARKDOWN` 选择，
+复用既有平台文件 Store；见[后端说明](providers/memory/markdown/README.md)。
 
 ## 在不同系统和平台移植
 
@@ -154,6 +162,8 @@ bash tests/ports/openvela/compile.sh
 bash tests/providers/openai/compile.sh
 bash tests/session/compile.sh
 bash tests/session/jsonl_compile.sh
+bash tests/memory/compile.sh
+bash tests/providers/memory_markdown/compile.sh
 bash tests/providers/files/compile.sh
 bash tests/ports/posix/file_store_compile.sh
 bash tests/ports/posix/file_store_faults.sh

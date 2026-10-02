@@ -934,6 +934,7 @@ cAgentV2/include/
 | 头文件 | 所属组件与职责 |
 |---|---|
 | `agent_file_store.h` | `providers/storage/files/include/`；字节级文件 ops、有界读取辅助 |
+| `agent_markdown_memory.h` | `providers/memory/markdown/include/`；可选文档 Memory 配置与 Store 映射 |
 | `agent_session_jsonl.h` | `providers/storage/jsonl/include/`；JSONL Session Provider 与领域文件回调 |
 | `agent_session_jsonl_files.h` | `providers/storage/jsonl/include/`；Session ID 与通用 File Store 绑定 |
 | `agent_session_ram.h` | `providers/storage/ram/include/`；易失 Session Storage |
@@ -941,8 +942,9 @@ cAgentV2/include/
 | `agent_espidf_file_store.h` | `ports/espidf/storage/include/`；ESP-IDF 文件 Port 装配 |
 | `agent_openvela_file_store.h` | `ports/openvela/storage/include/`；OpenVela 文件 Port 装配 |
 
-厂商 Model 和 Runtime/Transport Port 同样拥有各自可选公共头。完整 Memory 管理与
-Skill 文件加载器仍按各自 ADR 推进，不能从文件公共头的存在推断领域功能已实现。
+厂商 Model 和 Runtime/Transport Port 同样拥有各自可选公共头。基础 Memory 领域
+绑定与整文读写已实现，相关性检索、Context 集成与 Skill 文件加载仍未完成；
+具体边界见 [ADR 0032](adr/0032-memory-domain-management.md)。
 
 规则：
 
@@ -969,7 +971,7 @@ cAgentV2/
 ├── include/agent/     Kernel 唯一公共入口；不随 Profile 变化
 ├── src/               Kernel：每个构建都存在，无平台依赖
 │                      生命周期、workspace、session 事务、model wrapper、
-│                      skill registry（机制）、arena、cancel、error、event
+│                      Memory 绑定与有界投影、skill registry（机制）、arena、cancel、error、event
 ├── codecs/json/       可选：有界 JSON 读写器，被多个协议实现共用
 ├── providers/         可选：协议与格式实现，不认识平台
 │   ├── model/openai      Chat Completions 非流式
@@ -977,6 +979,7 @@ cAgentV2/
 │   ├── storage/jsonl     Session 记录格式
 │   ├── storage/ram       易失后端
 │   ├── storage/files     字节文件契约、有界读取辅助；不解释领域格式
+│   ├── memory/markdown   文档分类与整文 Memory 读写，不自动接入 Context
 │   └── skill/loader      Markdown + front-matter 加载（ADR 0029 通用层，未实现）
 ├── ports/             可选：平台适配
 │   ├── posix/storage     共享字节文件 I/O；Session 命名空间由 Provider 维护
@@ -999,15 +1002,15 @@ cAgentV2/
 Session 命名空间与 Skill 注册语义由各自领域组件维护。共享文件契约、预制平台
 实现及接入步骤以 [ADR 0031](adr/0031-prefabricated-platform-file-storage.md) 为准，
 用 JSONL Session 与 USER 文件有界读取验证；可选通用组件统一放在 `providers/`。
-现有文件 Port 可以提供读取和枚举，不再为尚未实现的 Skill/Memory 各预建一份
+现有文件 Port 可以提供读取和枚举，不再为 Skill/Memory 各预建一份
 物理 I/O 目录；领域解析与注册逻辑仍由各自可选组件承担。
 
 ESP-IDF/OpenVela Adapter 已有 mock 测试，但尚未经真实网络/TLS 与文件系统掉电恢复的
 集成验证；上图不表示所有列出的模块已经实现。
 
-当前通用构建目标为 `cagent_core`；Host CMake 可选构建 `cagent_provider_mock` 和
-`cagent_provider_openai` 占位目标，Anthropic 尚无目标。具体协议实现与 Provider
-配置头以后在各自目录内完成；不能把空目标视为可用的云模型接入。
+当前通用构建目标为 `cagent_core`；OpenAI 非流式 Provider 已实现，Mock 仍为
+占位，Anthropic 尚无目标。Memory 可选目标为 `cagent::memory_markdown`，
+依赖共享 File Store，不依赖 JSON/JSONL。目标可链接不代表 Core ReAct 已完成。
 
 ## 23. V1 迁移决策
 

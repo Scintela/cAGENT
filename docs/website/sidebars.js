@@ -15,6 +15,7 @@ const sidebars = {
       ],
     },
     { type: 'doc', id: 'api/public-api', label: 'API 参考' },
+    { type: 'doc', id: 'development/memory', label: 'Memory 开发记录' },
     {
       type: 'category',
       label: '设计决策 (ADR)',
@@ -37,6 +38,7 @@ const sidebars = {
         { type: 'doc', id: 'adr/0020-synchronous-run-mvp', label: '0020 同步运行 MVP' },
         { type: 'doc', id: 'adr/0021-platform-cjson-reuse', label: '0021 平台 cJSON 复用' },
         { type: 'doc', id: 'adr/0022-bounded-json-codec', label: '0022 有界 JSON codec' },
+        { type: 'doc', id: 'adr/0032-memory-domain-management', label: '0032 Memory 领域管理' },
       ],
     },
   ],

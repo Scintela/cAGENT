@@ -4,6 +4,8 @@
 > 本文定义建议的公开范围、行为和所有权，不表示这些接口已实现或 ABI 已稳定。
 > `include/` 已补齐首批公共声明；部分 Core/Port 代码可运行，但 `agent_run()` 执行链尚未实现。
 > 下文保留设计评审语境，最新声明快照见 §11.1；声明不等于已接受或通过运行验证。
+> Memory 后续已实现独立的整文领域契约与 Markdown 后端，实际 API 和边界见
+> [ADR 0032](../adr/0032-memory-domain-management.md)与[开发记录](../development/memory.md)。
 
 ## 1. 目标与评审依据
 
@@ -57,9 +59,10 @@ MCP、远程 Node、业务设备 Tool Pack 继续作为独立 addon。
 | `agent/event.h`、`session.h` | 观测与有界会话管理 |
 | `agent/model.h`、`runtime.h`、`transport.h` | 能力绑定与扩展接口；按需包含 |
 | `agent/context.h`、`skill.h` | 可选上下文贡献；文件 loader 在外围 |
+| `agent/memory.h` | 独立领域 ops、借用绑定与整文读写；按需包含，不自动注入 Context |
 | `agent/model_mock.h`、`model_openai.h`、`transport_http.h` | 具体 Provider，独立构建与包含 |
 | `agent/runtime_<platform>.h` | 平台 Runtime 工厂；TLS 配置属于 Transport 头 |
-| `agent/plugin.h`、`storage.h`、`storage_jsonl.h`、`memory.h` | 延后稳定，见 §10；最小应用不依赖 |
+| `agent/plugin.h`、`storage.h`、`storage_jsonl.h` | 历史规划，见 §10；实际可选文件公共头见总体架构清单 |
 
 ### 2.1 公共值类型与所有权
 
@@ -359,7 +362,7 @@ ACTIVE 中的目录变更。
 | Plugin descriptor/scope/依赖管理 | 保留扩展边界；能力包出现重复生命周期需求后稳定 API，不作为最小应用必经路径 |
 | Storage set/open/append/checkpoint/sync | 可选后端；先明确恢复读取/遍历、版本、损坏尾部、错误传播与 Flash 写入策略 |
 | 无参数 `storage_required_buffer_size()` | 不保留固定需求假设；缓冲需求由后端及配置决定 |
-| `memory_snapshot/restore/free`、Memory ops | V1 未实现；先与 Session 持久化、长期检索划清边界 |
+| `memory_snapshot/restore/free`、长期检索 | 不公开旧草案快照管理接口；整文 Memory ops 已由 ADR 0032 实现，检索仍待需求 |
 | Policy 注册链 | 多个独立能力包需贡献策略时再加，定义 DENY 优先、确认合并及移除规则 |
 | `agent_stop/reset`、ISR cancel | 按实际需求和状态契约评审，不靠名字预留能力 |
 | `agent_turn_begin/step/resume/end` | 需跨回调持有状态、确认 nonce 和可恢复资源；MVP 不公开，见 ADR 0020 |
