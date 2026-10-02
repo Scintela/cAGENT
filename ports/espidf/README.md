@@ -6,7 +6,7 @@ subpackage is part of the Core build.
 
 Each subpackage owns its source and include directory. Its public headers include
 `runtime/include/agent_espidf_runtime.h`, `transport/include/agent_espidf_transport.h`,
-and `storage/include/agent_espidf_file_store.h` (legacy Session binding remains available).
+and `storage/include/agent_espidf_file_store.h`.
 They are validated with a C99 mock SDK; an
 ESP-IDF hardware integration target is still required before claiming a supported SDK release.
 Storage additionally needs target-filesystem durability testing; Host tests alone cannot

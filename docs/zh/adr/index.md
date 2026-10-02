@@ -36,12 +36,12 @@
 | [0023 文件型 Memory、Soul 与 Skill](0023-file-backed-memory-soul-skill.md) | Markdown 来源的归属、显式注册、文件 I/O 解耦与有界 Context 投影提案 |
 | [0024 Session 到 Memory 的提取](0024-session-to-memory-extraction.md) | 保留原始 Session，以规则、Tool 或可选后台任务生成有来源的长期记忆 |
 | [0025 内置 Tool 边界](0025-builtin-tools-boundary.md) | 默认零内置 Tool；按需提供受限的 Skill/Memory 工具，摘要归内部任务 |
-| [0026 Session 文件 I/O 适配器](0026-session-file-io-adapters.md) | 共用 JSONL 后端，按需提供可选文件适配器；平台差异只做薄层 |
+| [0026 Session 文件 I/O 适配器](0026-session-file-io-adapters.md) | 早期 Session 专属适配方案，已被 ADR 0031 的共享字节文件方案取代 |
 | [0027 最小 Markdown Memory 布局](0027-minimal-markdown-memory-layout.md) | Soul、User、长期 Memory 和每日笔记四类文件的作用域、加载与更新边界 |
 | [0028 Skill 投影双模式](0028-skill-projection-modes.md) | 注册期以 enum 声明 INLINE 全文或 ON_DEMAND 摘要；摘要层优先保障，读取 Tool 留在核心外 |
 | [0029 官方可选 Skill 文件加载器](0029-official-skill-file-loader.md) | 可选包两层结构、三触发条件后实现；默认严格回滚、best_effort 显式选择；顺序/信任/查询前置齐备 |
 | [0030 可选共享文件 I/O 边界](0030-shared-file-io-boundary.md) | 共享物理 I/O 的早期评估；后续平台预制方案与迁移节奏见 ADR 0031 |
-| [0031 预制平台文件存储与读取](0031-prefabricated-platform-file-storage.md) | 已实现可选字节文件契约、JSONL bridge、USER 有界读取与平台入口；真机文件系统和掉电保证待验证 |
+| [0031 预制平台文件存储与读取](0031-prefabricated-platform-file-storage.md) | 已实现可选字节文件契约、JSONL bridge、USER 有界读取与平台入口，删除旧平台入口；真机文件系统和掉电保证待验证 |
 
 新增 ADR 时：沿用四位递增编号与 `NNNN-kebab-case.md` 命名，并将条目追加到
 上表。

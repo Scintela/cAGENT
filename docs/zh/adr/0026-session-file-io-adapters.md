@@ -1,10 +1,15 @@
 # ADR 0026: Session 文件 I/O 预制适配器
 
-- 状态：提案
+- 状态：已被 ADR 0031 的共享文件方案取代（保留早期设计记录）
 - 日期：2026-10-01
 - 关联：[ADR 0016](0016-session-history-storage.md)、[ADR 0017](0017-runtime-portability.md)、[ADR 0023](0023-file-backed-memory-soul-skill.md)
 
 ## 背景
+
+本文描述早期 Session 专属平台适配方案，不再作为当前接入指南。现有平台入口
+已统一为字节文件 Store；Session 命名、统计和清理由 Provider 文件适配承担，
+旧平台 API 与构建开关已删除。当前使用方式见
+[ADR 0031](0031-prefabricated-platform-file-storage.md)。
 
 可选的 JSONL Session Storage Provider 已通过
 `agent_session_jsonl_file_ops_t` 与文件系统解耦。它要求应用提供

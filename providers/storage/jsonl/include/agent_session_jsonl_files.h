@@ -18,7 +18,7 @@ typedef struct {
     size_t name_capacity;
 } agent_session_jsonl_files_t;
 
-/* Bind all eight legacy file ops into config; no file or JSONL buffer is allocated. */
+/* Bind all eight Session file ops into config; no file or JSONL buffer is allocated. */
 agent_error_t agent_session_jsonl_files_init(agent_session_jsonl_files_t* files,
                                             const agent_file_store_t* store,
                                             char* name_buffer, size_t name_capacity,

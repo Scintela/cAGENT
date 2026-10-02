@@ -2,7 +2,7 @@
 
 ## Shared byte-file backend
 
-`agent_posix_file_store.h` is the preferred entry for shared file access, with
+`agent_posix_file_store.h` is the entry for shared file access, with
 no JSONL dependency. It implements `agent_file_store_t` over one existing,
 trusted absolute directory. It does not mount, format or create directories.
 
@@ -57,42 +57,26 @@ Host build: `AGENT_BUILD_FILE_STORE=ON` and `AGENT_BUILD_POSIX_FILE_STORE=ON`,
 then link `cagent::posix_file_store`. Core-only and RAM Session builds do not
 require these components. See [file contracts](../../../providers/storage/files/README.md).
 
-## Legacy Session-only entry
+## JSONL Session binding
 
-This optional adapter implements `agent_session_jsonl_file_ops_t` for an
-application-owned, already mounted directory. The JSONL provider still owns
-record encoding and tail recovery; Core remains filesystem-independent.
+Session naming/count/clear belong to the Provider's
+`agent_session_jsonl_files_t`, not this Port. Initialize a writable store for
+the chosen Session root, then bind it with independent filename scratch:
 
 ```c
-agent_posix_session_files_t files;
-char path[256];
-agent_session_jsonl_config_t config = {0};
+#include <agent_session_jsonl_files.h>
 
-/* The application provides an existing directory and all JSONL buffers. */
-agent_posix_session_files_init(&files, "/data/sessions", path, sizeof(path));
-config.files = agent_posix_session_file_ops();
-config.file_context = &files;
+agent_session_jsonl_files_t files;
+agent_session_jsonl_config_t config = {0};
+char names[160];
+/* Fill the existing JSONL buffers and keep all state/scratch alive while bound. */
+agent_error_t status = agent_session_jsonl_files_init(
+    &files, &store, names, sizeof(names), &config);
 ```
 
-The directory must be an existing absolute path. Its string, `files`, and
-`path` remain alive while JSONL is bound.
-One instance is synchronous and not thread-safe. The application mounts and
-owns the filesystem, chooses a private directory, and handles capacity,
-retention, encryption, and unmounting. Session IDs are hex-encoded as
-`session-<hex>.jsonl`; `count` and `clear_all` act only on matching names.
-The directory must not be writable by an untrusted party: encoding names does
-not defend against symlink substitution or concurrent replacement.
-
-The adapter needs working `open`, `read`, `write`, `lseek`, `ftruncate`,
-`fsync`, `stat`, `opendir`, `readdir`, and `unlink`. It returns errors rather
-than pretending an unsupported `fsync` succeeded. A successful `fsync` call
-is not, by itself, a verified power-loss guarantee for every filesystem.
-`clear_all` can partially remove files before reporting an I/O error.
-
-On Host, build with `AGENT_BUILD_JSON_CODEC=ON`,
-`AGENT_BUILD_SESSION_JSONL=ON`, and `AGENT_BUILD_POSIX_SESSION_FILES=ON`,
-then link `cagent::posix_session_files`. ESP-IDF may select
-`CONFIG_AGENT_SESSION_POSIX_FILES` with `CONFIG_AGENT_SESSION_JSONL`.
-NuttX/RT-Thread applications can compile this source if their configured
-filesystem supplies the required calls. Hardware durability and filesystem
-compatibility have not yet been validated by the Host contract tests.
+Enable `AGENT_BUILD_FILE_STORE`, `AGENT_BUILD_POSIX_FILE_STORE`,
+`AGENT_BUILD_JSON_CODEC` and `AGENT_BUILD_SESSION_JSONL`; link
+`cagent::posix_file_store` and `cagent::session_jsonl_files`. The JSONL Provider
+still owns records and tail repair; the bridge owns `session-<hex>.jsonl` names
+and namespace-specific cleanup. No Session-only Port API or compatibility
+wrapper remains. Existing filenames and JSONL records are unchanged.

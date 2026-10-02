@@ -25,12 +25,4 @@ config AGENT_PORT_OPENVELA_FILE_STORE
       independently selectable package has no JSONL or JSON dependency.
       Validate filesystem support and durability on the target device.
 
-config AGENT_PORT_OPENVELA_STORAGE
-    bool "Build OpenVela JSONL Session file binding"
-    depends on AGENT_SESSION_JSONL
-    default n
-    help
-      Bind JSONL file operations to an application-mounted NuttX filesystem.
-      This option also compiles the shared POSIX file implementation.
-
 endmenu

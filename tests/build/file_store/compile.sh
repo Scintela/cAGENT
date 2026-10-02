@@ -25,10 +25,6 @@ for mode in posix idf openvela; do
       count="$(rg -c '"file": ".*'"$source"'"' "$commands")"
       test "$count" = 1
     done
-    if [[ "$variant" == on ]]; then
-      count="$(rg -c '"file": ".*/ports/posix/storage/src/session_files.c"' "$commands")"
-      test "$count" = 1
-    fi
     printf 'PASS: %s file-store assembly (%s)\n' "$mode" "$variant"
   done
 done

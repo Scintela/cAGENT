@@ -97,4 +97,7 @@ bash tests/build/file_store/compile.sh
 Host 代替 SDK 构建入口，分别验证纯文件组合、JSONL 组合和公共源码不重复编译。
 
 Host 契约验证不等于 ESP-IDF/OpenVela 真机文件系统兼容性、重启或掉电验证。
-旧 Session 文件入口保持兼容；新使用方式推荐统一文件接口及 JSONL bridge。
+快速开发阶段移除旧 Session 平台入口及其构建开关，不保留兼容别名；统一使用
+文件接口及 JSONL bridge。Session 文件名和记录格式不变。原有边界用例迁移到
+新链路测试，包括特殊 ID、空参数、路径/名称容量、多文件清理及 Markdown 隔离。
+`agent_session_jsonl_file_ops_t` 继续作为领域契约支持应用直接注入回调。

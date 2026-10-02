@@ -10,9 +10,9 @@
 每日笔记和 Skill 文件。希望应用配置平台、目录和缓冲后，就能使用官方文件
 适配器，减少每个产品重复编写目录遍历、短读写处理、错误映射与生命周期代码。
 
-当前 JSONL Session Provider 已通过 `agent_session_jsonl_file_ops_t` 与文件系统
-解耦。ESP-IDF 与 OpenVela 的 storage 装配层绑定同一份 POSIX Session 文件
-实现，已有 Host 契约测试；目标文件系统兼容性与掉电保证仍待验证。该实现
+本文提出时，JSONL Session Provider 已通过 `agent_session_jsonl_file_ops_t` 与文件系统
+解耦，ESP-IDF 与 OpenVela 的 storage 装配层绑定同一份 POSIX Session 文件
+实现，已有 Host 契约测试；目标文件系统兼容性与掉电保证仍待验证。该历史实现
 包含 Session ID 编码、文件过滤和批量清理，不能直接当作 Markdown 文件接口。
 当前 `memory.h` 没有稳定操作，Skill registry、Context 和官方加载器也尚未
 形成完整运行链路。
@@ -159,7 +159,7 @@ providers/storage/jsonl/
 providers/skill/loader/             候选：ADR 0029 通用加载层
 providers/memory/                   候选：形成领域需求后再确定子目录
 ports/
-  posix/storage/                    可复用物理 I/O；迁移期保留原 Session 入口
+  posix/storage/                    可复用物理字节 I/O，无 Session 专属入口
   espidf/storage/                   预制 ESP-IDF 文件入口与实际平台差异
   openvela/storage/                 预制 OpenVela 文件入口与实际平台差异
 ```
@@ -191,7 +191,7 @@ C 配置头和 CMake 可以独立选择组件，Kconfig 作为平台集成入口
 1. 在 Host 上定稿最小读取及 JSONL 所需操作的生命周期、错误和寻址契约，
    同时交付单文件有界读取辅助。完整 Skill loader 的触发条件不变。
 2. 通过 Session 文件适配复用新契约，保留既有 `agent_session_jsonl_file_ops_t`
-   的使用方式、记录格式、尾部修复与命名空间测试；不直接重命名旧类型。
+   领域契约、记录格式、尾部修复与命名空间测试；删除被统一文件链路替代的平台入口。
 3. 以 JSONL Session 和 `USER.md` 读取作为两条实际消费者链路，验证名称处理、
    容量失败、文件变化、借用期和资源清理。
 4. 提供 ESP-IDF、OpenVela 的官方文件入口和可选构建；分别在目标文件系统验证
@@ -230,7 +230,10 @@ C 配置头和 CMake 可以独立选择组件，Kconfig 作为平台集成入口
 - Host/OpenVela profile 使用 lstat 并拒绝叶子符号链接。ESP-IDF VFS profile 使用
   stat，限定为不提供符号链接的文件系统。全部 profile 要求根和祖先目录可信且
   稳定，不承诺抵御不可信并发目录替换；更强隔离需要另一个后端。
-- 旧 Session 文件入口保留兼容。新入口不依赖 JSON/JSONL；JSONL 与文件层同时
+- 快速开发阶段删除旧 Session 平台入口及其构建开关，不保留兼容包装或别名；
+  统一由文件 Store 和 Provider 内的 Session 文件适配接入。领域级
+  `agent_session_jsonl_file_ops_t` 继续保留，不因平台入口删除而改变记录格式。
+  文件入口不依赖 JSON/JSONL；JSONL 与文件层同时
   构建时提供独立 bridge，未选择时不增加 Core 依赖。
 
 实现和使用示例见 [文件存储开发记录](../development/file-storage.md)。Host 上已验证

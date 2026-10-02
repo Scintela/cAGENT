@@ -8,7 +8,7 @@ Each package may provide either or both of these independent adapters:
 - Runtime: populates `agent_runtime_t` with a monotonic clock and optional short cancel sync or log callback.
 - Transport: implements `agent_transport_ops_t` using the platform HTTP/TLS stack.
 - Storage file adapter: implements byte-file ops over an application-mounted root;
-  JSONL namespace handling stays in its Provider bridge. Legacy Session entries remain available.
+  JSONL namespace handling stays in its Provider bridge; there are no Session-only Port entries.
 
 Port state, SDK headers, Kconfig/CMake metadata, network buffers, TLS state, and connection pools
 remain inside the selected package. They never enter `src/` or `agent_workspace_t`.
@@ -20,7 +20,7 @@ ports/<platform>/
   README.md
   runtime/                        # Optional Runtime subpackage.
   transport/                      # Optional HTTP/TLS Transport subpackage.
-  storage/                        # Optional byte-file backend and legacy Session binding.
+  storage/                        # Optional byte-file backend.
 ```
 
 `ports/posix/storage/` is a shared, opt-in implementation for compatible

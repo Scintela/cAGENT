@@ -1,13 +1,14 @@
 # ADR 0030: 可选共享文件 I/O 的边界
 
-- 状态：提案（不变更现有公共接口，暂不实施迁移）
+- 状态：已被 ADR 0031 的共享文件方案取代（保留早期评估记录）
 - 日期：2026-10-02
 - 关联：[ADR 0023](0023-file-backed-memory-soul-skill.md)、[ADR 0026](0026-session-file-io-adapters.md)、[ADR 0027](0027-minimal-markdown-memory-layout.md)、[ADR 0029](0029-official-skill-file-loader.md)
 
 后续方案见 [ADR 0031: 预制平台文件存储与读取](0031-prefabricated-platform-file-storage.md)。
 本文保留共享 I/O 的早期评估；ADR 0031 以 JSONL Session 与 `USER.md` 有界读取
 验证统一文件契约，并调整下文关于安全相对打开、目录同步和迁移触发的建议。
-两份文档均未冻结新的 C API。
+旧 Session 平台入口现已删除，当前使用统一文件 Store 与 JSONL bridge；下文
+“现状”是提出本文时的历史背景，不是当前接入指南。公共 ABI 尚未冻结。
 
 ## 背景与现状
 
@@ -25,7 +26,7 @@ ID 寻址、文件名映射以及 `clear_all/count` 的作用范围都具有 Ses
 `MEMORY.md`、每日笔记和 Skill 目录。
 
 **共享已经发生，只是发生在平台维度上。**ESP-IDF 与 OpenVela 两个装配层都
-直接绑定 `agent_posix_session_file_ops()`，与 Host 共用同一份实现；两者的
+当时直接绑定 Session 专属 POSIX file ops，与 Host 共用同一份实现；两者的
 README 也已各自声明 `fsync` 成功不等于掉电持久。因此本文要裁决的不是
 "要不要抽象"，而是：
 

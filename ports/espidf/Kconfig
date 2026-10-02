@@ -23,12 +23,4 @@ config AGENT_PORT_ESPIDF_FILE_STORE
       Supports bounded text loading and optional JSONL binding. No mount or
       format operations are performed. Validate filesystem calls on target.
 
-config AGENT_PORT_ESPIDF_STORAGE
-    bool "Build ESP-IDF JSONL Session file binding"
-    depends on AGENT_SESSION_JSONL && AGENT_SESSION_POSIX_FILES
-    default n
-    help
-      Bind JSONL file operations to an application-mounted ESP-IDF VFS
-      directory. The library does not mount or format the filesystem.
-
 endmenu

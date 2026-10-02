@@ -2,7 +2,7 @@
 # SPDX-FileCopyrightText: 2026 tanglinjie
 
 if(CONFIG_AGENT_PORT_OPENVELA_RUNTIME OR CONFIG_AGENT_PORT_OPENVELA_TRANSPORT OR
-   CONFIG_AGENT_PORT_OPENVELA_STORAGE OR CONFIG_AGENT_PORT_OPENVELA_FILE_STORE)
+   CONFIG_AGENT_PORT_OPENVELA_FILE_STORE)
     if(NOT COMMAND nuttx_add_library)
         message(FATAL_ERROR "OpenVela Port must be built in a NuttX application build")
     endif()
@@ -37,29 +37,6 @@ if(CONFIG_AGENT_PORT_OPENVELA_FILE_STORE)
         ${CMAKE_CURRENT_LIST_DIR}/storage/include)
     target_link_libraries(cagent_openvela_file_store PUBLIC cagent_posix_file_store)
     target_compile_features(cagent_openvela_file_store PUBLIC c_std_99)
-endif()
-
-if(CONFIG_AGENT_PORT_OPENVELA_STORAGE)
-    if(NOT CONFIG_AGENT_SESSION_JSONL)
-        message(FATAL_ERROR "OpenVela Storage requires CONFIG_AGENT_SESSION_JSONL")
-    endif()
-
-    if(NOT TARGET cagent_posix_session_files)
-        nuttx_add_library(cagent_posix_session_files STATIC)
-        target_sources(cagent_posix_session_files PRIVATE
-            ${CMAKE_CURRENT_LIST_DIR}/../posix/storage/src/session_files.c)
-        target_include_directories(cagent_posix_session_files PUBLIC
-            ${CMAKE_CURRENT_LIST_DIR}/../posix/storage/include
-            ${CMAKE_CURRENT_LIST_DIR}/../../providers/storage/jsonl/include
-            ${CMAKE_CURRENT_LIST_DIR}/../../include)
-        target_compile_features(cagent_posix_session_files PUBLIC c_std_99)
-    endif()
-    nuttx_add_library(cagent_openvela_storage STATIC)
-    target_sources(cagent_openvela_storage PRIVATE storage/src/storage.c)
-    target_include_directories(cagent_openvela_storage PUBLIC
-        ${CMAKE_CURRENT_LIST_DIR}/storage/include)
-    target_link_libraries(cagent_openvela_storage PUBLIC cagent_posix_session_files)
-    target_compile_features(cagent_openvela_storage PUBLIC c_std_99)
 endif()
 
 if(CONFIG_AGENT_PORT_OPENVELA_RUNTIME)

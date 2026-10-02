@@ -14,6 +14,9 @@
 #else
 #error Select the platform binding to test
 #endif
+#ifdef TEST_JSONL
+#include <agent_session_jsonl_files.h>
+#endif
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
@@ -30,12 +33,32 @@ int main(void)
     bool published;
     assert(mkdtemp(root));
     assert(init_store(NULL, &config, &store) == AGENT_ERROR_INVALID);
+    assert(init_store(&state, NULL, &store) == AGENT_ERROR_INVALID);
+    assert(init_store(&state, &config, NULL) == AGENT_ERROR_INVALID);
     assert(init_store(&state, &config, &store) == AGENT_OK);
     assert(agent_file_append(&store, SV("USER.md"), "user", 4u) == AGENT_OK);
     assert(agent_file_sync(&store, SV("USER.md")) == AGENT_OK);
     assert(agent_file_read_text(&store, SV("USER.md"), output, sizeof(output), 31u, &text) == AGENT_OK);
     assert(text.size == 4u && !strcmp(output, "user"));
     assert(agent_file_replace(&store, SV("USER.md"), "updated", 7u, &published) == AGENT_OK && published);
+#ifdef TEST_JSONL
+    {
+        agent_session_jsonl_files_t files;
+        agent_session_jsonl_config_t jsonl_config = {0};
+        char names[160];
+        size_t count;
+        uint64_t bytes;
+        assert(agent_session_jsonl_files_init(&files, &store, names, sizeof(names), &jsonl_config) == AGENT_OK);
+        assert(jsonl_config.file_context == &files);
+        assert(jsonl_config.files.append(&files, SV("home"), "one\n", 4u) == AGENT_OK);
+        assert(jsonl_config.files.sync(&files, SV("home")) == AGENT_OK);
+        assert(jsonl_config.files.size(&files, SV("home"), &bytes) == AGENT_OK && bytes == 4u);
+        assert(jsonl_config.files.count(&files, &count) == AGENT_OK && count == 1u);
+        assert(jsonl_config.files.clear_all(&files) == AGENT_OK);
+        assert(agent_file_read_text(&store, SV("USER.md"), output, sizeof(output), 31u, &text) == AGENT_OK);
+        assert(!strcmp(output, "updated"));
+    }
+#endif
     assert(agent_file_remove(&store, SV("USER.md")) == AGENT_OK);
     config.read_only = true;
     assert(init_store(&state, &config, &store) == AGENT_OK);

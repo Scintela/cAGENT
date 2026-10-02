@@ -54,13 +54,15 @@ State, name scratch, underlying backend and all JSONL buffers must be disjoint
 and outlive consumers. The bridge requires size/read/visit/append/truncate/sync/
 remove; read-only stores are rejected at binding time. It converts short reads
 to exact reads. IDs become `session-<lowercase hex>.jsonl`, including IDs with
-NUL or separators; this matches the legacy POSIX naming scheme. `count` and
+NUL or separators; filenames remain unchanged from the earlier implementation. `count` and
 `clear_all` only affect matching regular files, not Markdown or unknown names.
 Clear iterates and removes outside visitor callbacks; it may partially finish
 before error and uses repeated enumeration, not an unbounded list allocation.
 
-The old `agent_session_jsonl_file_ops_t` and POSIX Session-only entry remain
-available. JSONL-only builds do not require the new file-store target. Formats,
+`agent_session_jsonl_file_ops_t` remains the domain file contract, also allowing
+application-supplied callbacks without a generic store. Session-only platform
+entry points have been removed; physical I/O uses the shared file store.
+JSONL-only builds do not require the file-store target. Formats,
 transactions and tail repair are unchanged; Core still has no file dependency.
 
 ## Record and recovery

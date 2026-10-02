@@ -4,7 +4,6 @@
 #include <agent_posix_file_store.h>
 #ifdef TEST_JSONL
 #include <agent_session_jsonl_files.h>
-#include <agent_posix_session_files.h>
 #endif
 #include <assert.h>
 #include <stdlib.h>
@@ -29,14 +28,10 @@ int main(void)
         agent_session_jsonl_files_t files;
         agent_session_jsonl_config_t jsonl_config = {0};
         char names[160];
-        char legacy_paths[256];
-        agent_posix_session_files_t legacy;
-        agent_session_jsonl_file_ops_t legacy_ops = agent_posix_session_file_ops();
         uint64_t length;
         assert(agent_session_jsonl_files_init(&files, &store, names, sizeof(names), &jsonl_config) == AGENT_OK);
         assert(jsonl_config.files.append(&files, SV("chat"), "test", 4u) == AGENT_OK);
-        assert(agent_posix_session_files_init(&legacy, root, legacy_paths, sizeof(legacy_paths)) == AGENT_OK);
-        assert(legacy_ops.size(&legacy, SV("chat"), &length) == AGENT_OK && length == 4u);
+        assert(agent_file_size(&store, SV("session-63686174.jsonl"), &length) == AGENT_OK && length == 4u);
         assert(jsonl_config.files.clear_all(&files) == AGENT_OK);
         assert(agent_file_read_text(&store, SV("USER.md"), output, sizeof(output), 31u, &text) == AGENT_OK);
     }

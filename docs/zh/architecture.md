@@ -963,7 +963,7 @@ cAgentV2/
 │   ├── storage/files     字节文件契约、有界读取辅助；不解释领域格式
 │   └── skill/loader      Markdown + front-matter 加载（ADR 0029 通用层，未实现）
 ├── ports/             可选：平台适配
-│   ├── posix/storage     共享字节文件 I/O，兼容旧 Session 文件入口
+│   ├── posix/storage     共享字节文件 I/O；Session 命名空间由 Provider 维护
 │   ├── espidf/           runtime、transport、storage
 │   └── openvela/         runtime、transport、storage
 ├── tests/  docs/  examples/

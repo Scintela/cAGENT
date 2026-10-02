@@ -63,6 +63,52 @@ static void append_turn(agent_session_storage_t* storage)
     assert(storage->ops.finish(storage->context, transaction, AGENT_SESSION_TURN_COMPLETE) == AGENT_OK);
 }
 
+static void session_mapping(agent_file_store_t* store)
+{
+    agent_session_jsonl_files_t files;
+    agent_session_jsonl_config_t config = {0};
+    char names[160], output[8], long_id[200];
+    const char unusual_id[] = {'.', '.', '/', '\0', 'x'};
+    agent_string_view_t id = agent_string_view(unusual_id, sizeof(unusual_id));
+    uint64_t bytes;
+    size_t count;
+
+    assert(agent_session_jsonl_files_init(NULL, store, names, sizeof(names), &config) == AGENT_ERROR_INVALID);
+    assert(agent_session_jsonl_files_init(&files, store, names, sizeof(names), NULL) == AGENT_ERROR_INVALID);
+    assert(agent_session_jsonl_files_init(&files, store, names, 4u, &config) == AGENT_ERROR_CAPACITY);
+    assert(config.file_context == NULL);
+    assert(agent_session_jsonl_files_init(&files, store, names, sizeof(names), &config) == AGENT_OK);
+    assert(config.file_context == &files);
+    assert(config.files.size(&files, SV(""), &bytes) == AGENT_ERROR_INVALID);
+    assert(config.files.size(&files, agent_string_view(names, 1u), &bytes) == AGENT_ERROR_INVALID);
+    assert(config.files.size(&files, SV("missing"), &bytes) == AGENT_ERROR_NOT_FOUND);
+    assert(config.files.sync(&files, SV("missing")) == AGENT_ERROR_NOT_FOUND);
+    assert(config.files.remove(&files, SV("missing")) == AGENT_ERROR_NOT_FOUND);
+    memset(long_id, 'a', sizeof(long_id));
+    assert(config.files.append(&files, agent_string_view(long_id, sizeof(long_id)), "x", 1u) == AGENT_ERROR_CAPACITY);
+    assert(config.files.append(&files, id, "abc", 3u) == AGENT_OK);
+    assert(agent_file_size(store, SV("session-2e2e2f0078.jsonl"), &bytes) == AGENT_OK && bytes == 3u);
+    assert(config.files.read(&files, id, 0u, output, 3u) == AGENT_OK && !memcmp(output, "abc", 3u));
+    assert(config.files.read(&files, id, 2u, output, 2u) == AGENT_ERROR_IO);
+    assert(config.files.read(&files, id, UINT64_MAX, output, 2u) == AGENT_ERROR_INVALID);
+    assert(config.files.truncate(&files, id, UINT64_MAX) == AGENT_ERROR_INVALID);
+    assert(config.files.truncate(&files, id, 1u) == AGENT_OK);
+    assert(config.files.sync(&files, id) == AGENT_OK);
+    assert(config.files.size(&files, id, &bytes) == AGENT_OK && bytes == 1u);
+    assert(config.files.append(&files, SV("second"), "2", 1u) == AGENT_OK);
+    assert(config.files.append(&files, SV("third"), "3", 1u) == AGENT_OK);
+    assert(agent_file_append(store, SV("notes.md"), "keep", 4u) == AGENT_OK);
+    assert(agent_file_append(store, SV("session-zz.jsonl"), "keep", 4u) == AGENT_OK);
+    assert(config.files.count(&files, &count) == AGENT_OK && count == 3u);
+    assert(config.files.clear_all(&files) == AGENT_OK);
+    assert(config.files.count(&files, &count) == AGENT_OK && count == 0u);
+    assert(agent_file_read_exact(store, SV("notes.md"), 0u, output, 4u) == AGENT_OK && !memcmp(output, "keep", 4u));
+    assert(agent_file_read_exact(store, SV("session-zz.jsonl"), 0u, output, 4u) == AGENT_OK);
+    assert(agent_file_size(store, SV("USER.md"), &bytes) == AGENT_OK && bytes == 3u);
+    assert(agent_file_remove(store, SV("notes.md")) == AGENT_OK);
+    assert(agent_file_remove(store, SV("session-zz.jsonl")) == AGENT_OK);
+}
+
 static void jsonl_chain(agent_file_store_t* store)
 {
     agent_session_jsonl_files_t files;
@@ -117,6 +163,13 @@ int main(void)
     uint64_t length;
     size_t count;
     assert(mkdtemp(root) && mkdtemp(other));
+    config.directory = ".";
+    assert(agent_posix_file_store_init(&state, &config, &store) == AGENT_ERROR_INVALID);
+    config.directory = root; config.path_buffer = root; config.path_capacity = sizeof(root);
+    assert(agent_posix_file_store_init(&state, &config, &store) == AGENT_ERROR_INVALID);
+    config.path_buffer = scratch; config.path_capacity = 8u;
+    assert(agent_posix_file_store_init(&state, &config, &store) == AGENT_ERROR_CAPACITY);
+    config.path_capacity = sizeof(scratch);
     assert(agent_posix_file_store_init(&state, &config, &store) == AGENT_OK);
     assert(agent_file_size(&store, SV("USER.md"), &length) == AGENT_ERROR_NOT_FOUND);
     assert(agent_file_append(&store, SV("USER.md"), "old", 3u) == AGENT_OK);
@@ -164,6 +217,7 @@ int main(void)
     assert(agent_posix_file_store_init(&readonly, &config, &reader) == AGENT_OK);
     assert(agent_file_replace(&reader, SV("USER.md"), "x", 1u, &published) == AGENT_ERROR_CAPACITY && !published);
     assert(agent_file_read_exact(&store, SV("USER.md"), 0u, output, 3u) == AGENT_OK && !memcmp(output, "new", 3u));
+    session_mapping(&store);
     jsonl_chain(&store);
     assert(agent_file_remove(&store, SV("USER.md")) == AGENT_OK);
     assert(agent_file_remove(&store, SV("USER.md")) == AGENT_ERROR_NOT_FOUND);
