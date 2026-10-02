@@ -206,6 +206,22 @@ config AGENT_DEFAULT_MAX_HISTORY_TURNS
 
 endmenu
 
+menu "cAgent Optional File Storage"
+
+config AGENT_FILE_STORE
+    bool "Byte-file contracts and bounded read helpers"
+    default n
+
+config AGENT_POSIX_FILE_STORE
+    bool "POSIX byte-file backend"
+    depends on AGENT_FILE_STORE
+    default n
+    help
+      Access one application-mounted trusted directory. The application owns
+      all buffers and serializes operations. No JSON or Session dependency.
+
+endmenu
+
 menu "cAgent Session Storage"
 
 config AGENT_SESSION_RAM

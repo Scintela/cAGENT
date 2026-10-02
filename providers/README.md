@@ -37,3 +37,9 @@ recovery. See the [Session development log](../docs/zh/development/session.md).
 It accepts application-owned file callbacks and bounded buffers, so neither it
 nor Core depends on POSIX or a platform SDK. See [JSONL Storage](storage/jsonl/README.md)
 for its record, durability, and recovery limits.
+
+`storage/files/` owns the optional byte-file contract and bounded helpers shared
+by file consumers. It has no Session or Markdown semantics. Platform backends
+remain under `ports/*/storage/`; JSONL attaches through its optional file-store
+bridge. See [File Store](storage/files/README.md). Future Skill/Memory loaders
+also belong under `providers/`, but are not implemented by this file layer.

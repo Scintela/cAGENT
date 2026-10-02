@@ -33,6 +33,36 @@ remain alive while bound. The token buffer must be aligned for `int`; `init`
 checks sizes and overlap. A record exceeding the configured line/view capacity
 returns `AGENT_ERROR_CAPACITY`, not a truncated record.
 
+## Shared file-store binding
+
+With `AGENT_BUILD_FILE_STORE=ON`, the separate `cagent::session_jsonl_files`
+target provides `agent_session_jsonl_files.h`. This optional bridge copies an
+`agent_file_store_t` and binds the existing eight JSONL callbacks:
+
+```c
+agent_session_jsonl_files_t files;
+char names[160];
+agent_session_jsonl_config_t config = {0};
+/* Initialize store with a platform Port; fill the existing JSONL buffers. */
+agent_error_t status = agent_session_jsonl_files_init(
+    &files, &store, names, sizeof(names), &config);
+if (status == AGENT_OK)
+    status = agent_session_jsonl_init(&jsonl, &config);
+```
+
+State, name scratch, underlying backend and all JSONL buffers must be disjoint
+and outlive consumers. The bridge requires size/read/visit/append/truncate/sync/
+remove; read-only stores are rejected at binding time. It converts short reads
+to exact reads. IDs become `session-<lowercase hex>.jsonl`, including IDs with
+NUL or separators; this matches the legacy POSIX naming scheme. `count` and
+`clear_all` only affect matching regular files, not Markdown or unknown names.
+Clear iterates and removes outside visitor callbacks; it may partially finish
+before error and uses repeated enumeration, not an unbounded list allocation.
+
+The old `agent_session_jsonl_file_ops_t` and POSIX Session-only entry remain
+available. JSONL-only builds do not require the new file-store target. Formats,
+transactions and tail repair are unchanged; Core still has no file dependency.
+
 ## Record and recovery
 
 Each committed line has this shape:
