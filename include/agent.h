@@ -28,7 +28,7 @@ agent_t* agent_create(const agent_config_t* config);
 /* Validates bindings and enters READY without issuing I/O. */
 agent_error_t agent_start(agent_t* agent);
 
-/* Destroys an idle Agent and owned resources; borrowed resources are untouched. */
+/* Destroys an idle Agent; active/callback calls are ignored, borrowed resources are untouched. */
 void agent_destroy(agent_t* agent);
 
 /* Runs one complete turn synchronously; provider/tool callbacks may block. */

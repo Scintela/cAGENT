@@ -13,6 +13,7 @@
 #include "core/arena_internal.h"
 #include <agent.h>
 #include <agent/model.h>
+#include <agent/memory.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -52,6 +53,8 @@ struct agent {
     agent_skill_registry_t* skills;
     agent_session_storage_t session_storage;
     bool has_session_storage;
+    agent_memory_t memory;
+    bool has_memory;
     agent_cancel_token_t* active_cancel; /* Guard with runtime.cancel_sync for cross-task access. */
     agent_arena_t scratch;
     agent_policy_callback_t policy;

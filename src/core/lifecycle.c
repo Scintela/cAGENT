@@ -182,7 +182,7 @@ void agent_destroy(agent_t* agent)
     agent_workspace_t* workspace;
     bool owns_workspace;
 
-    if (agent == NULL || agent->state == AGENT_CORE_ACTIVE)
+    if (agent == NULL || agent->state == AGENT_CORE_ACTIVE || agent->in_callback)
     {
         return;
     }

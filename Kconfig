@@ -241,3 +241,15 @@ config AGENT_PROVIDER_OPENAI
     default n
 
 endmenu
+
+menu "cAgent Memory Providers"
+
+config AGENT_MEMORY_MARKDOWN
+    bool "Bounded Markdown Memory over application-authorized file stores"
+    depends on AGENT_FILE_STORE
+    default n
+    help
+      Read explicit Soul/User/Memory documents and dated notes. Ordinary writes
+      cannot modify Soul. No automatic extraction, directory scan or heap cache.
+
+endmenu

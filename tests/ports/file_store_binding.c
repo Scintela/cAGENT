@@ -14,6 +14,9 @@
 #else
 #error Select the platform binding to test
 #endif
+#ifdef TEST_MEMORY
+#include <agent_markdown_memory.h>
+#endif
 #ifdef TEST_JSONL
 #include <agent_session_jsonl_files.h>
 #endif
@@ -41,6 +44,22 @@ int main(void)
     assert(agent_file_read_text(&store, SV("USER.md"), output, sizeof(output), 31u, &text) == AGENT_OK);
     assert(text.size == 4u && !strcmp(output, "user"));
     assert(agent_file_replace(&store, SV("USER.md"), "updated", 7u, &published) == AGENT_OK && published);
+#ifdef TEST_MEMORY
+    {
+        agent_markdown_memory_t memory;
+        agent_markdown_memory_config_t memory_config = {0};
+        agent_memory_t binding;
+        agent_memory_key_t key = {AGENT_MEMORY_USER, {NULL, 0u}};
+        size_t bytes;
+        memory_config.user.store = store;
+        memory_config.user.name = SV("USER.md");
+        memory_config.user.max_bytes = 31u;
+        assert(agent_markdown_memory_init(&memory, &memory_config) == AGENT_OK);
+        assert(agent_markdown_memory_bind(&memory, &binding) == AGENT_OK);
+        assert(binding.ops.read(binding.context, &key, output, sizeof(output), 31u, &bytes) == AGENT_OK);
+        assert(bytes == 7u && !strcmp(output, "updated"));
+    }
+#endif
 #ifdef TEST_JSONL
     {
         agent_session_jsonl_files_t files;
