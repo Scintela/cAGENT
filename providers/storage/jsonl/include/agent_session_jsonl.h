@@ -21,6 +21,7 @@ typedef struct {
                             const char* data, size_t size);
     agent_error_t (*truncate)(void* context, agent_string_view_t id, uint64_t size);
     agent_error_t (*sync)(void* context, agent_string_view_t id);
+    /* Failure may follow deletion or partial clearing; rollback is not required. */
     agent_error_t (*remove)(void* context, agent_string_view_t id);
     agent_error_t (*clear_all)(void* context);
     agent_error_t (*count)(void* context, size_t* count);

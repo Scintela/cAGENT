@@ -28,6 +28,7 @@ typedef struct {
                            const void* data, size_t bytes);
     agent_error_t (*truncate)(void* context, agent_string_view_t name, uint64_t bytes);
     agent_error_t (*sync)(void* context, agent_string_view_t name);
+    /* Failure may follow deletion when later synchronization fails. */
     agent_error_t (*remove)(void* context, agent_string_view_t name);
     /* published remains true if replacement succeeded but later synchronization failed. */
     agent_error_t (*replace)(void* context, agent_string_view_t name,
@@ -51,7 +52,7 @@ agent_error_t agent_file_read(const agent_file_store_t* store, agent_string_view
 agent_error_t agent_file_read_exact(const agent_file_store_t* store,
                                     agent_string_view_t name, uint64_t offset,
                                     void* output, size_t bytes);
-/* Observed growth/shrink is an error; callers serialize edits, including same-size changes. */
+/* Bounded whole-file read, not a snapshot; caller excludes concurrent writes/replaces. */
 agent_error_t agent_file_read_all(const agent_file_store_t* store,
                                   agent_string_view_t name, void* output,
                                   size_t capacity, size_t max_bytes, size_t* bytes_read);
@@ -69,6 +70,7 @@ agent_error_t agent_file_truncate(const agent_file_store_t* store,
                                   agent_string_view_t name, uint64_t bytes);
 /* The backend documents whether directory metadata is also synchronized. */
 agent_error_t agent_file_sync(const agent_file_store_t* store, agent_string_view_t name);
+/* An error does not guarantee the file still exists; no deletion rollback. */
 agent_error_t agent_file_remove(const agent_file_store_t* store, agent_string_view_t name);
 /* Do not retry blindly after failure with published=true. */
 agent_error_t agent_file_replace(const agent_file_store_t* store,

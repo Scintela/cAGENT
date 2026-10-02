@@ -3,6 +3,7 @@
 /* Host linker wrapping verifies error outcomes without production fault hooks. */
 #define _POSIX_C_SOURCE 200809L
 #include <agent_posix_file_store.h>
+#include <agent_session_jsonl_files.h>
 #include <assert.h>
 #include <dirent.h>
 #include <errno.h>
@@ -21,10 +22,12 @@ ssize_t __real_write(int, const void*, size_t);
 int __real_fsync(int);
 int __real_rename(const char*, const char*);
 int __real_closedir(DIR*);
+int __real_unlink(const char*);
 
 static int handles;
 static int sync_failure; /* 1: file error, 2: directory error, 3: unsupported sync */
 static int write_failure;
+static int unlink_failure;
 static bool interrupt_read, interrupt_write, fail_rename, fail_close, fail_closedir;
 
 int __wrap_open(const char* path, int flags, ...)
@@ -86,6 +89,12 @@ int __wrap_closedir(DIR* directory)
     return result;
 }
 
+int __wrap_unlink(const char* path)
+{
+    if (unlink_failure > 0 && --unlink_failure == 0) { errno = EIO; return -1; }
+    return __real_unlink(path);
+}
+
 static agent_error_t count_names(void* ctx, agent_string_view_t name, bool* stop)
 {
     size_t* count = ctx;
@@ -101,6 +110,49 @@ static void expect_text(agent_file_store_t* store, const char* expected)
     agent_string_view_t view;
     assert(agent_file_read_text(store, SV("USER.md"), text, sizeof(text), 31u, &view) == AGENT_OK);
     assert(strcmp(text, expected) == 0 && handles == 0);
+}
+
+static void session_clear_faults(agent_file_store_t* store)
+{
+    const agent_string_view_t ids[] = {SV("first"), SV("second"), SV("third")};
+    agent_session_jsonl_files_t files;
+    agent_session_jsonl_config_t config = {0};
+    char name[128], text[8];
+    size_t i, count, remaining;
+    uint64_t bytes;
+
+    assert(agent_session_jsonl_files_init(&files, store, name, sizeof(name), &config) == AGENT_OK);
+    assert(agent_file_append(store, SV("session-zz.jsonl"), "keep", 4u) == AGENT_OK);
+    for (i = 0u; i < 3u; ++i)
+        assert(config.files.append(&files, ids[i], "data", 4u) == AGENT_OK);
+    unlink_failure = 2;
+    assert(config.files.clear_all(&files) == AGENT_ERROR_IO && handles == 0);
+    assert(config.files.count(&files, &count) == AGENT_OK && count == 2u);
+    remaining = 0u;
+    for (i = 0u; i < 3u; ++i) {
+        agent_error_t status = config.files.size(&files, ids[i], &bytes);
+        assert(status == AGENT_OK || status == AGENT_ERROR_NOT_FOUND);
+        if (status == AGENT_OK) { assert(bytes == 4u); ++remaining; }
+    }
+    assert(remaining == 2u);
+    expect_text(store, "new");
+    assert(agent_file_read_exact(store, SV("session-zz.jsonl"), 0u, text, 4u) == AGENT_OK);
+    assert(!memcmp(text, "keep", 4u));
+    assert(config.files.clear_all(&files) == AGENT_OK && handles == 0);
+    assert(config.files.count(&files, &count) == AGENT_OK && count == 0u);
+
+    for (i = 0u; i < 3u; ++i)
+        assert(config.files.append(&files, ids[i], "data", 4u) == AGENT_OK);
+    sync_failure = 2;
+    assert(config.files.clear_all(&files) == AGENT_ERROR_IO && handles == 0);
+    sync_failure = 0;
+    assert(config.files.count(&files, &count) == AGENT_OK && count == 2u);
+    assert(config.files.clear_all(&files) == AGENT_OK && handles == 0);
+    assert(config.files.count(&files, &count) == AGENT_OK && count == 0u);
+    expect_text(store, "new");
+    assert(agent_file_read_exact(store, SV("session-zz.jsonl"), 0u, text, 4u) == AGENT_OK);
+    assert(!memcmp(text, "keep", 4u));
+    assert(agent_file_remove(store, SV("session-zz.jsonl")) == AGENT_OK && handles == 0);
 }
 
 int main(void)
@@ -142,6 +194,7 @@ int main(void)
     assert(agent_file_replace(&store, SV("USER.md"), "new", 3u, &published) == AGENT_ERROR_IO && published);
     sync_failure = 0;
     expect_text(&store, "new");
+    session_clear_faults(&store);
     write_failure = 2;
     assert(agent_file_append(&store, SV("USER.md"), "suffix", 6u) == AGENT_ERROR_IO);
     expect_text(&store, "newsu");
@@ -154,7 +207,14 @@ int main(void)
     assert(agent_file_visit(&store, count_names, &count) == AGENT_ERROR_IO && count == 1u);
     count = 0u;
     assert(agent_file_visit(&store, count_names, &count) == AGENT_OK && count == 1u);
-    assert(agent_file_remove(&store, SV("USER.md")) == AGENT_OK && handles == 0);
+    sync_failure = 2;
+    assert(agent_file_remove(&store, SV("USER.md")) == AGENT_ERROR_IO && handles == 0);
+    sync_failure = 0;
+    {
+        uint64_t bytes;
+        assert(agent_file_size(&store, SV("USER.md"), &bytes) == AGENT_ERROR_NOT_FOUND);
+    }
+    assert(agent_file_remove(&store, SV("USER.md")) == AGENT_ERROR_NOT_FOUND && handles == 0);
     assert(rmdir(root) == 0); /* No hidden temporary files leaked by failed replacement. */
     return 0;
 }

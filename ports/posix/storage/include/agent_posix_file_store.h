@@ -16,7 +16,7 @@ typedef struct {
     char* path_buffer;     /* Borrowed scratch, disjoint from state, config and input/output. */
     size_t path_capacity;
     bool read_only;       /* Bind only size/read/visit capabilities. */
-    bool sync_directory;  /* Request directory fsync on sync/remove/replace; verified at init. */
+    bool sync_directory;  /* Request directory fsync, attempted at init; not a durability proof. */
 } agent_posix_file_store_config_t;
 
 typedef struct {

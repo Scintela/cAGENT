@@ -19,4 +19,4 @@ includes=(-I"$root/include" -I"$root/providers/storage/files/include"
 "$binary"
 "${CXX:-c++}" -std=c++11 -Wall -Wextra -Werror "${includes[@]}" \
   -include agent_posix_file_store.h -include agent_session_jsonl_files.h -x c++ -fsyntax-only /dev/null
-printf 'PASS: POSIX file store, USER snapshot and JSONL Session bridge\n'
+printf 'PASS: POSIX file store, bounded USER read and JSONL Session bridge\n'

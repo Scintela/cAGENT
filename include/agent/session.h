@@ -38,7 +38,9 @@ typedef struct {
                             size_t max_candidates, agent_session_visit_fn visit,
                             void* visit_context);
     agent_error_t (*clear)(void* context, agent_string_view_t session_id);
+    /* Failure may leave some conversations cleared; no rollback is required. */
     agent_error_t (*clear_all)(void* context);
+    /* Failure may follow deletion; callers must not assume the identity remains. */
     agent_error_t (*remove)(void* context, agent_string_view_t session_id);
     agent_error_t (*count)(void* context, size_t* count);
 } agent_session_storage_ops_t;
@@ -56,10 +58,10 @@ agent_error_t agent_set_session_storage(agent_t* agent,
 /* Clear one persisted conversation; Storage determines retained identity semantics. */
 agent_error_t agent_session_clear(agent_t* agent, agent_string_view_t session_id);
 
-/* Clear all persisted conversations. */
+/* Clear all persisted conversations; failure may leave a partially cleared store. */
 agent_error_t agent_session_clear_all(agent_t* agent);
 
-/* Remove one persisted conversation and its identity. */
+/* Remove one conversation and its identity; failure does not guarantee it remains. */
 agent_error_t agent_session_remove(agent_t* agent, agent_string_view_t session_id);
 
 /* Count identities known to the selected Storage. */

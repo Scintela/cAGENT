@@ -7,11 +7,13 @@ binary="$(mktemp)"
 trap 'rm -f "$binary"' EXIT
 "${CC:-cc}" -std=c99 -Wall -Wextra -Werror -pedantic ${CFLAGS:-} \
   -I"$root/include" -I"$root/providers/storage/files/include" \
+  -I"$root/providers/storage/jsonl/include" \
   -I"$root/ports/posix/storage/include" \
   "$root/tests/ports/posix/file_store_faults.c" \
   "$root/providers/storage/files/src/file_store.c" \
+  "$root/providers/storage/jsonl/src/file_store_bind.c" \
   "$root/ports/posix/storage/src/file_store.c" \
-  -Wl,--wrap=open,--wrap=close,--wrap=read,--wrap=write,--wrap=fsync,--wrap=rename,--wrap=closedir \
+  -Wl,--wrap=open,--wrap=close,--wrap=read,--wrap=write,--wrap=fsync,--wrap=rename,--wrap=closedir,--wrap=unlink \
   -o "$binary"
 "$binary"
-printf 'PASS: POSIX short I/O, failed replacement and resource cleanup (GNU linker)\n'
+printf 'PASS: POSIX short I/O, replacement/deletion failures, Session partial clear and cleanup (GNU linker)\n'

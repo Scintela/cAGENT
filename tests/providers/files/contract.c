@@ -39,6 +39,7 @@ static agent_error_t mock_read(void* ctx, agent_string_view_t name, uint64_t off
     *count = available < capacity ? available : capacity;
     if (*count > mock->chunk) *count = mock->chunk;
     if (*count) memcpy(output, mock->data + (size_t)offset, *count);
+    if (mock->mutation == 3 && offset == 0u && *count) mock->data = "world";
     return AGENT_OK;
 }
 
@@ -107,7 +108,11 @@ int main(void)
                (mock.mutation == 0 ? AGENT_OK : AGENT_ERROR_IO));
         assert(count == (mock.mutation == 0 ? 5u : 0u));
     }
-    mock.mutation = 0; mock.invalid_count = true;
+    /* Deliberately violate stable-input preconditions: size checks cannot detect this. */
+    mock.mutation = 3; mock.size_calls = 0u;
+    assert(agent_file_read_all(&store, SV("USER.md"), output, sizeof(output), 8u, &count) == AGENT_OK);
+    assert(count == 5u && memcmp(output, "horld", 5u) == 0);
+    mock.data = "hello"; mock.mutation = 0; mock.invalid_count = true;
     assert(agent_file_read(&store, SV("USER.md"), 0u, output, 1u, &count) == AGENT_ERROR_IO);
     assert(count == 0u);
     assert(agent_file_size(&store, SV("../USER.md"), &bytes) == AGENT_ERROR_INVALID);
