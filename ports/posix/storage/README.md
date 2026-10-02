@@ -47,11 +47,13 @@ after rename, `published=true`, even if directory synchronization fails. Do not
 blindly retry an ambiguous result. Stale private files after a crash are hidden
 from enumeration, not automatically deleted; applications own maintenance.
 
-`sync_directory=true` verifies directory `fsync` during init and requests it
+`sync_directory=true` attempts directory `fsync` during init and requests it
 after sync/remove/replace. Unsupported operations fail explicitly. With `false`,
 file `fsync` is still requested, but directory metadata durability is not claimed.
 Both modes require filesystem-specific reboot/power-loss validation. POSIX
 rename publication is not itself proof of crash consistency on an embedded VFS.
+Removal unlinks before directory synchronization. A synchronization error may
+therefore be reported after the target has disappeared; no rollback is provided.
 
 Host build: `AGENT_BUILD_FILE_STORE=ON` and `AGENT_BUILD_POSIX_FILE_STORE=ON`,
 then link `cagent::posix_file_store`. Core-only and RAM Session builds do not

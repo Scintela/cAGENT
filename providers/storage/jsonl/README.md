@@ -58,6 +58,9 @@ NUL or separators; filenames remain unchanged from the earlier implementation. `
 `clear_all` only affect matching regular files, not Markdown or unknown names.
 Clear iterates and removes outside visitor callbacks; it may partially finish
 before error and uses repeated enumeration, not an unbounded list allocation.
+Previously deleted files are not restored. Removal can also return an error
+after deleting a file if directory synchronization fails; a subsequent removal
+may report NOT_FOUND. Callers must not interpret failure as an unchanged store.
 
 `agent_session_jsonl_file_ops_t` remains the domain file contract, also allowing
 application-supplied callbacks without a generic store. Session-only platform

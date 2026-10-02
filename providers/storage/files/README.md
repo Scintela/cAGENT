@@ -18,13 +18,13 @@ instances; model arguments must not select roots or authorization.
 | `append` | Append bytes; failure may leave a prefix. Record rollback belongs to the consumer. |
 | `truncate` | Change an existing file's length. |
 | `sync` | Request backend synchronization, not an unconditional power-loss guarantee. |
-| `remove` | Remove one named file; no whole-directory clear primitive. |
+| `remove` | Remove one named file; an error may follow deletion if later synchronization fails. No rollback or whole-directory clear primitive. |
 | `replace` | Publish a complete replacement; `published=true` survives a later synchronization failure. |
 
 `agent_file_read_exact` joins short reads and rejects unexpected EOF.
 `agent_file_read_all` checks both caller capacity and `max_bytes`, verifies EOF
 and final size, and never reports a truncated document as success. This detects
-observed growth/shrink, **not all concurrent changes**: callers must serialize
+observed growth/shrink, **not all concurrent changes**. It is **not a snapshot**: callers must serialize
 edits, including same-size replacement. `agent_file_read_text` adds a NUL
 terminator, rejects embedded NUL and returns a borrowed view of caller storage.
 It does not validate UTF-8, parse Markdown or grant permission to write Soul.

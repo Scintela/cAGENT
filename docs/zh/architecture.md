@@ -906,27 +906,43 @@ Live event 默认不进入 Session log。Policy interceptor 与普通 observer �
 
 ## 21. Public Header 规划
 
-建议公共头文件：
+Core 公共头文件与可选组件公共头分开管理。文件契约不进入 Core 聚合头，也不
+要求给 `agent_config_t` 注入全局文件系统。Core 公共头文件：
 
 ```text
-include/agent/
+cAgentV2/include/
 ├── agent.h
-├── types.h
-├── error.h
-├── config.h
-├── runtime.h
-├── plugin.h
-├── model.h
-├── transport.h
-├── tool.h
-├── policy.h
-├── skill.h
-├── context.h
-├── session.h
-├── storage.h
-├── memory.h
-└── event.h
+└── agent/
+    ├── version.h
+    ├── types.h
+    ├── error.h
+    ├── config.h
+    ├── runtime.h
+    ├── model.h
+    ├── transport.h
+    ├── tool.h
+    ├── policy.h
+    ├── skill.h
+    ├── context.h
+    ├── session.h
+    ├── memory.h
+    └── event.h
 ```
+
+文件存储链路的可选公共头（按需包含和链接，不由 `agent.h` 自动引入）：
+
+| 头文件 | 所属组件与职责 |
+|---|---|
+| `agent_file_store.h` | `providers/storage/files/include/`；字节级文件 ops、有界读取辅助 |
+| `agent_session_jsonl.h` | `providers/storage/jsonl/include/`；JSONL Session Provider 与领域文件回调 |
+| `agent_session_jsonl_files.h` | `providers/storage/jsonl/include/`；Session ID 与通用 File Store 绑定 |
+| `agent_session_ram.h` | `providers/storage/ram/include/`；易失 Session Storage |
+| `agent_posix_file_store.h` | `ports/posix/storage/include/`；共享 POSIX 字节 I/O |
+| `agent_espidf_file_store.h` | `ports/espidf/storage/include/`；ESP-IDF 文件 Port 装配 |
+| `agent_openvela_file_store.h` | `ports/openvela/storage/include/`；OpenVela 文件 Port 装配 |
+
+厂商 Model 和 Runtime/Transport Port 同样拥有各自可选公共头。完整 Memory 管理与
+Skill 文件加载器仍按各自 ADR 推进，不能从文件公共头的存在推断领域功能已实现。
 
 规则：
 
