@@ -6,6 +6,7 @@ cmake_minimum_required(VERSION 3.16)
 set(AGENT_CORE_SOURCES
     src/context/context_builder.c
     src/context/context_registry.c
+    src/context/context_projection.c
     src/core/lifecycle.c
     src/core/event.c
     src/core/arena.c

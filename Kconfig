@@ -26,14 +26,14 @@ config AGENT_MAX_TOOLS
     default 12
 
 config AGENT_MAX_CONTEXTS
-    int "Maximum context providers" if AGENT_PROFILE_CUSTOM
-    range 1 32
+    int "Maximum dynamic and Memory context contributions" if AGENT_PROFILE_CUSTOM
+    range 0 32
     default 2 if AGENT_PROFILE_TINY
     default 8
 
 config AGENT_MAX_SKILLS
     int "Maximum registered skills" if AGENT_PROFILE_CUSTOM
-    range 1 32
+    range 0 32
     default 2 if AGENT_PROFILE_TINY
     default 12 if AGENT_PROFILE_DEVICE_REACT
     default 8

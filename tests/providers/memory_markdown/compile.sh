@@ -13,7 +13,7 @@ includes=(-I"$root/include" -I"$root/src" -I"$root/providers/storage/files/inclu
   "$root/tests/providers/memory_markdown/contract.c" \
   "$root/providers/memory/markdown/src/memory_markdown.c" \
   "$root/providers/storage/files/src/file_store.c" "$root/ports/posix/storage/src/file_store.c" \
-  "$root/src/memory/memory_mgr.c" "$root/src/skill/skill_registry.c" "$root/src/core/lifecycle.c" "$root/src/core/arena.c" \
+  "$root/src/memory/memory_mgr.c" "$root/src/skill/skill_registry.c" "$root/src/context/context_registry.c" "$root/src/core/lifecycle.c" "$root/src/core/arena.c" \
   "$root/src/model/model.c" "$root/src/runtime/runtime.c" -o "$binary"
 "$binary"
 "${CXX:-c++}" -std=c++11 -Wall -Wextra -Werror "${includes[@]}" \

@@ -71,7 +71,8 @@ int header_contract_fixture(agent_t* agent, agent_model_workspace_t* model_works
                          NULL,
                          sample_tool,
                          NULL};
-    agent_context_provider_t context = {AGENT_SV_LITERAL("state"), 0, false, sample_context, NULL};
+    agent_context_provider_t context = {AGENT_SV_LITERAL("state"), 0, false, sample_context, NULL,
+                                         128u, AGENT_CONTEXT_REFERENCE};
     agent_model_t* model = NULL;
     agent_event_type_t event_type = AGENT_EVENT_TURN_BEGIN;
     agent_event_t event;

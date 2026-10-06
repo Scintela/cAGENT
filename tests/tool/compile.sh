@@ -7,7 +7,7 @@ build="$(mktemp -d)"
 trap 'rm -rf "$build"' EXIT
 sources=("$root/tests/tool/contract.c" "$root/src/tool/tool_registry.c"
   "$root/src/tool/tool_schema.c" "$root/src/tool/tool_guard.c"
-  "$root/src/policy/policy_chain.c" "$root/src/skill/skill_registry.c" "$root/src/core/lifecycle.c"
+  "$root/src/policy/policy_chain.c" "$root/src/skill/skill_registry.c" "$root/src/context/context_registry.c" "$root/src/core/lifecycle.c"
   "$root/src/core/arena.c" "$root/src/model/model.c"
   "$root/src/run/cancel.c" "$root/src/runtime/runtime.c")
 includes=(-I"$root/include" -I"$root/src" -I"$root/codecs/json" -I"$root/codecs/json/vendor/jsmn")

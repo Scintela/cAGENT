@@ -315,6 +315,8 @@ typedef struct {
     size_t capacity;
     size_t candidates;
     size_t seen;
+    agent_error_t (*poll)(void*);
+    void* poll_context;
 } projection_t;
 
 static agent_error_t visit_group(void* context, const agent_session_group_view_t* group)
@@ -325,6 +327,10 @@ static agent_error_t visit_group(void* context, const agent_session_group_view_t
     size_t i;
     agent_error_t status;
 
+    if (projection->poll) {
+        status = projection->poll(projection->poll_context);
+        if (status != AGENT_OK) return status;
+    }
     if (++projection->seen > projection->candidates || !group || !group->messages ||
         group->message_count == 0u) return AGENT_ERROR_PARSE;
     for (i = 0u; i < group->message_count; ++i) {
@@ -355,33 +361,45 @@ static agent_error_t visit_group(void* context, const agent_session_group_view_t
     return AGENT_OK;
 }
 
-agent_error_t agent_session_project(const agent_session_turn_t* turn,
-                                    agent_arena_t* arena, uint32_t max_history_turns,
-                                    const agent_message_view_t** messages, size_t* count)
+size_t agent_session_current_count(const agent_session_turn_t* turn)
+{
+    return turn && !turn->closed ? turn->count : 0u;
+}
+
+agent_error_t agent_session_projection_identity(const agent_session_turn_t* turn,
+    const agent_arena_t* owner, const agent_request_t* request, agent_string_view_t* session_id)
+{
+    agent_string_view_t expected;
+    if (!turn || turn->closed || turn->arena != owner || !request || !session_id || !turn->count)
+        return AGENT_ERROR_INVALID;
+    expected = request->session_id.size ? request->session_id : agent_string_view("default", 7u);
+    if (!same_view(expected, turn->session_id) || !same_view(request->input, turn->current[0].content))
+        return AGENT_ERROR_INVALID;
+    *session_id = turn->session_id;
+    return AGENT_OK;
+}
+
+agent_error_t agent_session_project_into(const agent_session_turn_t* turn,
+    agent_arena_t* arena, uint32_t max_history_turns, agent_message_view_t* messages,
+    size_t capacity, size_t* count, agent_error_t (*poll)(void*), void* poll_context)
 {
     projection_t projection;
     agent_message_view_t swap;
     size_t mark;
-    size_t bytes;
     size_t i;
-    void* memory;
     agent_error_t status;
 
     if (!turn || turn->closed || !arena || !messages || !count) return AGENT_ERROR_INVALID;
-    *messages = NULL;
     *count = 0u;
-    if (turn->count > AGENT_MAX_PROJECTED_MESSAGES) return AGENT_ERROR_LIMIT;
+    if (capacity > AGENT_MAX_PROJECTED_MESSAGES || turn->count > capacity) return AGENT_ERROR_LIMIT;
     if (max_history_turns && !turn->storage) return AGENT_ERROR_NOT_SUPPORTED;
     mark = arena->used;
-    status = agent_size_multiply(AGENT_MAX_PROJECTED_MESSAGES,
-                                 sizeof(agent_message_view_t), &bytes);
-    if (status != AGENT_OK) return status;
-    status = agent_arena_take(arena, bytes, AGENT_ALIGNOF(agent_message_view_t), &memory);
-    if (status != AGENT_OK) return status;
     memset(&projection, 0, sizeof(projection));
     projection.arena = arena;
-    projection.messages = memory;
-    projection.capacity = AGENT_MAX_PROJECTED_MESSAGES - turn->count;
+    projection.messages = messages;
+    projection.capacity = capacity - turn->count;
+    projection.poll = poll;
+    projection.poll_context = poll_context;
     projection.candidates = max_history_turns < projection.capacity ?
                             max_history_turns : projection.capacity;
     if (projection.candidates) {
@@ -399,7 +417,27 @@ agent_error_t agent_session_project(const agent_session_turn_t* turn,
     }
     memcpy(&projection.messages[projection.count], turn->current,
            turn->count * sizeof(agent_message_view_t));
-    *messages = projection.messages;
     *count = projection.count + turn->count;
     return AGENT_OK;
+}
+
+agent_error_t agent_session_project(const agent_session_turn_t* turn,
+                                    agent_arena_t* arena, uint32_t max_history_turns,
+                                    const agent_message_view_t** messages, size_t* count)
+{
+    size_t mark, bytes;
+    void* memory;
+    agent_error_t status;
+    if (!arena || !messages || !count) return AGENT_ERROR_INVALID;
+    *messages = NULL; *count = 0u;
+    mark = arena->used;
+    status = agent_size_multiply(AGENT_MAX_PROJECTED_MESSAGES, sizeof(agent_message_view_t), &bytes);
+    if (status == AGENT_OK)
+        status = agent_arena_take(arena, bytes, AGENT_ALIGNOF(agent_message_view_t), &memory);
+    if (status != AGENT_OK) return status;
+    status = agent_session_project_into(turn, arena, max_history_turns, memory,
+                                        AGENT_MAX_PROJECTED_MESSAGES, count, NULL, NULL);
+    if (status != AGENT_OK) agent_arena_rewind(arena, mark);
+    else *messages = memory;
+    return status;
 }

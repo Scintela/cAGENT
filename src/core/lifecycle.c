@@ -12,6 +12,8 @@
 
 typedef char agent_workspace_must_fit_core
     [(sizeof(agent_t) + AGENT_TOOL_REGISTRY_BYTES + AGENT_SKILL_REGISTRY_BYTES +
+      AGENT_CONTEXT_REGISTRY_BYTES +
+      (AGENT_MAX_CONTEXTS ? AGENT_ALIGNOF(agent_context_registry_t) - 1u : 0u) +
       (AGENT_MAX_SKILLS ? AGENT_ALIGNOF(agent_skill_registry_t) - 1u : 0u) +
       (AGENT_MAX_TOOLS ? AGENT_ALIGNOF(agent_tool_registry_t) - 1u : 0u) +
       AGENT_SCRATCH_BYTES <= sizeof(agent_workspace_t)) ? 1 : -1];
@@ -114,6 +116,8 @@ agent_error_t agent_core_layout(agent_workspace_t* workspace, const agent_config
     status = agent_tool_registry_init(&(*agent)->tools, &arena);
     if (status == AGENT_OK)
         status = agent_skill_registry_init(&(*agent)->skills, &arena);
+    if (status == AGENT_OK)
+        status = agent_context_registry_init(&(*agent)->contexts, &arena);
     if (status != AGENT_OK)
     {
         memset(workspace->bytes, 0, sizeof(workspace->bytes));
