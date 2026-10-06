@@ -84,7 +84,7 @@ agent_error_t agent_context_collect(agent_context_turn_t* turn, const agent_cont
 agent_error_t agent_context_prepare(agent_t* agent, const agent_request_t* request,
                                     const agent_cancel_token_t* cancel, uint64_t deadline_ms,
                                     agent_context_turn_t** turn);
-/* reserve_bytes keeps tail space out of historical replay; response storage should precede this call. */
+/* reserve_bytes excludes tail space from projection; the driver owns response retention across release. */
 agent_error_t agent_context_project(agent_context_turn_t* turn, const agent_session_turn_t* session,
                                     uint32_t remaining_tool_calls, size_t reserve_bytes,
                                     agent_context_projection_t* projection);

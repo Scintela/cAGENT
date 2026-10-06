@@ -67,7 +67,7 @@ int main(void)
     agent_t* agent = NULL;
     agent_t* heap_agent;
     agent_limits_t invalid_limits = AGENT_LIMITS_DEFAULT;
-    agent_response_t response;
+    agent_response_t response = {0};
     agent_stats_t stats;
     agent_cancel_token_t token;
     unsigned char arena_bytes[8];
@@ -124,8 +124,8 @@ int main(void)
     {
         return 4;
     }
-    if (agent_run(agent, &request, &response) != AGENT_ERROR_NOT_SUPPORTED ||
-        response.status != AGENT_ERROR_NOT_SUPPORTED)
+    if (agent_run(agent, &request, &response) != AGENT_OK ||
+        response.status != AGENT_OK || !response.summary.final_valid)
     {
         return 5;
     }

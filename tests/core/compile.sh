@@ -17,6 +17,10 @@ trap 'rm -f "$binary"' EXIT
     "$root/src/core/error.c" \
     "$root/src/model/model.c" \
     "$root/src/run/cancel.c" \
+    "$root/src/run/react_loop.c" "$root/src/tool/tool_guard.c" \
+    "$root/src/policy/policy_chain.c" "$root/src/context/context_builder.c" \
+    "$root/src/context/context_projection.c" "$root/src/session/session_manager.c" \
+    "$root/src/memory/memory_mgr.c" \
     "$root/src/runtime/runtime.c" \
     -o "$binary"
 

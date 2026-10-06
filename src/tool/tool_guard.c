@@ -84,9 +84,9 @@ static agent_error_t validate_identifier(agent_string_view_t id, bool required)
     return agent_tool_text_validate(id);
 }
 
-agent_error_t agent_tool_invoke(agent_t* agent, const agent_tool_context_t* context,
+agent_error_t agent_tool_invoke_observed(agent_t* agent, const agent_tool_context_t* context,
                                 uint32_t remaining_calls, char* output, size_t capacity,
-                                agent_tool_execution_t* execution)
+                                agent_tool_execution_t* execution, const agent_tool_observer_t* observer)
 {
     const agent_tool_t* tool;
     agent_tool_context_t effective;
@@ -180,6 +180,11 @@ agent_error_t agent_tool_invoke(agent_t* agent, const agent_tool_context_t* cont
         collected = (tool_output_t){agent, &effective, output, capacity, 0u, AGENT_OK};
         sink = (agent_text_sink_t){collect_output, &collected};
         execution->handler_called = true;
+        if (observer && observer->begin) {
+            agent->in_callback = false;
+            observer->begin(observer->data, &effective);
+            agent->in_callback = true;
+        }
         execution->handler_status = tool->execute(tool->user_data, &effective, &sink);
         if (execution->handler_status == AGENT_ERROR || execution->handler_status > AGENT_OK)
             execution->handler_status = AGENT_ERROR_TOOL_FAILED;
@@ -195,5 +200,14 @@ agent_error_t agent_tool_invoke(agent_t* agent, const agent_tool_context_t* cont
     }
     agent->in_callback = false;
     execution->status = status;
+    if (execution->handler_called && observer && observer->end)
+        observer->end(observer->data, &effective, execution);
     return status;
+}
+
+agent_error_t agent_tool_invoke(agent_t* agent, const agent_tool_context_t* context,
+                                uint32_t remaining_calls, char* output, size_t capacity,
+                                agent_tool_execution_t* execution)
+{
+    return agent_tool_invoke_observed(agent, context, remaining_calls, output, capacity, execution, NULL);
 }

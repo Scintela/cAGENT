@@ -31,7 +31,7 @@ agent_error_t agent_start(agent_t* agent);
 /* Destroys an idle Agent; active/callback calls are ignored, borrowed resources are untouched. */
 void agent_destroy(agent_t* agent);
 
-/* Runs one complete turn synchronously; provider/tool callbacks may block. */
+/* Runs one turn synchronously; initialize response.output/output_size; delivery status is independent. */
 agent_error_t agent_run(agent_t* agent, const agent_request_t* request,
                              agent_response_t* response);
 

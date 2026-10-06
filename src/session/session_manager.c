@@ -248,8 +248,31 @@ fail:
     return status;
 }
 
-agent_error_t agent_session_append(agent_session_turn_t* turn,
-                                   const agent_message_view_t* message)
+static bool arena_owns(const agent_arena_t* arena, const void* data, size_t bytes)
+{
+    uintptr_t base = (uintptr_t)arena->base, pointer = (uintptr_t)data;
+    return !bytes || (pointer >= base && pointer - base <= arena->used &&
+                      bytes <= arena->used - (size_t)(pointer - base));
+}
+
+static bool message_owned(const agent_arena_t* arena, const agent_message_view_t* message)
+{
+    size_t bytes, i;
+    if (!arena_owns(arena, message->content.data, message->content.size) ||
+        !arena_owns(arena, message->tool_call_id.data, message->tool_call_id.size) ||
+        agent_size_multiply(message->tool_call_count, sizeof(agent_tool_call_view_t), &bytes) != AGENT_OK ||
+        !arena_owns(arena, message->tool_calls, bytes)) return false;
+    for (i = 0u; i < message->tool_call_count; ++i) {
+        const agent_tool_call_view_t* call = &message->tool_calls[i];
+        if (!arena_owns(arena, call->id.data, call->id.size) ||
+            !arena_owns(arena, call->name.data, call->name.size) ||
+            !arena_owns(arena, call->arguments_json.data, call->arguments_json.size)) return false;
+    }
+    return true;
+}
+
+static agent_error_t append_message(agent_session_turn_t* turn,
+                                    const agent_message_view_t* message, bool owned)
 {
     turn_state_t next;
     agent_message_view_t copied;
@@ -261,6 +284,7 @@ agent_error_t agent_session_append(agent_session_turn_t* turn,
     next = turn->state;
     status = accept_message(&next, message);
     if (status != AGENT_OK) return status;
+    if (owned && !message_owned(turn->arena, message)) return AGENT_ERROR_INVALID;
     if (message->tool_call_count) {
         size_t i;
         for (i = 0u; i < message->tool_call_count; ++i) {
@@ -269,7 +293,8 @@ agent_error_t agent_session_append(agent_session_turn_t* turn,
         }
     }
     mark = turn->arena->used;
-    status = copy_message(turn->arena, message, &copied);
+    if (owned) { copied = *message; status = AGENT_OK; }
+    else status = copy_message(turn->arena, message, &copied);
     if (status != AGENT_OK) goto fail;
     if (turn->storage) {
         status = turn->storage->ops.append(turn->storage->context,
@@ -289,6 +314,16 @@ agent_error_t agent_session_append(agent_session_turn_t* turn,
 fail:
     agent_arena_rewind(turn->arena, mark);
     return status;
+}
+
+agent_error_t agent_session_append(agent_session_turn_t* turn, const agent_message_view_t* message)
+{
+    return append_message(turn, message, false);
+}
+
+agent_error_t agent_session_append_owned(agent_session_turn_t* turn, const agent_message_view_t* message)
+{
+    return append_message(turn, message, true);
 }
 
 agent_error_t agent_session_turn_finish(agent_session_turn_t* turn,

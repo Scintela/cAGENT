@@ -28,7 +28,7 @@ typedef struct {
     uint64_t timestamp_ms;            /* Runtime monotonic timestamp. */
     agent_string_view_t session_id;   /* Effective session ID. */
     agent_string_view_t trace_id;     /* Request trace ID. */
-    agent_tool_call_view_t tool_call; /* Tool/confirmation events only; otherwise empty. */
+    agent_tool_call_view_t tool_call; /* Tool events only; otherwise empty. */
     agent_error_t status;        /* Relevant operation status. */
     agent_run_summary_t summary;      /* Execution facts at this boundary. */
 } agent_event_t;

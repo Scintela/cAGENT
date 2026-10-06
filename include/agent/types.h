@@ -64,7 +64,7 @@ typedef struct {
 /* Per-turn limits; request overrides replace the entire value. */
 typedef struct {
     uint32_t max_steps;            /* Maximum model iterations; must be nonzero. */
-    uint32_t timeout_ms;           /* Overall deadline, including confirmation wait; 0=none. */
+    uint32_t timeout_ms;           /* Overall cooperative deadline; 0=none. */
     uint32_t per_model_timeout_ms; /* Model call timeout; 0=overall deadline only. */
     uint32_t per_tool_timeout_ms;  /* Tool call timeout; 0=overall deadline only. */
     uint32_t max_tool_calls;       /* Maximum attempted handler calls; 0=disable tools. */
@@ -133,12 +133,12 @@ typedef struct {
 typedef struct {
     uint32_t model_calls;      /* Number of provider complete invocations. */
     uint32_t tool_calls;       /* Number of handler invocations. */
-    uint32_t tool_succeeded;   /* Handler calls returning AGENT_OK. */
-    uint32_t tool_failed;      /* Handler calls returning an error. */
+    uint32_t tool_succeeded;   /* Guarded handler calls completed successfully. */
+    uint32_t tool_failed;      /* Guarded handler calls failed, including output/deadline failures. */
     uint32_t tool_denied;      /* Calls rejected before invoking a handler. */
     bool final_valid;          /* A complete assistant final is available, possibly empty. */
     bool tools_executed;       /* At least one handler was invoked, effects may be unknown. */
-    uint64_t elapsed_ms;       /* Turn duration including confirmation wait. */
+    uint64_t elapsed_ms;       /* Turn duration through Session finalization and delivery. */
     size_t scratch_peak_bytes; /* Core scratch high-water mark for this turn. */
 } agent_run_summary_t;
 
@@ -173,6 +173,7 @@ typedef struct {
     size_t output_written;       /* Copied bytes excluding terminator. */
     size_t output_required;      /* Full final byte length excluding terminator. */
     agent_error_t status;  /* Execution status, independent of delivery_status. */
+    agent_error_t session_status; /* First transaction begin/append/finish error; not a durability guarantee. */
     agent_error_t delivery_status; /* AGENT_OK or AGENT_ERROR_TRUNCATED. */
     bool output_truncated;       /* True when the complete final was not delivered. */
     agent_run_summary_t summary; /* Per-turn execution facts. */

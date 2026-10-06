@@ -2,7 +2,7 @@
  * SPDX-License-Identifier: MIT
  * SPDX-FileCopyrightText: 2026 tanglinjie
  */
-/* Cancellation token support; synchronous run dispatch remains pending. */
+/* Cancellation synchronized with the synchronous driver's active-token lifetime. */
 
 #include "run/run_internal.h"
 #include "core/core_internal.h"

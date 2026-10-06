@@ -24,6 +24,9 @@ agent_error_t agent_session_turn_open(agent_session_turn_t** transaction,
                                       agent_string_view_t input);
 agent_error_t agent_session_append(agent_session_turn_t* transaction,
                                    const agent_message_view_t* message);
+/* Adopt views already stored below the turn arena's used mark; caller never rewinds these facts. */
+agent_error_t agent_session_append_owned(agent_session_turn_t* transaction,
+                                         const agent_message_view_t* message);
 agent_error_t agent_session_turn_finish(agent_session_turn_t* transaction,
                                         agent_session_turn_outcome_t outcome);
 agent_error_t agent_session_project(const agent_session_turn_t* transaction,

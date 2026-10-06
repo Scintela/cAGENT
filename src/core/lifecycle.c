@@ -252,23 +252,3 @@ agent_error_t agent_set_limits(agent_t* agent, const agent_limits_t* limits)
     agent->config.limits = *limits;
     return AGENT_OK;
 }
-
-agent_error_t agent_run(agent_t* agent, const agent_request_t* request,
-                        agent_response_t* response)
-{
-    if (agent == NULL || request == NULL || response == NULL)
-    {
-        return AGENT_ERROR_INVALID;
-    }
-    if (agent->state != AGENT_CORE_READY)
-    {
-        return AGENT_ERROR_STATE;
-    }
-
-    memset(response, 0, sizeof(*response));
-    response->status = AGENT_ERROR_NOT_SUPPORTED;
-    response->delivery_status = AGENT_OK;
-    return AGENT_ERROR_NOT_SUPPORTED;
-}
-
-/* TODO(cAgentV2): 实现本模块。 */
