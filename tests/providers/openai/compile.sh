@@ -16,6 +16,7 @@ trap 'rm -f "$binary"' EXIT
     "$root/providers/model/openai/src/openai_response.c" \
     "$root/codecs/json/reader.c" \
     "$root/codecs/json/writer.c" \
+    "$root/src/skill/skill_registry.c" \
     "$root/src/core/lifecycle.c" \
     "$root/src/tool/tool_registry.c" "$root/src/tool/tool_schema.c" \
     "$root/src/core/arena.c" \

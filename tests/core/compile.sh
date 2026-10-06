@@ -11,6 +11,7 @@ trap 'rm -f "$binary"' EXIT
     "$root/src/tool/tool_registry.c" "$root/src/tool/tool_schema.c" "$root/codecs/json/reader.c" \
     "$root/tests/core/lifecycle.c" \
     "$root/src/core/arena.c" \
+    "$root/src/skill/skill_registry.c" \
     "$root/src/core/lifecycle.c" \
     "$root/src/core/event.c" \
     "$root/src/core/error.c" \

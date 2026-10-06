@@ -5,6 +5,7 @@
 /* Syntax admission only; application validators own JSON Schema semantics. */
 
 #include "tool/tool_internal.h"
+#include "core/text_internal.h"
 
 #if AGENT_MAX_TOOLS > 0
 #include "json_internal.h"
@@ -12,28 +13,7 @@
 
 agent_error_t agent_tool_text_validate(agent_string_view_t text)
 {
-    if (text.size && !text.data)
-        return AGENT_ERROR_INVALID;
-#if AGENT_MAX_TOOLS > 0
-    {
-        size_t pos = 0u;
-        while (pos < text.size)
-        {
-            size_t width;
-            agent_error_t status;
-            if (text.data[pos] == '\0')
-                return AGENT_ERROR_INVALID;
-            status = agent_json_utf8_width((const unsigned char*)text.data + pos, text.size - pos,
-                                           &width);
-            if (status != AGENT_OK)
-                return status;
-            pos += width;
-        }
-    }
-    return AGENT_OK;
-#else
-    return text.size ? AGENT_ERROR_NOT_SUPPORTED : AGENT_OK;
-#endif
+    return agent_text_validate(text);
 }
 
 agent_error_t agent_tool_object_validate(agent_string_view_t object, size_t maximum)

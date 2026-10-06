@@ -2,7 +2,7 @@
  * SPDX-License-Identifier: MIT
  * SPDX-FileCopyrightText: 2026 tanglinjie
  */
-/* Optional static prompt contributions; loaders remain application-side. Interface draft; declarations do not imply an implemented feature. */
+/* Borrowed, trusted instruction contributions; file loaders are optional providers. */
 #pragma once
 
 #include <agent/error.h>
@@ -14,7 +14,7 @@ extern "C" {
 
 /* Skill metadata, shallow-copied by registration.  */
 typedef struct {
-    agent_string_view_t name;        /* Unique nonempty name; borrowed and immutable. */
+    agent_string_view_t name;        /* Unique ASCII [A-Za-z0-9_-] name; borrowed and immutable. */
     agent_string_view_t description; /* Optional borrowed description. */
     agent_string_view_t content;     /* Borrowed UTF-8 prompt fragment. */
     int32_t priority;                /* Higher first; ties follow registration order. */

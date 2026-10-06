@@ -14,6 +14,7 @@ trap 'rm -f "$binary"' EXIT
     "$root/src/session/session_manager.c" \
     "$root/src/session/session_storage.c" \
     "$root/providers/storage/ram/src/session_ram.c" \
+    "$root/src/skill/skill_registry.c" \
     "$root/src/core/lifecycle.c" \
     "$root/src/core/arena.c" \
     "$root/src/model/model.c" \
