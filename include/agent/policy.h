@@ -2,7 +2,7 @@
  * SPDX-License-Identifier: MIT
  * SPDX-FileCopyrightText: 2026 tanglinjie
  */
-/* Application authorization, independent of schema and visibility. Interface draft; declarations do not imply an implemented feature. */
+/* Application authorization, independent of schema and visibility. */
 #pragma once
 
 #include <agent/tool.h>
@@ -34,7 +34,7 @@ typedef struct {
 typedef agent_policy_decision_t (*agent_policy_callback_t)(void* user_data,
                                                            const agent_policy_request_t* request);
 
-/* Install/clear the single product policy callback while idle. */
+/* Install/clear the product policy while idle; NULL denies every model tool call. */
 agent_error_t agent_set_policy_callback(agent_t* agent, agent_policy_callback_t callback,
                                              void* user_data);
 

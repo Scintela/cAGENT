@@ -11,7 +11,9 @@
 #include <string.h>
 
 typedef char agent_workspace_must_fit_core
-    [(sizeof(agent_t) + AGENT_SCRATCH_BYTES <= sizeof(agent_workspace_t)) ? 1 : -1];
+    [(sizeof(agent_t) + AGENT_TOOL_REGISTRY_BYTES +
+      (AGENT_MAX_TOOLS ? AGENT_ALIGNOF(agent_tool_registry_t) - 1u : 0u) +
+      AGENT_SCRATCH_BYTES <= sizeof(agent_workspace_t)) ? 1 : -1];
 
 static agent_error_t agent_limits_validate(const agent_limits_t* limits)
 {
@@ -89,6 +91,12 @@ agent_error_t agent_core_layout(agent_workspace_t* workspace, const agent_config
     {
         return AGENT_ERROR_INVALID;
     }
+#if AGENT_MAX_TOOLS > 0
+    if (capacity.max_json_depth == 0u || capacity.max_json_depth > 32u)
+    {
+        return AGENT_ERROR_INVALID;
+    }
+#endif
 
     memset(workspace->bytes, 0, sizeof(workspace->bytes));
     status = agent_arena_init(&arena, workspace->bytes, sizeof(workspace->bytes));
@@ -101,13 +109,22 @@ agent_error_t agent_core_layout(agent_workspace_t* workspace, const agent_config
     {
         return status;
     }
+    *agent = agent_memory;
+    status = agent_tool_registry_init(&(*agent)->tools, &arena);
+    if (status != AGENT_OK)
+    {
+        memset(workspace->bytes, 0, sizeof(workspace->bytes));
+        *agent = NULL;
+        return status;
+    }
     status = agent_arena_take(&arena, capacity.scratch_bytes, 1u, &scratch_memory);
     if (status != AGENT_OK)
     {
+        memset(workspace->bytes, 0, sizeof(workspace->bytes));
+        *agent = NULL;
         return status;
     }
 
-    *agent = agent_memory;
     (*agent)->config = *config;
     (*agent)->state = AGENT_CORE_CONFIGURING;
     (*agent)->workspace = workspace;
@@ -164,10 +181,8 @@ agent_t* agent_create(const agent_config_t* config)
 
 agent_error_t agent_start(agent_t* agent)
 {
-    if (agent == NULL)
-    {
-        return AGENT_ERROR_INVALID;
-    }
+    agent_error_t status = agent_core_require_idle(agent);
+    if (status != AGENT_OK) return status;
     if (agent->state != AGENT_CORE_CONFIGURING)
     {
         return AGENT_ERROR_STATE;

@@ -1,0 +1,32 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 tanglinjie
+cmake_minimum_required(VERSION 3.16)
+project(cagent_tool_build_contract C)
+get_filename_component(AGENT_ROOT "${CMAKE_CURRENT_LIST_DIR}/../../.." ABSOLUTE)
+option(TOOL_BUILD_IDF "Exercise IDF source assembly without the SDK" OFF)
+option(TOOL_WITH_CODEC "Include full codec and OpenAI provider" OFF)
+
+if(TOOL_BUILD_IDF)
+    function(idf_component_register)
+        cmake_parse_arguments(COMP "" "" "SRCS;INCLUDE_DIRS;PRIV_INCLUDE_DIRS;PRIV_REQUIRES" ${ARGN})
+        add_library(cagent_core STATIC ${COMP_SRCS})
+        target_include_directories(cagent_core PUBLIC ${COMP_INCLUDE_DIRS}
+            PRIVATE ${COMP_PRIV_INCLUDE_DIRS})
+        set(COMPONENT_LIB cagent_core PARENT_SCOPE)
+    endfunction()
+    set(CONFIG_AGENT_PROVIDER_OPENAI ${TOOL_WITH_CODEC})
+else()
+    set(AGENT_BUILD_JSON_CODEC ${TOOL_WITH_CODEC} CACHE BOOL "" FORCE)
+    set(AGENT_BUILD_OPENAI_PROVIDER ${TOOL_WITH_CODEC} CACHE BOOL "" FORCE)
+endif()
+add_subdirectory("${AGENT_ROOT}" core)
+add_executable(tool_smoke "${AGENT_ROOT}/tests/tool/contract.c")
+target_include_directories(tool_smoke PRIVATE "${AGENT_ROOT}/src"
+    "${AGENT_ROOT}/codecs/json" "${AGENT_ROOT}/codecs/json/vendor/jsmn")
+target_link_libraries(tool_smoke PRIVATE cagent_core)
+if(TOOL_WITH_CODEC)
+    target_compile_definitions(tool_smoke PRIVATE TEST_LINK_OPENAI=1)
+    if(NOT TOOL_BUILD_IDF)
+        target_link_libraries(tool_smoke PRIVATE cagent::provider_openai)
+    endif()
+endif()

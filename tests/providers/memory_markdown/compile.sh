@@ -6,8 +6,10 @@ root="$(cd "$(dirname "$0")/../../.." && pwd)"
 binary="$(mktemp)"
 trap 'rm -f "$binary"' EXIT
 includes=(-I"$root/include" -I"$root/src" -I"$root/providers/storage/files/include"
+  -I"$root/codecs/json" -I"$root/codecs/json/vendor/jsmn"
   -I"$root/providers/memory/markdown/include" -I"$root/ports/posix/storage/include")
 "${CC:-cc}" -std=c99 -Wall -Wextra -Werror -pedantic ${CFLAGS:-} "${includes[@]}" \
+  "$root/src/tool/tool_registry.c" "$root/src/tool/tool_schema.c" "$root/codecs/json/reader.c" \
   "$root/tests/providers/memory_markdown/contract.c" \
   "$root/providers/memory/markdown/src/memory_markdown.c" \
   "$root/providers/storage/files/src/file_store.c" "$root/ports/posix/storage/src/file_store.c" \

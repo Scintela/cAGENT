@@ -41,6 +41,8 @@ agent_error_t agent_json_parse(agent_string_view_t input, jsmntok_t* tokens,
                                agent_json_document_t* document);
 /* Strictly validate one complete object without allocating tokens. */
 agent_error_t agent_json_validate_object(agent_string_view_t input, size_t max_depth);
+/* Tokenless strict object admission; reject decoded duplicate/NUL keys at every depth. */
+agent_error_t agent_json_validate_unique_object(agent_string_view_t input, size_t max_depth);
 agent_error_t agent_json_object_get(const agent_json_document_t* document,
                                     size_t object, agent_string_view_t key,
                                     size_t* value);

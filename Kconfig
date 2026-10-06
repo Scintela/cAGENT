@@ -20,7 +20,7 @@ endchoice
 
 config AGENT_MAX_TOOLS
     int "Maximum registered tools" if AGENT_PROFILE_CUSTOM
-    range 1 64
+    range 0 64
     default 4 if AGENT_PROFILE_TINY
     default 16 if AGENT_PROFILE_DEVICE_REACT
     default 12

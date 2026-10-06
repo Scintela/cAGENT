@@ -16,6 +16,7 @@ typedef struct {
     size_t size;
     size_t pos;
     size_t max_depth;
+    bool unique_keys;
 } json_cursor_t;
 
 agent_error_t agent_json_utf8_width(const unsigned char* input, size_t available,
@@ -227,23 +228,33 @@ static agent_error_t parse_number(json_cursor_t* cursor)
 
 static agent_error_t parse_value(json_cursor_t* cursor, size_t depth);
 
+static agent_error_t check_object_key(const json_cursor_t* cursor, size_t first,
+                                      size_t start, size_t end, size_t depth);
+
 static agent_error_t parse_object(json_cursor_t* cursor, size_t depth)
 {
     agent_error_t status;
+    size_t first;
 
     if (depth >= cursor->max_depth) {
         return AGENT_ERROR_LIMIT;
     }
     ++cursor->pos;
     skip_space(cursor);
+    first = cursor->pos;
     if (cursor->pos < cursor->size && cursor->data[cursor->pos] == '}') {
         ++cursor->pos;
         return AGENT_OK;
     }
     for (;;) {
+        size_t start = cursor->pos;
         status = parse_string(cursor);
         if (status != AGENT_OK) {
             return status;
+        }
+        if (cursor->unique_keys) {
+            status = check_object_key(cursor, first, start, cursor->pos, depth);
+            if (status != AGENT_OK) return status;
         }
         skip_space(cursor);
         if (cursor->pos >= cursor->size || cursor->data[cursor->pos++] != ':') {
@@ -357,6 +368,7 @@ static agent_error_t validate_input(agent_string_view_t input, size_t max_depth)
     cursor.size = input.size;
     cursor.pos = 0u;
     cursor.max_depth = max_depth;
+    cursor.unique_keys = false;
     status = parse_value(&cursor, 0u);
     if (status != AGENT_OK) {
         return status;
@@ -492,6 +504,79 @@ static agent_error_t decode_escape(const unsigned char* data, size_t end,
     }
     *count = 1u;
     return AGENT_OK;
+}
+
+typedef struct {
+    const unsigned char* data;
+    size_t pos, end, used, count;
+    unsigned char bytes[4];
+} key_cursor_t;
+
+static int key_next(key_cursor_t* key)
+{
+    if (key->used < key->count) return key->bytes[key->used++];
+    if (key->pos == key->end) return -1;
+    key->used = 0u;
+    key->count = 1u;
+    if (key->data[key->pos] == '\\') {
+        if (decode_escape(key->data, key->end, &key->pos, key->bytes, &key->count) != AGENT_OK)
+            return -2;
+    } else {
+        key->bytes[0] = key->data[key->pos++];
+    }
+    return key->bytes[key->used++];
+}
+
+/* Re-scan earlier members without recursive uniqueness checks: bounded O(n^2), O(depth) stack. */
+static agent_error_t check_object_key(const json_cursor_t* cursor, size_t first,
+                                      size_t start, size_t end, size_t depth)
+{
+    json_cursor_t previous = *cursor;
+    key_cursor_t current = {cursor->data, start + 1u, end - 1u, 0u, 0u, {0}};
+    int byte;
+    while ((byte = key_next(&current)) >= 0) {
+        if (byte == 0) return AGENT_ERROR_PARSE;
+    }
+    if (byte != -1) return AGENT_ERROR_PARSE;
+    previous.pos = first;
+    previous.unique_keys = false;
+    while (previous.pos < start) {
+        size_t old_start = previous.pos;
+        key_cursor_t old;
+        bool equal = true;
+        agent_error_t status = parse_string(&previous);
+        if (status != AGENT_OK) return status;
+        old = (key_cursor_t){cursor->data, old_start + 1u, previous.pos - 1u, 0u, 0u, {0}};
+        current = (key_cursor_t){cursor->data, start + 1u, end - 1u, 0u, 0u, {0}};
+        do {
+            byte = key_next(&current);
+            if (byte != key_next(&old)) equal = false;
+        } while (equal && byte >= 0);
+        if (equal) return AGENT_ERROR_PARSE;
+        skip_space(&previous);
+        if (previous.pos >= previous.size || previous.data[previous.pos++] != ':')
+            return AGENT_ERROR_PARSE;
+        status = parse_value(&previous, depth + 1u);
+        if (status != AGENT_OK) return status;
+        skip_space(&previous);
+        if (previous.pos >= previous.size || previous.data[previous.pos++] != ',')
+            return AGENT_ERROR_PARSE;
+        skip_space(&previous);
+    }
+    return AGENT_OK;
+}
+
+agent_error_t agent_json_validate_unique_object(agent_string_view_t input, size_t max_depth)
+{
+    json_cursor_t cursor;
+    agent_error_t status = agent_json_validate_object(input, max_depth);
+    if (status != AGENT_OK) return status;
+    cursor.data = (const unsigned char*)input.data;
+    cursor.size = input.size;
+    cursor.pos = 0u;
+    cursor.max_depth = max_depth;
+    cursor.unique_keys = true;
+    return parse_value(&cursor, 0u);
 }
 
 static bool string_equals(const agent_json_document_t* document, size_t token,

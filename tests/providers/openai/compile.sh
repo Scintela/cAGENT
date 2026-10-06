@@ -17,6 +17,7 @@ trap 'rm -f "$binary"' EXIT
     "$root/codecs/json/reader.c" \
     "$root/codecs/json/writer.c" \
     "$root/src/core/lifecycle.c" \
+    "$root/src/tool/tool_registry.c" "$root/src/tool/tool_schema.c" \
     "$root/src/core/arena.c" \
     "$root/src/model/model.c" \
     "$root/src/run/cancel.c" \

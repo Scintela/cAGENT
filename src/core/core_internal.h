@@ -21,7 +21,7 @@ extern "C" {
 
 typedef enum { AGENT_CORE_CONFIGURING = 0, AGENT_CORE_READY, AGENT_CORE_ACTIVE } agent_core_state_t;
 
-struct agent_core_capacity {
+typedef struct agent_core_capacity {
     size_t max_tools;
     size_t max_contexts;
     size_t max_skills;
@@ -38,7 +38,7 @@ struct agent_core_capacity {
     size_t max_description_bytes;
     size_t max_identifier_bytes;
     size_t max_json_depth;
-};
+} agent_core_capacity_t;
 
 struct agent {
     agent_config_t config;

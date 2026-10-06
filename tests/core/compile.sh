@@ -6,7 +6,9 @@ cc="${CC:-cc}"
 binary="$(mktemp)"
 trap 'rm -f "$binary"' EXIT
 
-"$cc" -std=c99 -Wall -Wextra -Werror -I"$root/include" -I"$root/src" \
+"$cc" -std=c99 -Wall -Wextra -Werror ${CFLAGS:-} -I"$root/include" -I"$root/src" \
+    -I"$root/codecs/json" -I"$root/codecs/json/vendor/jsmn" \
+    "$root/src/tool/tool_registry.c" "$root/src/tool/tool_schema.c" "$root/codecs/json/reader.c" \
     "$root/tests/core/lifecycle.c" \
     "$root/src/core/arena.c" \
     "$root/src/core/lifecycle.c" \

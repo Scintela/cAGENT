@@ -7,6 +7,7 @@ set(FILE_STORE_PLATFORM "posix" CACHE STRING "Build contract platform")
 option(FILE_STORE_WITH_JSONL "Include JSONL and its shared-file bridge" OFF)
 option(FILE_STORE_WITH_MEMORY "Include the Markdown Memory provider" OFF)
 option(FILE_STORE_REUSE "Reuse prebuilt common targets in NuttX assembly" OFF)
+set(CONFIG_AGENT_MAX_TOOLS 0 CACHE STRING "Exclude Tool JSON admission from file-only tests")
 
 if(FILE_STORE_PLATFORM STREQUAL "idf")
     # Exercise component source/usage assembly without claiming a native SDK build.

@@ -2,7 +2,7 @@
  * SPDX-License-Identifier: MIT
  * SPDX-FileCopyrightText: 2026 tanglinjie
  */
-/* Borrowed tool registration and bounded synchronous execution. Interface draft; declarations do not imply an implemented feature. */
+/* Borrowed tool registration and bounded synchronous execution. */
 #pragma once
 
 #include <agent/error.h>
@@ -57,20 +57,20 @@ typedef struct {
 /* Enumeration callback; definition is VIEW for this callback only. */
 typedef agent_error_t (*agent_tool_visit_fn)(void* user_data, const agent_tool_t* tool);
 
-/* Register atomically in CONFIGURING/READY; no implicit heap growth. */
+/* Register while idle; pointed-to data stays immutable until removal; zero slots returns NOT_SUPPORTED. */
 agent_error_t agent_register_tool(agent_t* agent, const agent_tool_t* tool);
 
 /* Remove an idle tool and release all registry references to it. */
 agent_error_t agent_unregister_tool(agent_t* agent, agent_string_view_t name);
 
-/* Enable/disable an idle tool; invalidate model schema projection. Returns: AGENT_OK; NOT_FOUND, INVALID or BUSY. */
+/* Enable/disable an idle tool without changing its hidden/authorization flags. */
 agent_error_t agent_tool_set_enabled(agent_t* agent, agent_string_view_t name, bool enabled);
 
 /* Query enable state on the driver task, outside callbacks. Returns: AGENT_OK; NOT_FOUND or INVALID. */
 agent_error_t agent_tool_is_enabled(const agent_t* agent, agent_string_view_t name,
                                          bool* enabled);
 
-/* Enumerate all registered tools; a visitor error stops enumeration and is propagated. */
+/* Visit all tools in registration order; no reentry; first visitor error is propagated. */
 agent_error_t agent_tool_enumerate(const agent_t* agent, agent_tool_visit_fn visit,
                                         void* user_data);
 

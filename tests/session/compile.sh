@@ -7,6 +7,8 @@ trap 'rm -f "$binary"' EXIT
 
 "${CC:-cc}" -std=c99 -Wall -Wextra -Werror \
     -I"$root/include" -I"$root/src" \
+    -I"$root/codecs/json" -I"$root/codecs/json/vendor/jsmn" \
+    "$root/src/tool/tool_registry.c" "$root/src/tool/tool_schema.c" "$root/codecs/json/reader.c" \
     -I"$root/providers/storage/ram/include" \
     "$root/tests/session/contract.c" \
     "$root/src/session/session_manager.c" \
