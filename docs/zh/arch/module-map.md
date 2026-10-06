@@ -9,10 +9,10 @@
 |------|------|------|
 | Core Kernel | Lifecycle、Workspace、Registry、Event Dispatch、Cancel/Stats | `core.md` |
 | Execution / Orchestration | Loop、Run State Machine | `loop.md` |
-| Execution / Orchestration | Context Projection | `context.md` |
+| Execution / Orchestration | Context Projection | [Context 架构](context.md)，[公共接口](../api/context.md) |
 | Capabilities | Model wrapper (`src/model/`) and optional implementations (`providers/`) | `model.md` |
 | Capabilities | Tool | [Tool 架构](tool.md)，[公共接口](../api/tool.md) |
-| Capabilities | Skill | `skill.md` |
+| Capabilities | Skill | [Skill 架构](skill.md)，[公共接口](../api/skill.md) |
 | Capabilities | Session | `session.md` |
 | Capabilities | Memory | `memory.md` |
 | Cross-cutting Control | Policy、Confirmation、Validation | `policy.md` |

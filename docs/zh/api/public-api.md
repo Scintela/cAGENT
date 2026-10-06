@@ -8,6 +8,8 @@
 > [ADR 0032](../adr/0032-memory-domain-management.md)与[开发记录](../development/memory.md)。
 > Tool 注册、投影、参数准入、单 Policy 和安全同步执行机制已实现；当前事实见
 > [Tool 接口](tool.md)与[Tool 架构](../arch/tool.md)。Run/Session 接入仍未完成。
+> Skill 注册与 Context 联合投影已实现，当前契约见 [Skill 接口](skill.md)、
+> [Context 接口](context.md)和[Context 架构](../arch/context.md)；Run 驱动仍待接入。
 
 ## 1. 目标与评审依据
 

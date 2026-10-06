@@ -3,6 +3,9 @@
 日期：2026-10-02。依据：[ADR 0032](../adr/0032-memory-domain-management.md)。
 代码提交：`fd2e0ce`（Memory 领域管理、Markdown 后端与测试）。
 
+后续更新（2026-10-06）：Context 已接入显式文档选择与 turn 快照，见
+[Context 开发日志](context.md)。下文保留本次 Memory 实现时的记录；ReAct 驱动仍未完成。
+
 ## 本次范围
 
 `src/memory/` 从空骨架变成平台无关的领域管理层。可选 Markdown 后端接入现有

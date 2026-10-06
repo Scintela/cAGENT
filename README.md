@@ -9,12 +9,16 @@ ESP-IDF/OpenVela 适配器、私有 JSON codec 和 OpenAI 非流式 Provider 已
 Host 测试；Session 已有格式无关的 Storage 契约、可选 RAM/JSONL 后端和共享文件读写，
 Memory 已有独立领域绑定与可选 Markdown 整文后端，
 Tool 已有固定注册表、规范投影、参数/授权校验和有界同步执行机制，
+Skill 已有注册与全文投影，Context 已有 Memory 快照和 Session/Tool 联合组装，
 但同步 `agent_run()` 的 ReAct 流程尚未实现，Mock Provider 仍是占位。目前不能通过 Core 完成
 端到端 LLM 对话。
 Session 的 API、内存与数据流见[开发日志](docs/zh/development/session.md)。
 Memory 的 API、借用寿命与写入结果见[开发日志](docs/zh/development/memory.md)。
 Tool 的[接口](docs/zh/api/tool.md)、[架构](docs/zh/arch/tool.md)与
 [开发记录](docs/zh/development/tool.md)区分已实现机制和待接入的 Run 编排。
+Skill 的[接口](docs/zh/api/skill.md)、[架构](docs/zh/arch/skill.md)与
+Context 的[接口](docs/zh/api/context.md)、[架构](docs/zh/arch/context.md)
+说明统一组装、参考消息、预算和两级 scratch 生命周期。
 
 ## 架构
 
@@ -26,6 +30,7 @@ Public API (include/agent.h, include/agent/*.h)
   |
   +-- Core (src/)                 生命周期、运行契约、注册与资源边界
   |     +-- Tool / Policy         固定注册表、可见投影、默认拒绝与有界执行
+  |     +-- Skill / Context       指令贡献、Memory 快照、Session/Tool 统一投影
   |     +-- Model contract        调用 Provider 的 ops，不处理厂商协议
   |     +-- Runtime contract      单调时钟、可选平台服务
   |     +-- Transport contract    HTTP 请求/响应与流式接收接口
@@ -38,7 +43,7 @@ Public API (include/agent.h, include/agent/*.h)
   |     +-- Platform file ops      USER/Memory/Skill 文件访问的共用基础
   |
   +-- Memory Provider            Soul/User/Memory/笔记分类与整文操作，可选编译
-  |     +-- File Store ops        复用平台 I/O，不自动进入 Context
+  |     +-- File Store ops        复用平台 I/O，由 Context 显式选择逻辑文档
   |
   +-- Platform Ports (ports/)     Runtime、HTTP/TLS 与文件 I/O 适配
 ```

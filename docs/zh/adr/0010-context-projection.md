@@ -1,7 +1,8 @@
 # ADR 0010: Context 的编排、投影与资源边界
 
-- 状态：提案
+- 状态：已实现有界全文与联合投影；Run/ReAct 接入待完成
 - 日期：2026-09-26
+- 实现更新：2026-10-06；实际接口与测试见 [Context 架构](../arch/context.md)。
 
 本文提到的 `agent_turn_end()` 是后续候选接口；同步 MVP 以 `agent_run()` 返回结束运行，见 ADR 0020。
 
@@ -41,9 +42,9 @@ Optional Memory provider ──┘                    Provider wire encoding
 | system prompt / Agent 指令 | 应用配置或 Core 复制的配置 | 选择、计入预算、输出最终 `system_prompt` | 映射到目标模型请求字段 |
 | Session 历史 | Session Storage Provider | 维护当前 turn 事务、按预算查询完整历史 turn group、投影 `agent_message_view_t[]` | 编码目标协议的 messages |
 | Tool 定义与 schema | 应用持有或 Tool Registry 的受控副本 | 筛选可见 Tool、Policy 检查、投影 `agent_tool_view_t[]` | 编码目标协议的 tools/function schema |
-| Skill | 应用提供、Registry 注册 | 按注册模式投影：INLINE 全文或 ON_DEMAND 摘要（[ADR 0028](0028-skill-projection-modes.md)） | 不解释 Skill 领域含义 |
+| Skill | 应用提供、Registry 注册 | 已实现全文投影；[ADR 0028](0028-skill-projection-modes.md) 的 ON_DEMAND 契约尚未实现 | 不解释 Skill 领域含义 |
 | 动态 Context | Context Provider / 应用 | 调用、排序、限制输出、处理失败 | 不直接读取设备或应用状态 |
-| 长期 Memory | 可选的外部 Memory Provider | 将选中的结果作为受限 Context 贡献 | 不保存或检索长期记忆 |
+| 长期 Memory | 独立 Memory 领域绑定与可选 Provider | 显式选择逻辑文档，取得有界 turn 快照 | 不保存或检索长期记忆 |
 | OpenAI JSON / HTTP body | Model Provider | 不持有、不生成 | 序列化、发送、解析和释放/复用临时 buffer |
 
 Core 可以持有注册项、当前 session 的绑定/游标和本 turn 的投影副本，但不持有完整 Session
@@ -64,9 +65,9 @@ agent_model_request_t request = {
 };
 ```
 
-- `system_prompt` 是 system 指令、启用 Skill、动态 Context 和将来 Memory 检索结果的有界
-  文本投影。
-- `messages` 是 Session 的有序对话投影；它不是 `system_prompt` 的拼接内容。
+- `system_prompt` 是固定指令、Skill、SOUL 及 INSTRUCTIONS 动态贡献的有界文本投影。
+- `messages` 先包含选中的 USER/FACTS/NOTE 与 REFERENCE 动态贡献，再包含 Session 的有序
+  对话投影；参考消息不追加到持久化 Session。
 - `tools` 是可调用 Tool 的结构化投影；它不是 system text，也不是 Core 生成的
   `tools_json`。
 
@@ -80,7 +81,8 @@ OpenAI-compatible Provider 可以将上述三部分编码为 `messages`、`tools
 
 - `build()` 在驱动 Agent 的同一任务上下文中同步执行，不由 Core 创建线程，也不允许 ISR
   调用。
-- Core 按 `priority` 降序调用；相同 priority 保持注册顺序，保证可复现的模型输入。
+- Core 先执行必需贡献，再执行可选贡献，各组内按 `priority` 降序。最终同类内容恢复为
+  优先级顺序，同优先级保持注册顺序；回调不得依赖其他回调的副作用。
 - `agent_context_request_t`、取消 token 和 text sink 只在此次 callback 内借用有效。
 - Provider 通过 `agent_text_sink_t` 分段输出。Core 将每个 chunk 复制到当前 turn 的
   Context scratch，Provider 不得保留 sink 或依赖其在返回后继续可用。
@@ -90,19 +92,24 @@ OpenAI-compatible Provider 可以将上述三部分编码为 `messages`、`tools
 取消和 deadline 是 turn 级控制：任一 Provider 观察到取消或 deadline 到期时，当前 turn
 分别以 `AGENT_ERROR_CANCELLED` 或 `AGENT_ERROR_TIMEOUT` 终止，`required` 不改变该规则。
 `required == true` 的其他失败或 Context 总预算超限同样终止 turn；非必需 Provider 的其他
-失败应被记录为事件/诊断事实后跳过，具体事件字段留待 Event 契约冻结时定义。非必需贡献
+失败记录在私有构建报告后跳过，不新增公共事件。非必需贡献
 不得因失败而静默改变已写入文本的边界：Core 要么丢弃该 Provider 的整段输出，要么在调用前
 预留可验证的输出空间；首版实现采用“按 Provider checkpoint 回退整段输出”。
 
 ### 组装顺序和预算
 
-首版规定如下逻辑顺序：
+当前实现规定如下逻辑顺序：
 
 1. 固定 system prompt；
-2. 已启用的 Skill；
-3. 已注册的动态 Context Provider；
-4. 将来由可选 Memory Provider 返回的检索结果；
-5. Session 消息与 Tool 列表作为独立结构化投影，而非拼入 system text。
+2. 已注册且选中的 Skill 全文；
+3. 选中的 SOUL 快照；
+4. INSTRUCTIONS 动态 Context；
+5. 其他 Memory 与 REFERENCE 动态 Context 作为临时参考消息；
+6. Session 消息与 Tool 列表作为独立结构化投影，而非拼入 system text。
+
+Memory 按显式逻辑 key 选择，无自动目录扫描。动态贡献的 `max_bytes` 限制正文；必需来源
+按声明上界预留，可选来源按完整上界准入。所有非空文本贡献保守计入两个分隔字节，
+第一段免除此开销。Reference 单条正文还受 `AGENT_MAX_INPUT_BYTES` 限制。
 
 每类贡献的上限由 build Profile 的 `CONFIG_AGENT_MAX_CONTEXT_BYTES`、
 `CONFIG_AGENT_SCRATCH_BYTES` 及相关容量宏确定。无论如何最终 Context 都不得超过这些固定
@@ -116,10 +123,10 @@ OpenAI-compatible Provider 可以将上述三部分编码为 `messages`、`tools
 ### Session 历史窗口
 
 Session 历史由 Storage Provider 保存和按需读取；Core 不读取整段历史后再裁剪。每次模型请求
-只选择最近的、已经结束的完整历史 turn group。目标 API 在 `agent_limits_t` 增加
+只选择最近的、已经结束的完整历史 turn group。`agent_limits_t` 已提供
 `max_history_turns`：它是本次请求最多投影多少个**此前完整** turn group 的运行期窗口，既不是
 一次执行的 `max_steps`，也不是存储后端的保留数量。`max_history_turns == 0` 表示不投影持久化
-历史；默认值将由 `AGENT_LIMITS_DEFAULT` 给出。
+历史；默认值由 `AGENT_LIMITS_DEFAULT` 给出。
 
 一个 turn group 可包含 user 消息、assistant Tool call、Tool result、assistant final 或 abort
 事实。Core 必须从最新 group 向前选择，并同时满足下列边界：
@@ -127,7 +134,7 @@ Session 历史由 Storage Provider 保存和按需读取；Core 不读取整段�
 - `max_history_turns`；
 - build Profile 的 `AGENT_MAX_PROJECTED_MESSAGES`，用于限制 scratch 中
   `agent_message_view_t[]` 的数量；
-- `AGENT_MAX_CONTEXT_BYTES`、可用 turn scratch 与其他本轮必需投影的预算。
+- 可用 turn scratch 与其他本轮必需投影的预算；历史不计入文本贡献字节上限。
 
 若一个较旧的完整 group 无法整体放入剩余预算，Core 跳过该 group，不得留下孤立的 Tool call 或
 Tool result；最终送给 Model 的已选 group 恢复为时间正序。旧历史因窗口或预算未被投影是正常
@@ -155,12 +162,12 @@ ADR 0007。Provider 不得把 Core scratch 作为其私有长期 allocator。
 
 ### Memory 的位置
 
-长期 Memory 在 V2 首版不实现为 Core 内建模块。Flash/NVS、文件、网络服务、向量检索和
-隐私策略的差异过大，过早固定 `memory.h` 的行为会制造无实现契约。
+Memory 领域管理及 Markdown 后端已由 ADR 0032 实现。应用通过
+`agent_register_memory_context()` 选择逻辑文档，Core 在驱动上下文读取有界快照，
+随后按来源分类参与投影，不在动态回调内重入公共 Memory API。
 
-后续若引入 Memory Provider，它必须通过受限检索结果或 Context Provider 等价接口贡献文本，
-并满足同样的 cancellation、deadline、排序、预算和借用期规则。Memory Provider 不得绕过
-Context Builder 直接修改 Session、system prompt 或 Model Provider 请求。
+SOUL 来源必须由应用保证可信；其他文档不会自动提升为 system 指令。Provider 不得绕过
+Context 修改 Session 或 Model 请求。相关性检索、摘要提取与自动文档发现仍未实现。
 
 ## 不采用的方案
 
@@ -179,10 +186,10 @@ Context Builder 直接修改 Session、system prompt 或 Model Provider 请求�
 Provider 将绕过 Policy、Context 预算和统一的 Session 行为；不同 Provider 可能得到不同
 上下文，且 Provider 需要依赖 Core 私有结构；拒绝。
 
-### 将长期 Memory 作为首版 Core 组件
+### 让 Core 直接实现 Memory 文件存储
 
-持久化、一致性、检索、加密、生命周期和资源上限尚无已验证契约。首版只保留 Context
-贡献边界，待真实产品需求确认后再设计 Provider 契约；拒绝。
+拒绝 Core 直接认识文件路径、JSONL/Markdown 和平台文件系统。Memory 领域 ops 已收敛，
+具体文档映射和存储由可选 Provider 实现，替代本 ADR 早期“暂不建立 Memory 模块”的决定。
 
 ## 影响
 

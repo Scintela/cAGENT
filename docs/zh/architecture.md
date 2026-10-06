@@ -9,6 +9,7 @@
 和实际头文件为准。
 Tool 的当前实现事实以[模块架构](arch/tool.md)与[接口](api/tool.md)为准；
 下面 §14.1/§14.2 已与同步机制对齐，Run/Session 编排仍待接入。
+Skill 与 Context 的实际结构见 [Skill 架构](arch/skill.md)和[Context 架构](arch/context.md)。
 
 ## 2. 背景
 
@@ -691,16 +692,12 @@ cancel 和 request_user_data）、MODEL 调用来源；callback-lifetime，只�
 
 ### 14.3 Skill 与 Context
 
-Skill 是上下文资源，不直接执行代码。Skill loader 可以作为插件，Core 只接收已经
-解析和验证的 Skill contribution。
+Skill 是借用的指令资源，不直接执行代码；注册表和全文投影已实现，文件 loader 是可选
+Provider，尚未实现。Context 已统一组装 Session、Tool、Skill、Memory 和动态贡献。
 
-Context provider 必须明确优先级和溢出行为：
-
-```text
-CRITICAL  放不下则本次运行失败
-NORMAL    根据预算策略裁剪、摘要或跳过
-OPTIONAL  放不下直接跳过
-```
+当前契约使用 `required` 二分：必需失败终止，可选失败整段回退并记录原因，不自动摘要或截断。
+Memory 快照属于 turn，动态贡献按模型调用刷新；Skill/SOUL 进入指令，其他 Memory 进入临时
+参考消息。必需动态来源先执行，最终内容按同类优先级稳定呈现。完整边界见模块文档。
 
 ## 15. 插件作用域（延后）
 
@@ -946,7 +943,7 @@ cAgentV2/include/
 | `agent_openvela_file_store.h` | `ports/openvela/storage/include/`；OpenVela 文件 Port 装配 |
 
 厂商 Model 和 Runtime/Transport Port 同样拥有各自可选公共头。基础 Memory 领域
-绑定与整文读写已实现，相关性检索、Context 集成与 Skill 文件加载仍未完成；
+绑定与整文读写及 Context 显式文档投影已实现，相关性检索、Run 接入与 Skill 文件加载仍未完成；
 具体边界见 [ADR 0032](adr/0032-memory-domain-management.md)。
 
 规则：
@@ -982,7 +979,7 @@ cAgentV2/
 │   ├── storage/jsonl     Session 记录格式
 │   ├── storage/ram       易失后端
 │   ├── storage/files     字节文件契约、有界读取辅助；不解释领域格式
-│   ├── memory/markdown   文档分类与整文 Memory 读写，不自动接入 Context
+│   ├── memory/markdown   文档分类与整文 Memory 读写，Context 按逻辑 key 选择
 │   └── skill/loader      Markdown + front-matter 加载（ADR 0029 通用层，未实现）
 ├── ports/             可选：平台适配
 │   ├── posix/storage     共享字节文件 I/O；Session 命名空间由 Provider 维护

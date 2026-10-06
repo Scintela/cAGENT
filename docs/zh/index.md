@@ -8,7 +8,7 @@ OpenVela、RT-Thread 等系统上复用同一套应用接口。项目采用平�
 > **当前仍处于基础实现阶段**：Core workspace、生命周期、Runtime/Transport 契约、
 > ESP-IDF/OpenVela 适配器、私有 JSON codec、OpenAI 非流式 Provider 与
 > Session RAM/JSONL Storage、共享 File Store、Memory 领域与可选 Markdown 后端
-> 以及 Tool 注册/授权/有界执行机制已有代码和 Host 测试；同步
+> 以及 Tool 注册/授权/有界执行、Skill 注册和 Context 联合投影已有代码和 Host 测试；同步
 > `agent_run()` 尚未实现 ReAct 流程。目前不能用它完成端到端 LLM 对话，
 > ESP-IDF/OpenVela 文件系统持久化仍需真实挂载、重启和掉电验收。
 
@@ -22,6 +22,7 @@ Public API (include/agent.h, include/agent/*.h)
   |
   +-- Core (src/)                 生命周期、运行契约、注册与资源边界
   |     +-- Tool / Policy         固定槽位、可见投影、默认拒绝与同步安全流水线
+  |     +-- Skill / Context       静态指令、Memory 快照、动态资料与结构化输入组装
   |     +-- Model contract        调用 Provider 的 ops，不处理厂商协议
   |     +-- Runtime contract      单调时钟、可选平台服务
   |     +-- Transport contract    HTTP 请求/响应与流式接收接口
@@ -33,7 +34,7 @@ Public API (include/agent.h, include/agent/*.h)
   +-- Storage Providers          RAM/JSONL Session、共享字节文件契约，可选编译
   |     +-- File Store ops        USER/MEMORY 等普通文件读取，不等于领域管理
   |
-  +-- Memory Provider            文档分类与整文操作，不自动接入 Context
+  +-- Memory Provider            文档分类与整文操作，Context 显式选择文档
   |     +-- File Store ops        复用平台字节 I/O，Core 只见 Memory ops
   |
   +-- Platform Ports (ports/)     Runtime、HTTP/TLS 与文件 I/O 的平台实现
@@ -51,6 +52,9 @@ Session 的现有接口与数据流见[开发日志](development/session.md)。
 Memory 的接口、数据流和实施边界见[开发记录](development/memory.md)。
 Tool 的[接口](api/tool.md)、[架构](arch/tool.md)与[开发记录](development/tool.md)
 说明已实现的独立机制，不表示已完成 Run/Session 编排接入。
+Skill 的[接口](api/skill.md)、[架构](arch/skill.md)、[开发记录](development/skill.md)，
+以及 Context 的[接口](api/context.md)、[架构](arch/context.md)、[开发记录](development/context.md)
+说明现有投影机制和 Run 接入约束。
 
 ## 资源与配置
 
@@ -96,6 +100,9 @@ cmake --build build
 bash tests/headers/compile.sh
 bash tests/core/compile.sh
 bash tests/tool/compile.sh
+bash tests/skill/compile.sh
+bash tests/context/compile.sh
+bash tests/build/context/compile.sh
 bash tests/build/tool/compile.sh
 bash tests/json/compile.sh
 bash tests/transport/compile.sh

@@ -33,7 +33,7 @@ typedef enum {
 /* Definition copied; name/state borrowed and immutable until removal. */
 typedef struct {
     agent_string_view_t name;     /* Unique, nonempty, immutable name. */
-    int32_t priority;             /* Higher values first; ties follow registration order. */
+    int32_t priority;             /* Presentation order; required callbacks execute before optional ones. */
     bool required;                /* Failure/overflow aborts the turn when true. */
     agent_context_build_fn build; /* Required callback. */
     void* user_data;              /* Borrowed application state. */

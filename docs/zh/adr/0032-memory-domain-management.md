@@ -1,6 +1,6 @@
 # ADR 0032: Memory 领域管理与可选 Markdown 后端
 
-- 状态：已实现基础契约与 Markdown 后端；Context/ReAct 自动接入未实现
+- 状态：已实现基础契约、Markdown 后端和 Context 显式文档投影；ReAct 接入未实现
 - 日期：2026-10-02
 - 关联：[ADR 0023](0023-file-backed-memory-soul-skill.md)、[ADR 0024](0024-session-to-memory-extraction.md)、[ADR 0027](0027-minimal-markdown-memory-layout.md)、[ADR 0031](0031-prefabricated-platform-file-storage.md)
 
@@ -76,7 +76,7 @@ NOT_SUPPORTED，缺文件返回 NOT_FOUND。空文件是成功的零字节文档
 - 私有 `agent_memory_project()` 将一个显式文档读进 turn arena，先预留
   `max_bytes + 1`，失败回退 mark，成功仅保留实际长度加终止符。需要同时存在的
   文档快照会占用累计 scratch，预算不足返回 CAPACITY；调用方不能依靠实际
-  文件较小绕过预留预算。它尚未被 Context/ReAct 调用，不代表自动投影已完成。
+  文件较小绕过预留预算。Context 已通过显式文档选择调用此入口；ReAct 驱动尚未接入。
 - Root、用户选择与文件名映射只能来自可信配置；相同 Store/name 的固定文档
   别名和与文档共用绑定的 notes Store 被拒绝。不同 Store context 是否映射到
   同一实际目录无法由通用层证明，应用必须保证物理目录与权限隔离。
@@ -119,6 +119,7 @@ OpenVela 可通过普通目标装配或把通用 Provider 源加入应用构建�
 发布前/后的失败；可选 Host/模拟 IDF/NuttX 构建与 JSON 独立性；新增两组
 契约通过 AddressSanitizer/UndefinedBehaviorSanitizer。
 
-仍未实现：自动 Context 注入、相关性检索、Memory Tool、后台摘要提取与
+Context 已实现显式选择、预算和快照接入，见 [Context 接口](../api/context.md)。
+仍未实现：自动文档发现、相关性检索、Memory Tool、后台摘要提取与
 多文档版本事务。真实 ESP-IDF/OpenVela 固件、Flash 磨损和掉电行为仍需产品验证。
 开发流程与 API 使用见 [Memory 开发记录](../development/memory.md)。
