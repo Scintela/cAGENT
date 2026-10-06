@@ -3,9 +3,11 @@
 > 状态：基于 V1 实际应用复核的修订草案；同步运行 MVP 边界以 ADR 0020 为准。
 > 本文定义建议的公开范围、行为和所有权，不表示这些接口已实现或 ABI 已稳定。
 > `include/` 已补齐首批公共声明；部分 Core/Port 代码可运行，但 `agent_run()` 执行链尚未实现。
-> 下文保留设计评审语境，最新声明快照见 §11.1；声明不等于已接受或通过运行验证。
+> 下文保留设计评审语境，历史声明快照见 §11.1；声明不等于已接受或通过运行验证。
 > Memory 后续已实现独立的整文领域契约与 Markdown 后端，实际 API 和边界见
 > [ADR 0032](../adr/0032-memory-domain-management.md)与[开发记录](../development/memory.md)。
+> Tool 注册、投影、参数准入、单 Policy 和安全同步执行机制已实现；当前事实见
+> [Tool 接口](tool.md)与[Tool 架构](../arch/tool.md)。Run/Session 接入仍未完成。
 
 ## 1. 目标与评审依据
 
@@ -189,7 +191,7 @@ input/session/trace view 与 user_data 由调用方保持有效直到 `agent_run
 
 MVP 没有暂停或恢复能力。`AGENT_POLICY_CONFIRM` 或
 `AGENT_TOOL_REQUIRES_CONFIRM` 必须阻止 handler 执行，不得自动批准或留下待恢复
-的隐藏 turn。Tool guard 和完整 run 尚未实现，此处是后续实现的强制规则；
+的隐藏 turn。Tool guard 已实现该规则；完整 run 尚未接入，
 需要异步人工确认的产品应在应用层管理该流程，未来再单独评审公开 resume API。
 
 ## 5. Model、Runtime 与 Transport
@@ -245,9 +247,9 @@ Transport request/sink 是扩展公开面，可以包含 HTTP method、地址、
 |------|------|
 | `agent_register_tool()` | 复制定义值，检查名称冲突、容量和字段上限；失败不产生半注册项 |
 | `agent_unregister_tool()` | CONFIGURING/READY 中移除；不负责断开外部连接或释放 addon 对象 |
-| `agent_tool_set_enabled()/is_enabled()` | 控制调用及模型可见列表，变更使 schema 缓存失效 |
+| `agent_tool_set_enabled()/is_enabled()` | 设置/查询 DISABLED；HIDDEN 独立；投影即时生成，不维护 schema 缓存 |
 | `agent_tool_enumerate()` | 支持设置页与诊断；回调不得修改注册表或保留 view |
-| `agent_tool_execute()` | 首版内部；独立调用需来源、授权、预算、结果生命周期，不能直接开放内部 handler 路径 |
+| 执行入口 | 已实现私有 `agent_tool_invoke()`；不提供公共 bypass 接口，Run 接入尚待完成 |
 
 注册定义中的名称、说明、schema、user_data 默认 BORROWED，保持有效直到注销返回或
 Agent 销毁；描述数据在注册期间不可修改，user_data 指向的业务状态由应用同步维护。
@@ -271,7 +273,9 @@ group/category 可保留给分类和来源展示，但不能仅凭可重复数�
 JSON codec 检查完整文档、类型、字节/深度限制；这些检查不等于 JSON Schema 语义验证。
 Tool 自身或显式 validator 必须验证 required、范围、设备约束等执行前置条件。声明
 支持的 schema 子集需有测试，不支持规则不能被声称已验证。重复键、嵌入 NUL、未知
-字段策略须统一，避免 Policy 与 Tool 对同一输入产生不同解释。
+字段策略须统一，避免 Policy 与 Tool 对同一输入产生不同解释。当前对象准入拒绝所有
+嵌套重复键、解码等价键和 NUL 键；合法字符串值中的转义 NUL 由业务验证器决定是否接受。
+原始 NUL 文本拒绝，未知字段策略属于业务语义而不是通用语法层。
 
 首版私有 codec 采用 jsmn token 数组和有界读写层，不暴露 jsmn 类型。准确边界是：
 Core 不绑定 JSON 库类型、不构造厂商请求；公共接口可携带通用 JSON view。
@@ -284,8 +288,8 @@ codec 自身不申请 heap，但 Provider、Transport 和 TLS 的外部内存仍
 ### 6.3 Tool 输出
 
 Tool callback 应获得有效 deadline、cancel token 和有界输出能力。优先采用 caller
-buffer 或 sink，签名待定。不能仅返回未定义寿命的栈内字符串。若保留 result view，
-必须约定 Core 复制时点及提供者可重用缓冲的时点。
+sink；当前签名已在 `tool.h` 实现。write 返回前复制文本，不保留源 view；输出缓冲在
+handler 前按完整单次上限预检，首错 sticky，不静默截断。不能仅返回栈内字符串地址。
 Tool 结果不强制为 JSON，文本也可由 Model Provider 序列化；执行状态和诊断分开保存。
 确认/校验失败不得调用 handler。
 
@@ -403,6 +407,8 @@ ACTIVE 中的目录变更。
 ### 11.1 头文件声明快照（2026-09-22）
 
 已将首批接口落为可编译声明，仍为接口草案，而非实现或稳定 ABI：
+
+本节保留当时的历史快照；codec、Memory 与 Tool 的后续实现状态以页首链接为准。
 
 - `agent.h` 聚合应用接口；新增 `context.h`、`transport.h` 补齐已有模块的扩展契约。
   Runtime 不含网络/TLS，HTTP Transport 经 Model Provider 配置注入，不增加

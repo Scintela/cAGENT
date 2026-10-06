@@ -12,9 +12,12 @@ const sidebars = {
       items: [
         { type: 'doc', id: 'architecture', label: '总体架构' },
         { type: 'doc', id: 'arch/module-map', label: '模块责任地图' },
+        { type: 'doc', id: 'arch/tool', label: 'Tool 架构' },
       ],
     },
     { type: 'doc', id: 'api/public-api', label: 'API 参考' },
+    { type: 'doc', id: 'api/tool', label: 'Tool 接口' },
+    { type: 'doc', id: 'development/tool', label: 'Tool 开发记录' },
     { type: 'doc', id: 'development/memory', label: 'Memory 开发记录' },
     {
       type: 'category',

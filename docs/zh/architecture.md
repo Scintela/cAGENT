@@ -7,6 +7,8 @@
 其中 `agent_turn_begin/step/resume/end` 和通用 Plugin scope 属于后续候选，
 不是同步 MVP 公开接口；当前边界以 [ADR 0020](adr/0020-synchronous-run-mvp.md)
 和实际头文件为准。
+Tool 的当前实现事实以[模块架构](arch/tool.md)与[接口](api/tool.md)为准；
+下面 §14.1/§14.2 已与同步机制对齐，Run/Session 编排仍待接入。
 
 ## 2. 背景
 
@@ -43,7 +45,7 @@ cAgentV2 的定位是：
 - **类型安全**：Model、Transport、Storage 等能力使用独立的强类型 ops。
 - **运行可追踪**：模型可见的关键事实能够从有界 Session 事件日志重建。
 - **平台可移植**：核心不直接依赖 POSIX、openvela、ESP-IDF 或 STM32 API。
-- **安全默认**：未安装确认或 Policy 能力时，高风险 Tool 默认拒绝。
+- **安全默认**：缺少明确 ALLOW 时，所有模型 Tool 调用默认拒绝，包括只读工具。
 - **渐进能力**：简单应用继续使用同步接口，复杂应用可以驱动状态机。
 
 本项目的移植目标是让同一应用源代码在 ESP-IDF、openvela、RT-Thread 和 Host port
@@ -260,7 +262,7 @@ Adapter；本地 Model、Mock 和串口 Model 不产生 Transport 依赖。具�
 
 | 状态 | 所属模块 |
 |------|----------|
-| Tool entries、schema cache、schema generation | Tool Registry |
+| Tool entries、启停标志与规范视图投影 | Tool Registry；厂商 schema JSON 序列化属于 Model Provider |
 | Session binding/cursor 与完整 turn 不变量 | Core；历史记录/缓存由 Session Storage Provider |
 | Model 指针、ops、ownership | Model Binding |
 | deadline、effective limits、step count | Run Context |
@@ -633,13 +635,13 @@ ADR 0007 仍是提案；`include/agent/transport.h` 在实现任意 Adapter 前�
 ```text
 lookup
 -> visibility/state validation
--> argument size/schema validation
--> policy chain
--> confirmation
--> rate/resource guard
--> execute
--> output validation
--> Session event append
+-> output reservation / cancel / deadline / remaining budget
+-> argument JSON admission + optional semantic validator
+-> product Policy (explicit ALLOW; confirmation fails closed)
+-> cancel/deadline check
+-> execute once -> sticky bounded output
+-> execution facts to Run
+-> Run Session/Event pairing (not yet integrated)
 ```
 
 Tool 标志必须具有明确行为：
@@ -647,44 +649,45 @@ Tool 标志必须具有明确行为：
 | 标志 | V2 语义 |
 |------|---------|
 | `HIDDEN` | 默认可见；置位后从模型可见 Tool 列表移除 |
-| `READ_ONLY` | 无外部副作用，可供 Policy 优化决策 |
-| `SIDE_EFFECT` | 进入副作用 Policy/审计链 |
-| `REQUIRES_CONFIRM` | 没有明确确认时禁止执行 |
+| `READ_ONLY` | 应用声明无外部副作用，不自动授权 |
+| `SIDE_EFFECT` | 应用声明可能修改外部状态；不自动回滚/重试 |
+| `REQUIRES_CONFIRM` | 同步 MVP 拒绝执行，不等待或自动确认 |
 | `DISABLED` | 不可调用且不进入 schema |
-| `PARALLEL_SAFE` | 只声明并行安全，不自动启用并行执行 |
+
+当前不公开 PARALLEL_SAFE，READ_ONLY 与 SIDE_EFFECT 互斥，未知 flag 拒绝。
 
 V2 不提供 `agent_register_tool_simple()` 之类的便捷变体，调用者直接初始化
 `agent_tool_t` 后注入。因此零初始化（`flags == 0`）必须表示“默认启用且对模型可见”，
 由 `HIDDEN` / `DISABLED` 显式关闭；Skill 与 Context 同理，用 `*_FLAG_DISABLED`
 反向控制，避免“注册成功但模型看不到”。
 
-Tool 使用受限类型化 descriptor 注册，由内部 schema codec 生成并缓存模型可见 schema。
-现有 `agent_tool_view_t.input_schema_json` 仅是模型投影视图，不是注册的规范来源。
-Core 不依赖 JSON 或承诺完整 JSON Schema 支持；OpenAI 等 Provider 的协议 JSON、JSONL
-storage 和 Tool 参数的 JSON 适配属于外围实现，并必须使用有界 buffer。第一版 JSON
-依赖、动态分配边界和使用规则见 ADR 0006。
+Tool 以 `agent_tool_t.input_schema_json` 的完整对象作为注册事实输入。注册表借用文本，
+投影生成规范 Tool view，不生成/缓存厂商 tools JSON，也不强制类型化 descriptor。
+Tool 启用时 Core 私有依赖有界 reader 做语法准入；无第三方类型进入公共头，不承诺完整
+JSON Schema 语义支持。required、类型、范围等由应用 validator/handler 落实。
+OpenAI 协议格式与序列化仍属于 Provider。codec 边界见 ADR 0022 和 Tool 架构。
 
 ### 14.2 Policy Chain
 
-V2 支持多个 Policy contributor：
+当前使用单个 `agent_set_policy_callback()`，由应用在该回调中组合产品规则。
+文件名 `policy_chain.c` 不代表已实现多 contributor 注册：
 
 ```text
-Permission Policy
--> Confirmation Policy
--> Rate-limit Policy
--> Product Policy
+application checks
+-> product Policy callback
 -> Tool handler
 ```
 
-合并规则：
+决策规则：
 
 ```text
-任意 DENY             -> DENY
-没有 DENY 但需要确认  -> REQUIRE_CONFIRM
-全部允许              -> ALLOW
+no callback / DENY / invalid enum / CONFIRM -> POLICY_DENIED
+tool REQUIRES_CONFIRM                     -> POLICY_DENIED
+explicit ALLOW                           -> continue cancel/deadline checks
 ```
 
-Policy request 必须包含 Tool、arguments、session、trace、run state 和调用来源。
+Policy request 包含 Tool 与当次 context（arguments、session、trace、有效 limits、deadline、
+cancel 和 request_user_data）、MODEL 调用来源；callback-lifetime，只读且不重入 Agent。
 
 ### 14.3 Skill 与 Context
 

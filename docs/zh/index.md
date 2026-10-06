@@ -8,7 +8,7 @@ OpenVela、RT-Thread 等系统上复用同一套应用接口。项目采用平�
 > **当前仍处于基础实现阶段**：Core workspace、生命周期、Runtime/Transport 契约、
 > ESP-IDF/OpenVela 适配器、私有 JSON codec、OpenAI 非流式 Provider 与
 > Session RAM/JSONL Storage、共享 File Store、Memory 领域与可选 Markdown 后端
-> 已有代码和 Host 测试；同步
+> 以及 Tool 注册/授权/有界执行机制已有代码和 Host 测试；同步
 > `agent_run()` 尚未实现 ReAct 流程。目前不能用它完成端到端 LLM 对话，
 > ESP-IDF/OpenVela 文件系统持久化仍需真实挂载、重启和掉电验收。
 
@@ -21,6 +21,7 @@ Application
 Public API (include/agent.h, include/agent/*.h)
   |
   +-- Core (src/)                 生命周期、运行契约、注册与资源边界
+  |     +-- Tool / Policy         固定槽位、可见投影、默认拒绝与同步安全流水线
   |     +-- Model contract        调用 Provider 的 ops，不处理厂商协议
   |     +-- Runtime contract      单调时钟、可选平台服务
   |     +-- Transport contract    HTTP 请求/响应与流式接收接口
@@ -48,6 +49,8 @@ Session 的现有接口与数据流见[开发日志](development/session.md)。
 文件存储见[实施记录](development/file-storage.md)和
 [核验日志](development/file-storage-review.md)。
 Memory 的接口、数据流和实施边界见[开发记录](development/memory.md)。
+Tool 的[接口](api/tool.md)、[架构](arch/tool.md)与[开发记录](development/tool.md)
+说明已实现的独立机制，不表示已完成 Run/Session 编排接入。
 
 ## 资源与配置
 
@@ -84,12 +87,16 @@ cmake --build build
 
 普通 CMake 不会自动编译平台 Port 或 Provider。ESP-IDF 的 Core 和 Port 组件由
 应用显式纳入构建；OpenVela Port 使用其 NuttX 构建入口。
+默认 Tool 非零容量自动链接私有 JSON reader，完整 writer 仍按需启用。
+不使用 Tool 的产品可设置 `-DCONFIG_AGENT_MAX_TOOLS=0`，此时不因 Tool 引入 JSON。
 
 ## 验证
 
 ```sh
 bash tests/headers/compile.sh
 bash tests/core/compile.sh
+bash tests/tool/compile.sh
+bash tests/build/tool/compile.sh
 bash tests/json/compile.sh
 bash tests/transport/compile.sh
 bash tests/ports/espidf/compile.sh

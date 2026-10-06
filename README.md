@@ -8,10 +8,13 @@ OpenVela、RT-Thread 等系统上复用同一套应用接口。项目采用平�
 ESP-IDF/OpenVela 适配器、私有 JSON codec 和 OpenAI 非流式 Provider 已有代码与
 Host 测试；Session 已有格式无关的 Storage 契约、可选 RAM/JSONL 后端和共享文件读写，
 Memory 已有独立领域绑定与可选 Markdown 整文后端，
+Tool 已有固定注册表、规范投影、参数/授权校验和有界同步执行机制，
 但同步 `agent_run()` 的 ReAct 流程尚未实现，Mock Provider 仍是占位。目前不能通过 Core 完成
 端到端 LLM 对话。
 Session 的 API、内存与数据流见[开发日志](docs/zh/development/session.md)。
 Memory 的 API、借用寿命与写入结果见[开发日志](docs/zh/development/memory.md)。
+Tool 的[接口](docs/zh/api/tool.md)、[架构](docs/zh/arch/tool.md)与
+[开发记录](docs/zh/development/tool.md)区分已实现机制和待接入的 Run 编排。
 
 ## 架构
 
@@ -22,6 +25,7 @@ Application
 Public API (include/agent.h, include/agent/*.h)
   |
   +-- Core (src/)                 生命周期、运行契约、注册与资源边界
+  |     +-- Tool / Policy         固定注册表、可见投影、默认拒绝与有界执行
   |     +-- Model contract        调用 Provider 的 ops，不处理厂商协议
   |     +-- Runtime contract      单调时钟、可选平台服务
   |     +-- Transport contract    HTTP 请求/响应与流式接收接口
@@ -44,6 +48,8 @@ HTTP/TLS 实现或 OpenAI JSON 格式。应用在构建时选择所需组件，�
 `agent_config_t` 注入 Runtime，通过 `agent_set_model()` 绑定 Model；需要网络的
 Model Provider 自行持有 Transport。当前的 JSON codec 使用内嵌 jsmn 作为 tokenizer，
 不要求系统提供 cJSON，也不向公共头文件暴露 JSON 类型。
+Tool 启用时 Core 自动链接私有 JSON reader 做结构准入，不构造厂商 JSON；
+`AGENT_MAX_TOOLS=0` 时不因 Tool 引入 codec，其他 Provider 可独立启用完整 codec。
 
 ## 目录
 
@@ -52,7 +58,7 @@ Model Provider 自行持有 Transport。当前的 JSON codec 使用内嵌 jsmn �
 | [`include/`](include/) | 公共 C API 与构建容量配置。 |
 | [`src/`](src/) | 平台无关的 Core、Model wrapper、Runtime/Transport 转发及各领域模块。部分模块尚未实现。 |
 | [`providers/`](providers/) | 可选 Model、RAM/JSONL Session Storage、Markdown Memory、共享字节文件契约和有界读取辅助；Mock/Anthropic 尚未实现。 |
-| [`codecs/json/`](codecs/json/) | 可选的有界 JSON reader/writer；上游 jsmn 位于 `vendor/jsmn/`。 |
+| [`codecs/json/`](codecs/json/) | 有界 JSON reader/writer；Tool 非零时自动依赖 reader，完整 codec 按需启用；jsmn 位于 `vendor/jsmn/`。 |
 | [`ports/`](ports/) | 可选的平台 Runtime、HTTP/TLS 和 Session 文件 I/O Adapter；ESP-IDF/OpenVela 已有实现，Host/RT-Thread/STM32 仍需完善。 |
 | [`tests/`](tests/) | 公共头、Core、JSON、Transport 与 Port 的 Host 契约测试。 |
 | [`docs/`](docs/) | 中文文档（`zh/`）与 Docusaurus 站点（`website/`），含全部 ADR；设计文档中的目标能力不等于已实现能力。 |
@@ -111,6 +117,9 @@ cmake -S . -B build -DCONFIG_AGENT_MAX_TOOLS=16 -DAGENT_BUILD_JSON_CODEC=ON
 cmake --build build
 ```
 
+不需要 Tool、也不启用 JSON Provider 的产品，可设置 `-DCONFIG_AGENT_MAX_TOOLS=0`
+构建没有 JSON reader 的 Core。开启 Tool 只引入 reader；OpenAI 等 Provider 仍需完整 codec。
+
 应用通过 CMake 链接 `cagent::core` 目标，以继承库生成的配置头和相同的容量宏；
 不要仅手工链接静态库却用另一组宏编译公共头文件。
 
@@ -155,6 +164,8 @@ Provider 的配置和缓冲区契约见 [OpenAI Provider](providers/model/openai
 ```sh
 bash tests/headers/compile.sh
 bash tests/core/compile.sh
+bash tests/tool/compile.sh
+bash tests/build/tool/compile.sh
 bash tests/json/compile.sh
 bash tests/transport/compile.sh
 bash tests/ports/espidf/compile.sh

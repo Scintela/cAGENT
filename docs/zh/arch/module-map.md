@@ -1,8 +1,7 @@
 # cAgentV2 模块责任地图
 
-[总体架构](../architecture.md) 是当前唯一完整的架构事实来源。本目录中的各模块文档尚未
-创建；以下表格是后续拆分计划，不是可访问文档索引。模块文档开始编写后，必须先从
-总体架构中迁移相应契约，再将链接加入本页。
+[总体架构](../architecture.md) 保留目标设计；已有模块文档说明实际实现边界。
+以下表格中只有链接项表示已创建文档，其余仍为拆分计划。
 
 ## 模块分类
 
@@ -12,7 +11,7 @@
 | Execution / Orchestration | Loop、Run State Machine | `loop.md` |
 | Execution / Orchestration | Context Projection | `context.md` |
 | Capabilities | Model wrapper (`src/model/`) and optional implementations (`providers/`) | `model.md` |
-| Capabilities | Tool | `tool.md` |
+| Capabilities | Tool | [Tool 架构](tool.md)，[公共接口](../api/tool.md) |
 | Capabilities | Skill | `skill.md` |
 | Capabilities | Session | `session.md` |
 | Capabilities | Memory | `memory.md` |
@@ -29,9 +28,9 @@
 
 1. 无 Core Gateway 门面，主链路为类型化直接调用（architecture.md §5.6）。
 2. 无通用 Hook Registry；控制点类型化，观测走 live event（§20.2）。
-3. Permission 不独立成子系统，是 Policy chain 的 contributor（§14.2）。
-4. Tool 使用受限类型化 descriptor 注册；内部 JSON codec 负责产生模型可见 schema，
-   不实现完整 JSON Schema 验证（ADR 0006）。
+3. Permission 不独立成子系统，由应用在单个产品 Policy 回调中组合（§14.2）。
+4. Tool 注册借用的 schema JSON 对象，reader 做语法/唯一键准入，不执行完整 JSON Schema；
+   模型 wire JSON 由 Provider 生成，无 schema 缓存（Tool 架构、ADR 0022）。
 5. Context 投影策略由 Kernel 固定，仅 Context Provider 可插拔（§14.3）。
 6. Kernel 拥有运行状态机，Loop 只贡献 step 决策（§10.2）。
 7. Trigger/Scheduler 属于 Application 外围，Core 不提供 Trigger Registry（§4）。
