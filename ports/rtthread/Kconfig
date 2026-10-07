@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 tanglinjie
+# Source the root cAgent Kconfig separately before this file.
+menu "cAgent RT-Thread ports"
+config AGENT_PORT_RTTHREAD_RUNTIME
+    bool "RT-Thread 5.1+ clock and cancellation Runtime"
+    default n
+    help
+      Caller-owned static timer samples the 32-bit tick. No automatic init.
+      Requires RT-Thread 5.1+ spinlock API, also on uniprocessor builds.
+
+config AGENT_PORT_RTTHREAD_TRANSPORT
+    bool "WebClient synchronous POST Transport"
+    depends on PKG_USING_WEBCLIENT && RT_USING_HEAP && !WEBCLIENT_DEBUG
+    default n
+    help
+      WebClient 2.3 API, nonempty POST only, redirects rejected.
+      HTTPS requires a verified TLS backend configured by the application.
+      Cancellation/deadlines cannot interrupt blocking SDK network calls.
+
+config AGENT_PORT_RTTHREAD_FILE_STORE
+    bool "DFS/POSIX byte-file store"
+    depends on RT_USING_DFS && RT_USING_POSIX_FS
+    select AGENT_FILE_STORE
+    select AGENT_POSIX_FILE_STORE
+    default n
+
+config AGENT_PORT_RTTHREAD_NO_SYMLINKS
+    bool "Trusted mounted filesystem has no symbolic links"
+    depends on AGENT_POSIX_FILE_STORE
+    default n
+    help
+      Explicitly permit stat instead of lstat on trusted VFS mounts without
+      symbolic-link support. Do not enable on filesystems supporting symlinks.
+endmenu

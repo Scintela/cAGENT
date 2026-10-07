@@ -1,0 +1,62 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 tanglinjie
+import os
+from building import DefineGroup, GetCurrentDir, GetDepend
+
+root = os.path.abspath(os.path.join(GetCurrentDir(), '../..'))
+sources = [
+    'src/context/context_builder.c', 'src/context/context_registry.c', 'src/context/context_projection.c',
+    'src/core/lifecycle.c', 'src/core/event.c', 'src/core/arena.c', 'src/core/error.c',
+    'src/memory/memory_mgr.c', 'src/model/model.c', 'src/policy/policy_chain.c',
+    'src/run/react_loop.c', 'src/run/cancel.c', 'src/runtime/runtime.c',
+    'src/session/session_manager.c', 'src/session/session_storage.c', 'src/skill/skill_registry.c',
+    'src/tool/tool_guard.c', 'src/tool/tool_registry.c', 'src/tool/tool_schema.c', 'src/transport/transport.c',
+]
+includes = ['include', 'src', 'codecs/json', 'codecs/json/vendor/jsmn']
+defines = [('AGENT_BUILD_CONFIG_HEADER', '\\"rtconfig.h\\"')]
+
+def enabled(symbol):
+    return bool(GetDepend(symbol))
+
+def package(base, files):
+    sources.extend(base + '/src/' + file for file in files)
+    includes.extend([base + '/include', base + '/src'])
+
+openai = enabled('AGENT_PROVIDER_OPENAI')
+jsonl = enabled('AGENT_SESSION_JSONL')
+if GetDepend('AGENT_MAX_TOOLS') or openai or jsonl:
+    sources.append('codecs/json/reader.c')
+if openai or jsonl:
+    sources.append('codecs/json/writer.c')
+if openai:
+    package('providers/model/openai', ['model_openai.c', 'openai_request.c', 'openai_response.c'])
+if enabled('AGENT_SESSION_RAM'):
+    package('providers/storage/ram', ['session_ram.c'])
+if enabled('AGENT_FILE_STORE'):
+    package('providers/storage/files', ['file_store.c'])
+if enabled('AGENT_POSIX_FILE_STORE'):
+    if not enabled('AGENT_FILE_STORE'):
+        raise ValueError('POSIX file store requires AGENT_FILE_STORE')
+    package('ports/posix/storage', ['file_store.c'])
+if enabled('AGENT_MEMORY_MARKDOWN'):
+    if not enabled('AGENT_FILE_STORE'):
+        raise ValueError('Markdown Memory requires AGENT_FILE_STORE')
+    package('providers/memory/markdown', ['memory_markdown.c'])
+if jsonl:
+    package('providers/storage/jsonl', ['session_jsonl.c', 'jsonl_record.c'])
+    if enabled('AGENT_FILE_STORE'):
+        sources.append('providers/storage/jsonl/src/file_store_bind.c')
+for part in ['runtime', 'transport', 'storage']:
+    symbol = 'FILE_STORE' if part == 'storage' else part.upper()
+    if enabled('AGENT_PORT_RTTHREAD_' + symbol):
+        if part == 'storage' and not enabled('AGENT_POSIX_FILE_STORE'):
+            raise ValueError('RT-Thread file store requires AGENT_POSIX_FILE_STORE')
+        if part == 'transport' and (not enabled('PKG_USING_WEBCLIENT') or not enabled('RT_USING_HEAP')):
+            raise ValueError('RT-Thread Transport requires WebClient and RT_USING_HEAP')
+        package('ports/rtthread/' + part, ['file_store.c' if part == 'storage' else part + '.c'])
+if enabled('AGENT_PORT_RTTHREAD_NO_SYMLINKS'):
+    defines.append(('AGENT_POSIX_FILE_STORE_NO_SYMLINKS', 1))
+
+group = DefineGroup('cAgent', [os.path.join(root, p) for p in sources], depend=[],
+                    CPPPATH=[os.path.join(root, p) for p in includes], CPPDEFINES=defines)
+Return('group')

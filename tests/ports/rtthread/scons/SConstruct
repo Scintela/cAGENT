@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 tanglinjie
+"""Real SCons engine, Host SDK doubles; not a BSP build."""
+import os
+import sys
+import types
+from SCons.Script import ARGUMENTS, Default, Environment, SConscript, SConsignFile
+
+root = os.path.abspath(ARGUMENTS['ROOT_DIR'])
+build = os.path.abspath(ARGUMENTS['BUILD_DIR'])
+SConsignFile(os.path.join(build, '.sconsign.dblite'))
+env = Environment(CCFLAGS=['-std=c99', '-Wall', '-Wextra', '-Werror', '-pedantic'])
+env.AppendUnique(CPPPATH=[os.path.join(root, 'tests/ports/rtthread/fake'),
+                         os.path.join(root, 'tests/ports/rtthread/scons')])
+config = dict(AGENT_MAX_TOOLS=0, AGENT_PORT_RTTHREAD_RUNTIME=1,
+              AGENT_PORT_RTTHREAD_TRANSPORT=1, RT_USING_HEAP=1, PKG_USING_WEBCLIENT=1)
+building = types.ModuleType('building')
+building.GetCurrentDir = lambda: os.path.join(root, 'ports/rtthread')
+building.GetDepend = lambda name: config.get(name, 0)
+
+def group(name, sources, **options):
+    env.AppendUnique(CPPPATH=options['CPPPATH'], CPPDEFINES=options['CPPDEFINES'])
+    objects = [env.Object(target=os.path.join(build, os.path.relpath(p, root) + '.o'), source=p)
+               for p in sources]
+    return env.Library(target=os.path.join(build, 'cagent'), source=objects)
+
+building.DefineGroup = group
+sys.modules['building'] = building
+library = SConscript(os.path.join(root, 'ports/rtthread/SConscript'))
+programs = []
+for part in ['runtime', 'transport']:
+    source = os.path.join(root, 'tests/ports/rtthread/' + part + '_contract.c')
+    obj = env.Object(target=os.path.join(build, part + '_contract.o'), source=source)
+    programs.append(env.Program(target=os.path.join(build, part + '_contract'), source=[obj, library]))
+Default(programs)

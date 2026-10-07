@@ -11,6 +11,11 @@
 #define file_state_t agent_openvela_file_store_t
 #define file_config_t agent_openvela_file_store_config_t
 #define init_store agent_port_openvela_file_store_init
+#elif defined(TEST_RTTHREAD)
+#include <agent_rtthread_file_store.h>
+#define file_state_t agent_rtthread_file_store_t
+#define file_config_t agent_rtthread_file_store_config_t
+#define init_store agent_port_rtthread_file_store_init
 #else
 #error Select the platform binding to test
 #endif
