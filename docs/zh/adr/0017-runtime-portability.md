@@ -128,7 +128,7 @@ ports/espidf/runtime/include/agent_espidf_runtime.h
 ports/espidf/runtime/src/runtime.c
 ports/openvela/runtime/include/agent_openvela_runtime.h
 ports/openvela/runtime/src/runtime.c
-ports/rtthread/include/agent_rtthread_runtime.h
+ports/rtthread/runtime/include/agent_rtthread_runtime.h
 ports/rtthread/runtime/src/runtime.c
 ports/stm32/include/agent_stm32_runtime.h
 ports/stm32/runtime/src/runtime.c
@@ -147,7 +147,7 @@ ports/host/runtime/src/runtime.c
 | Host | `clock_gettime(CLOCK_MONOTONIC)` 或等价 | mutex/原子实现 | stderr | 仅用于测试/开发，不作为 MCU 内存结论。 |
 | ESP-IDF | `esp_timer_get_time()/1000` | 目前未注入；后续可选短 FreeRTOS critical section | 目前未注入 | 已有最小 Runtime builder；allocator 默认留空，避免隐式 heap。 |
 | openvela/NuttX | `CLOCK_MONOTONIC` | 目前由应用按需注入 | 目前由应用按需注入 | 已有最小 Runtime builder；不把 socket/mbedTLS 放入 Runtime。 |
-| RT-Thread | 经回绕扩展的 tick 或板级时钟 | 短 critical section | `rt_kprintf` adapter | tick 单位、回绕和低功耗唤醒需要产品确认。 |
+| RT-Thread | 32-bit tick 差分扩展 + 静态周期采样 | 两个独立 irqsave spinlock | 由应用按需注入 | 已有 5.1+ builder；Host 回绕/heap/失败契约和真实 SDK 头检查通过；tickless、SMP 及 timer 销毁仍需 BSP 验证。 |
 | STM32 | 板级维护的 64 位 tick | 应用定义 | 可选串口 logger | 不应假设 HAL tick 天然满足 64 位单调契约。 |
 
 ## 待决项

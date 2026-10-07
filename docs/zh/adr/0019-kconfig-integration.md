@@ -195,7 +195,10 @@ config AGENT_PORT_ESPIDF_TRANSPORT
 - 当前 Core workspace 编译期断言仍只验证 `sizeof(agent_t) + AGENT_SCRATCH_BYTES`，后续应结合真实布局和 profile 继续加强；
 - Core 子模块逐项裁剪尚未实现，因此首版 Kconfig 不暴露会造成“菜单可关、源码仍编译”的 ENABLE 开关；
 - OpenVela 已有可独立选择的单调时钟 Runtime 和 `webclient` Transport Kconfig/CMake 片段，
-  但尚未在目标系统完成组件集成与设备验证；RT-Thread 的构建组件尚未添加。
+  但尚未在目标系统完成组件集成与设备验证；
+- RT-Thread 已添加独立 Kconfig、SConscript 与可选 CMake targets，分别裁剪 Runtime、
+  WebClient POST 和 DFS/POSIX 文件绑定。SCons 使用 rtconfig.h 的原生 AGENT_* 宏，
+  CMake 使用 Core 生成的统一配置头。Host 构建/链接检查通过，不等于完整 BSP 验证。
 
 Profile 数值目前是可用的初始值，仍需在目标 MCU 上测量 workspace 峰值，并据此校准。
 

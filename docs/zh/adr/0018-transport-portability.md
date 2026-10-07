@@ -150,7 +150,7 @@ ports/espidf/transport/include/agent_espidf_transport.h
 ports/espidf/transport/src/transport.c
 ports/openvela/transport/include/agent_openvela_transport.h
 ports/openvela/transport/src/transport.c
-ports/rtthread/include/agent_rtthread_transport.h
+ports/rtthread/transport/include/agent_rtthread_transport.h
 ports/rtthread/transport/src/transport.c
 ports/host/include/agent_host_transport.h
 ports/host/transport/src/transport.c
@@ -158,7 +158,8 @@ ports/host/transport/src/transport.c
 
 平台依赖和 Kconfig/CMake 配置不污染 Core；代价是发布与版本协同更复杂。对跨系统开源库更合适，并
 与 ADR 0017 的 Runtime Port 采用同一组织模型。目前已有 ESP-IDF 和基于 NuttX
-`netutils/webclient` 的 OpenVela Adapter 初版；其他未实现的 Adapter 不导出占位 API，
+`netutils/webclient` 的 OpenVela Adapter，以及 RT-Thread WebClient 2.3 API 的非空 POST
+Adapter（实现边界见[开发记录](../development/rtthread.md)）；其他未实现的 Adapter 不导出占位 API，
 也不进入任何默认构建。
 
 构建期选择的是参与编译的 Backend 及其 SDK 依赖，初始化期选择的是具体
@@ -188,11 +189,14 @@ Core 只发布 `transport.h`，不维护官方 Adapter。维护成本最低，�
 
 ## 待决项
 
-1. ESP-IDF/OpenVela 已有 mock-SDK 验证的 Adapter；何时完成设备验证并加入 RT-Thread。
+1. ESP-IDF/OpenVela/RT-Thread 已有 Host mock-SDK 验证的 Adapter；设备上的 TLS、网络错误和私有内存峰值仍需验收。
 2. 首版已选择完整 request body、同步 `request()`；何时增加请求 streaming 或异步接口仍待真实需求。
 3. 各 Adapter 如何验证 HTTPS 信任来源、证书格式、超时与取消行为，并测量私有内存。
 4. OpenVela `webclient` 自动重定向无法按当前 Contract 原样交付 3xx，因此 Adapter 明确拒绝 3xx；
    若产品需要 3xx 响应或硬截止时间，应选其他 HTTP Backend。其阻塞 DNS/IO 期间无法保证即时取消。
+5. RT-Thread 当前仅支持非空 POST，拒绝重定向；TLS 必须由应用验证并配置。
+   WebClient 内部阻塞阶段不能立即取消，上游 parser/write 错误传播限制见开发记录，
+   不因适配器通过 Host 契约测试就视作 SDK 网络安全审计完成。
 
 ## 验证要求
 

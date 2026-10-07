@@ -6,11 +6,11 @@ OpenVela、RT-Thread 等系统上复用同一套应用接口。项目采用平�
 提供。
 
 > **当前仍处于基础实现阶段**：Core workspace、生命周期、Runtime/Transport 契约、
-> ESP-IDF/OpenVela 适配器、私有 JSON codec、OpenAI 非流式 Provider 与
+> ESP-IDF/OpenVela/RT-Thread 适配器、私有 JSON codec、OpenAI 非流式 Provider 与
 > Session RAM/JSONL Storage、共享 File Store、Memory 领域与可选 Markdown 后端
 > 以及 Tool 注册/授权/有界执行、Skill 注册和 Context 联合投影已有代码和 Host 测试；同步
-> `agent_run()` 尚未实现 ReAct 流程。目前不能用它完成端到端 LLM 对话，
-> ESP-IDF/OpenVela 文件系统持久化仍需真实挂载、重启和掉电验收。
+> `agent_run()` 已接通有界 ReAct/Tool/Session 执行链。平台网络、TLS 与文件系统
+> 仍需真实挂载、联网、重启和掉电验收。
 
 ## 架构
 
@@ -51,10 +51,11 @@ Session 的现有接口与数据流见[开发日志](development/session.md)。
 [核验日志](development/file-storage-review.md)。
 Memory 的接口、数据流和实施边界见[开发记录](development/memory.md)。
 Tool 的[接口](api/tool.md)、[架构](arch/tool.md)与[开发记录](development/tool.md)
-说明已实现的独立机制，不表示已完成 Run/Session 编排接入。
+说明独立机制与编排边界。
 Skill 的[接口](api/skill.md)、[架构](arch/skill.md)、[开发记录](development/skill.md)，
 以及 Context 的[接口](api/context.md)、[架构](arch/context.md)、[开发记录](development/context.md)
 说明现有投影机制和 Run 接入约束。
+RT-Thread 的接口、构建、数据流与未验证边界见[开发记录](development/rtthread.md)。
 
 ## 资源与配置
 
@@ -108,6 +109,9 @@ bash tests/json/compile.sh
 bash tests/transport/compile.sh
 bash tests/ports/espidf/compile.sh
 bash tests/ports/openvela/compile.sh
+bash tests/ports/rtthread/compile.sh
+bash tests/ports/rtthread/build.sh
+bash tests/run/compile.sh
 bash tests/session/compile.sh
 bash tests/session/jsonl_compile.sh
 bash tests/memory/compile.sh

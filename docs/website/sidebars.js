@@ -25,6 +25,7 @@ const sidebars = {
     { type: 'doc', id: 'development/skill', label: 'Skill 开发记录' },
     { type: 'doc', id: 'development/context', label: 'Context 开发记录' },
     { type: 'doc', id: 'development/memory', label: 'Memory 开发记录' },
+    { type: 'doc', id: 'development/rtthread', label: 'RT-Thread 接入与开发记录' },
     {
       type: 'category',
       label: '设计决策 (ADR)',

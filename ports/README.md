@@ -3,7 +3,7 @@
 `ports/` contains optional platform packages. The Core library never compiles this directory
 implicitly and has no platform-selection preprocessor logic.
 
-Each package may provide either or both of these independent adapters:
+Each package may provide any of these independent adapters:
 
 - Runtime: populates `agent_runtime_t` with a monotonic clock and optional short cancel sync or log callback.
 - Transport: implements `agent_transport_ops_t` using the platform HTTP/TLS stack.
@@ -33,3 +33,8 @@ and a Transport-only Adapter that uses application-provided Runtime callbacks.
 
 The current directories are ownership and delivery boundaries, not claims that an adapter is
 implemented. An application may always construct `agent_runtime_t` or `agent_transport_t` itself.
+
+ESP-IDF, OpenVela and [RT-Thread](rtthread/README.md) now have optional Runtime,
+HTTP and byte-file bindings. RT-Thread supports SCons/Kconfig and explicit CMake
+targets; its WebClient backend is nonempty-POST-only. Platform TLS, low-power and
+filesystem durability still require BSP validation.

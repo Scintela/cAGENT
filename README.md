@@ -5,17 +5,17 @@ OpenVela、RT-Thread 等系统上复用同一套应用接口。项目采用平�
 可选 Model Provider 和平台 Port；容量在构建期确定，实例资源与依赖在初始化期提供。
 
 **当前仍处于基础实现阶段**：Core workspace、生命周期、Runtime/Transport 契约、
-ESP-IDF/OpenVela 适配器、私有 JSON codec 和 OpenAI 非流式 Provider 已有代码与
+ESP-IDF/OpenVela/RT-Thread 适配器、私有 JSON codec 和 OpenAI 非流式 Provider 已有代码与
 Host 测试；Session 已有格式无关的 Storage 契约、可选 RAM/JSONL 后端和共享文件读写，
 Memory 已有独立领域绑定与可选 Markdown 整文后端，
 Tool 已有固定注册表、规范投影、参数/授权校验和有界同步执行机制，
 Skill 已有注册与全文投影，Context 已有 Memory 快照和 Session/Tool 联合组装，
-但同步 `agent_run()` 的 ReAct 流程尚未实现，Mock Provider 仍是占位。目前不能通过 Core 完成
-端到端 LLM 对话。
+同步 `agent_run()` 已接通有界 ReAct、Tool 与 Session 执行链，并有 Host 契约测试；
+Mock Provider 仍是占位，真实平台的 LLM、TLS 与持久化仍需产品联调验收。
 Session 的 API、内存与数据流见[开发日志](docs/zh/development/session.md)。
 Memory 的 API、借用寿命与写入结果见[开发日志](docs/zh/development/memory.md)。
 Tool 的[接口](docs/zh/api/tool.md)、[架构](docs/zh/arch/tool.md)与
-[开发记录](docs/zh/development/tool.md)区分已实现机制和待接入的 Run 编排。
+[开发记录](docs/zh/development/tool.md)记录独立机制与编排边界。
 Skill 的[接口](docs/zh/api/skill.md)、[架构](docs/zh/arch/skill.md)与
 Context 的[接口](docs/zh/api/context.md)、[架构](docs/zh/arch/context.md)
 说明统一组装、参考消息、预算和两级 scratch 生命周期。
@@ -64,7 +64,7 @@ Tool 启用时 Core 自动链接私有 JSON reader 做结构准入，不构造�
 | [`src/`](src/) | 平台无关的 Core、Model wrapper、Runtime/Transport 转发及各领域模块。部分模块尚未实现。 |
 | [`providers/`](providers/) | 可选 Model、RAM/JSONL Session Storage、Markdown Memory、共享字节文件契约和有界读取辅助；Mock/Anthropic 尚未实现。 |
 | [`codecs/json/`](codecs/json/) | 有界 JSON reader/writer；Tool 非零时自动依赖 reader，完整 codec 按需启用；jsmn 位于 `vendor/jsmn/`。 |
-| [`ports/`](ports/) | 可选的平台 Runtime、HTTP/TLS 和 Session 文件 I/O Adapter；ESP-IDF/OpenVela 已有实现，Host/RT-Thread/STM32 仍需完善。 |
+| [`ports/`](ports/) | 可选 Runtime、HTTP/TLS 与字节文件 I/O；ESP-IDF/OpenVela/RT-Thread 已有实现，POSIX 文件后端可复用，尚无 Host HTTP 或 STM32 Port。 |
 | [`tests/`](tests/) | 公共头、Core、JSON、Transport 与 Port 的 Host 契约测试。 |
 | [`docs/`](docs/) | 中文文档（`zh/`）与 Docusaurus 站点（`website/`），含全部 ADR；设计文档中的目标能力不等于已实现能力。 |
 
@@ -102,12 +102,13 @@ allocator 和跨任务取消同步按需注入。使用联网 Model 时，再选
 | Host / 普通 CMake | 默认只构建 Core；由应用实现 Runtime，按需启用 JSON codec 与 OpenAI Provider。尚无 Host HTTP Port。 |
 | ESP-IDF | 将仓库作为 `components/cagent`，把 `ports/espidf` 加入组件搜索路径；由 Kconfig 分别选择 Runtime、基于 `esp_http_client` 的 Transport、Session 文件 I/O 和可选 OpenAI Provider。 |
 | OpenVela / NuttX | 在应用 Kconfig 中引入 `ports/openvela/Kconfig`，在 NuttX 构建中加入 `ports/openvela`；按需选择 Runtime、`netutils/webclient` Transport 和 Session 文件 I/O。HTTPS 还需要应用提供验证证书链与主机名的 TLS 实现。 |
-| RT-Thread / STM32 | Port 尚未实现；应用可自行填充 Runtime/Transport ops，并把平台实现放在 Core 之外。 |
+| RT-Thread | `ports/rtthread` 提供 SCons/Kconfig 与可选 CMake 入口；5.1+ Runtime、WebClient 非空 POST、DFS/POSIX 文件绑定独立裁剪。TLS 由应用验证并配置。 |
+| STM32 / 裸机 | Port 尚未实现；应用可注入 Runtime/Transport ops。 |
 
 Core 不强制依赖 Kconfig，也不会根据平台宏自动选择 Backend。平台适配所需的 SDK
 头文件和链接依赖由相应 Port 承担；未选择的 Port 不进入 Core。具体构建入口见
 [Port 集成说明](ports/README.md)、[ESP-IDF Port](ports/espidf/README.md) 和
-[OpenVela Port](ports/openvela/README.md)。Session 文件 I/O Port 仅绑定应用已挂载的
+[OpenVela Port](ports/openvela/README.md)和 [RT-Thread Port](ports/rtthread/README.md)。文件 I/O Port 仅绑定应用已挂载的
 文件系统，还需单独启用 JSONL Provider 与 JSON codec；不负责挂载、格式化或掉电恢复策略。
 共享文件入口独立于 JSONL，可只用于 `USER.md` 等有界读取；详细配置见各 Port 的 storage 文档。
 目前平台测试使用模拟 SDK；真实设备上的 HTTP/TLS、文件系统掉电恢复、栈和峰值内存
@@ -159,8 +160,8 @@ int main(void)
 }
 ```
 
-接入平台时钟后，这是当前可运行的最小生命周期示例，并非对话示例；`agent_run()` 仍返回
-`AGENT_ERROR_NOT_SUPPORTED`。完整的 Model/Tool 链路还需 ReAct 实现。
+接入平台时钟后，这是最小生命周期示例，并非对话示例。执行 `agent_run()` 还需绑定
+Model，并按需配置 Tool/Policy 与 Session Storage；同步执行链见 `tests/run/contract.c`。
 Provider 的配置和缓冲区契约见 [OpenAI Provider](providers/model/openai/README.md)。
 现有可执行契约见 [Core 生命周期测试](tests/core/lifecycle.c)。
 
@@ -175,6 +176,9 @@ bash tests/json/compile.sh
 bash tests/transport/compile.sh
 bash tests/ports/espidf/compile.sh
 bash tests/ports/openvela/compile.sh
+bash tests/ports/rtthread/compile.sh
+bash tests/ports/rtthread/build.sh
+bash tests/run/compile.sh
 bash tests/providers/openai/compile.sh
 bash tests/session/compile.sh
 bash tests/session/jsonl_compile.sh
