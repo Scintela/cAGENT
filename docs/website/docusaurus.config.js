@@ -1,19 +1,16 @@
 // cAgentV2 文档站点配置（Docusaurus，docs-only 模式）
 //
 // 本地预览（在 docs/website/ 目录下）：
-//   npm install
-//   npm start            # http://localhost:3000/cAgentV2/
+//   npm ci
+//   npm start            # http://localhost:3000/cAGENT/
 //   npm run build && npm run serve
 //
 // 推送 GitHub 后：Settings -> Pages -> Source 选 "GitHub Actions"，
-// 并将下方 <username> 替换为实际 GitHub 用户名/组织名（共 2 处）。
 
 /** @type {import('@docusaurus/types').DocusaurusConfig} */
 const config = {
   title: 'cAgentV2',
   tagline: '面向嵌入式与 Host 的跨平台 C 语言 Agent 库',
-  // TODO: 推送 GitHub 前将 "username" 替换为实际用户名/组织名（本文件共 2 处：
-  // 下面的 url 和 themeConfig.navbar 里的 GitHub 链接）
   url: 'https://scintela.github.io',
   baseUrl: '/cAGENT/',
 
@@ -29,6 +26,7 @@ const config = {
   },
 
   onBrokenLinks: 'throw',
+  onBrokenAnchors: 'throw',
 
   presets: [
     [
@@ -41,7 +39,7 @@ const config = {
           // 页面 URL 与文件路径一致（/architecture、/adr/0022-... 等）。
           routeBasePath: '/',
           sidebarPath: require.resolve('./sidebars.js'),
-          // ADR 的数字前缀是身份标识（0006-0022 连续编号）而非排序装饰，
+          // ADR 的数字前缀是身份标识而非排序装饰，
           // 禁用默认的数字前缀剥离，保持 id/URL 与文件名一致。
           numberPrefixParser: false,
         },
@@ -79,7 +77,7 @@ const config = {
           position: 'right',
         },
         {
-          href: 'https://github.com/username/cAgentV2',
+          href: 'https://github.com/Scintela/cAGENT',
           label: 'GitHub',
           position: 'right',
         },

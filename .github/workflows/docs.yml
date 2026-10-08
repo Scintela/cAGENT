@@ -34,6 +34,10 @@ jobs:
           cache-dependency-path: docs/website/package-lock.json
       - name: Install dependencies
         run: npm ci
+      - name: Check document links and navigation
+        run: npm run check
+      - name: Compile and run guide examples
+        run: npm run check:examples
       - name: Build site
         run: npm run build
       - uses: actions/upload-pages-artifact@v3

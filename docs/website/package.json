@@ -4,6 +4,8 @@
   "private": true,
   "description": "cAgentV2 文档站点（Docusaurus）",
   "scripts": {
+    "check": "node scripts/check-docs.mjs",
+    "check:examples": "node scripts/check-docs.mjs --examples",
     "docusaurus": "docusaurus",
     "start": "docusaurus start",
     "build": "docusaurus build",

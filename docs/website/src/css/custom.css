@@ -6,3 +6,8 @@
   --ifm-color-primary-darkest: #174364;
   --ifm-color-primary-light: #2a6fa3;
 }
+
+/* Keep short category labels readable on narrow document tables. */
+.markdown table th:first-child {
+  min-width: 5rem;
+}
