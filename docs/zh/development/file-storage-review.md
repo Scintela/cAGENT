@@ -100,8 +100,8 @@ NOT_FOUND，不能把该结果直接解释为第一次没有执行删除。
 Turn 提交存在同构的两阶段歧义：`jsonl_finish` 先追加完整行，再请求同步；同步
 失败时，完整记录可能仍然可被读取，甚至已经具有耐久性，但错误返回无法确认这些
 结果。Provider 已结束事务，Core Session 也会关闭本轮，不能对同一事务重复调用
-`finish()`。依据见 [JSONL 提交实现](../../../providers/storage/jsonl/src/session_jsonl.c)
-和 [Core Session 实现](../../../src/session/session_manager.c)。
+`finish()`。依据见 [JSONL 提交实现](https://github.com/Scintela/cAGENT/blob/main/providers/storage/jsonl/src/session_jsonl.c)
+和 [Core Session 实现](https://github.com/Scintela/cAGENT/blob/main/src/session/session_manager.c)。
 
 尾部修复只截掉没有结束换行的残尾，不撤销完整行、不判断重复 turn，也不恢复
 本轮提交的确定结果。不能将它描述为“下次 begin 会自愈提交歧义”。现有记录没有
@@ -129,7 +129,7 @@ FS-12 包含两个独立事实：`digit()` 要求数值原文为单个十进制�
 角色和 outcome 还要分别通过各自合法值检查，单数字解析成功不等于字段合法。
 当前未知版本与畸形记录均返回 `AGENT_ERROR_PARSE`，不静默跳过。这是当前错误
 分类取舍，不表示兼容未来版本。见
-[JSONL 记录解码](../../../providers/storage/jsonl/src/jsonl_record.c)。
+[JSONL 记录解码](https://github.com/Scintela/cAGENT/blob/main/providers/storage/jsonl/src/jsonl_record.c)。
 
 FS-13 中的容量都按一份 turn 记录计算，不是整个 Session 历史的总容量：
 
@@ -176,8 +176,8 @@ read_line、token 或 decoded 容量不足时，写入仍可能成功，recent �
 | 真机挂载、短读写、同步、替换、残尾恢复、重启与掉电 | 待验收；按 SDK、文件系统和配置分别记录 |
 
 只读绑定已有测试位于
-[POSIX 文件契约测试](../../../tests/ports/posix/file_store_contract.c)；现有故障覆盖位于
-[POSIX 文件故障测试](../../../tests/ports/posix/file_store_faults.c)。后续提交需逐项更新
+[POSIX 文件契约测试](https://github.com/Scintela/cAGENT/blob/main/tests/ports/posix/file_store_contract.c)；现有故障覆盖位于
+[POSIX 文件故障测试](https://github.com/Scintela/cAGENT/blob/main/tests/ports/posix/file_store_faults.c)。后续提交需逐项更新
 本日志状态；未验收事项不能标为已完成。
 
 ## 后续实施记录（2026-10-02）

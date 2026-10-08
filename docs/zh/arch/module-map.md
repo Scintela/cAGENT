@@ -1,50 +1,38 @@
-# cAgentV2 模块责任地图
+# 模块与目录地图
 
-[总体架构](../architecture.md) 保留目标设计；已有模块文档说明实际实现边界。
-以下表格中只有链接项表示已创建文档，其余仍为拆分计划。
+此地图描述当前目录职责；空目录或骨架文件不代表已交付能力。
 
-## 模块分类
+| 路径 | 职责 | 开发者入口 |
+|---|---|---|
+| include/agent.h | 生命周期、Run 和常用应用入口 | [Core 参考](../api/core.md) |
+| include/agent/ | 平台无关的领域与扩展契约 | [API 总览](../api/public-api.md) |
+| src/core/ | Workspace、Arena、事件、状态与错误 | [内存](memory.md) |
+| src/run/ | 同步 ReAct 与协作取消 | [执行链](run.md) |
+| src/tool/、src/policy/ | 工具注册、准入、授权与执行 | [Tool](tool.md) |
+| src/skill/ | 有界可信指令注册表 | [Skill](skill.md) |
+| src/context/ | 跨领域模型输入投影 | [Context](context.md) |
+| src/session/ | 当前 Turn 与 Storage 转发/历史投影 | [Session](../guides/session.md) |
+| src/memory/ | 长期内容领域操作与安全边界 | [Memory](../guides/memory.md) |
+| src/model/ | Model wrapper 和绑定，不含厂商协议 | [Model](../api/model.md) |
+| src/runtime/、src/transport/ | 通用服务/HTTP 契约验证与转发 | [Runtime](../api/runtime.md)、[HTTP](../api/transport.md) |
+| providers/model/openai/ | 非流式 Chat Completions | [OpenAI](../guides/openai.md) |
+| providers/storage/ram/、jsonl/ | Session 具体存储 | [Storage](../api/storage.md) |
+| providers/storage/files/ | 共享字节文件接口 | [文件 I/O](../api/storage.md) |
+| providers/memory/markdown/ | 四类 Markdown 文档映射 | [Memory](../guides/memory.md) |
+| codecs/json/ | 私有 reader/writer | [构建](../getting-started/build.md) |
+| ports/ | Runtime、HTTP、文件系统适配 | [平台](../platforms/index.md) |
+| tests/ | Host 契约、故障注入与构建矩阵 | [验证](../contributing/testing.md) |
+| docs/zh/ | 开发者手册及维护资料 | [快速开始](../getting-started/quickstart.md) |
 
-| 分类 | 模块 | 计划文档 |
-|------|------|------|
-| Core Kernel | Lifecycle、Workspace、Registry、Event Dispatch、Cancel/Stats | `core.md` |
-| Execution / Orchestration | Loop、Run State Machine | `loop.md` |
-| Execution / Orchestration | Context Projection | [Context 架构](context.md)，[公共接口](../api/context.md) |
-| Capabilities | Model wrapper (`src/model/`) and optional implementations (`providers/`) | `model.md` |
-| Capabilities | Tool | [Tool 架构](tool.md)，[公共接口](../api/tool.md) |
-| Capabilities | Skill | [Skill 架构](skill.md)，[公共接口](../api/skill.md) |
-| Capabilities | Session | `session.md` |
-| Capabilities | Memory | `memory.md` |
-| Cross-cutting Control | Policy、Confirmation、Validation | `policy.md` |
-| Cross-cutting Control | Live Event Dispatch | `event.md` |
-| Platform Services | Runtime、Transport | `runtime.md` |
-| Platform Services | Session Storage | `storage.md` |
-| Composition | Plugin、Profile | `plugin.md` |
-| 外围（非 Core） | Trigger、Scheduler | `trigger.md` |
+## 不要合并这些职责
 
-## 已收敛的边界决定
+通用 Codec 识别 JSON 语法；JSONL Provider 决定 Turn 记录格式。
+File Store 操作字节；Session bridge 决定会话文件命名与批量管理。
+Context 协调来源；Memory 与 Skill 决定文档/指令含义。
+Port 适配 SDK；src/runtime 与 src/transport 保留平台无关契约。
 
-以下决定已在总体架构中收敛，后续模块文档只引用：
+## 尚未交付
 
-1. 无 Core Gateway 门面，主链路为类型化直接调用（architecture.md §5.6）。
-2. 无通用 Hook Registry；控制点类型化，观测走 live event（§20.2）。
-3. Permission 不独立成子系统，由应用在单个产品 Policy 回调中组合（§14.2）。
-4. Tool 注册借用的 schema JSON 对象，reader 做语法/唯一键准入，不执行完整 JSON Schema；
-   模型 wire JSON 由 Provider 生成，无 schema 缓存（Tool 架构、ADR 0022）。
-5. Context 投影策略由 Kernel 固定，仅 Context Provider 可插拔（§14.3）。
-6. Kernel 拥有运行状态机，Loop 只贡献 step 决策（§10.2）。
-7. Trigger/Scheduler 属于 Application 外围，Core 不提供 Trigger Registry（§4）。
-
-## 待收敛的跨模块决定
-
-1. Model/Transport 的 I/O 模型：同步 `complete/request` 是最小实现路径；是否升级为
-   `start/poll/cancel` 的非阻塞契约，必须在公开 `model.h` 与 `transport.h` 前决定。
-2. Port capability 的最小集合：Runtime 只抽象 allocator、时钟、同步/临界区与日志；
-   网络、TLS、文件系统和硬件服务由独立 provider 或应用适配层提供。
-   HTTP Transport 的候选 Adapter 边界、构建裁剪和同步语义见
-   [ADR 0007](../adr/0007-http-transport-adapters.md)，在接受前仍可调整。
-
-## 阅读顺序
-
-建议先阅读 [总体架构](../architecture.md)，再按 `core` -> `loop` -> `model` -> `tool`
--> `policy` -> `session` -> `context` 的顺序创建模块文档。
+官方 Mock、Anthropic、Host Runtime/HTTP、STM32、Skill 文件加载器和内置 Tool
+尚无完整正式实现。自动 Session→Memory 提取、异步确认和流式模型也是未来能力；
+当前主干不依赖它们才能运行。

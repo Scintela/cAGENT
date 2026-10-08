@@ -2,8 +2,8 @@
 
 本节保存 cAgentV2 的架构决策记录（Architecture Decision Records）。每篇 ADR
 记录一个边界或契约的裁决：背景、候选方案、决定与后果。接口收敛以
-[公共 API 草案](../api/public-api.md) 及头文件快照说明为准；ADR 中描述的目标
-能力不等于已实现能力。
+[公共 API 参考](../api/public-api.md)及当前源码为准；ADR 中描述的历史候选或目标
+能力不等于已实现能力。调用手册与架构决策分开维护。
 
 ## 文档原则
 
@@ -20,7 +20,7 @@
 | [0007 HTTP Transport 适配](0007-http-transport-adapters.md) | HTTP Transport 的平台 Adapter、裁剪、同步语义和所有权提案 |
 | [0008 错误契约](0008-error-contract.md) | 跨平台错误类别、来源、远端失败、Tool 副作用事实与传播规则提案 |
 | [0009 类型边界](0009-types-boundary.md) | 公共 `types.h` 的跨模块类型边界、Model 类型迁移与 include 规则提案 |
-| [0010 Context 投影](0010-context-projection.md) | 已实现全文与联合模型投影、资源预算、Memory 快照和动态贡献；Run 接入待完成 |
+| [0010 Context 投影](0010-context-projection.md) | 已实现全文与联合模型投影、资源预算、Memory 快照和动态贡献，并接入同步 Run |
 | [0011 配置边界](0011-configuration-boundaries.md) | 编译期容量 Profile、运行期 limits、workspace 与可替换 Model Provider 的边界提案 |
 | [0012 agent.h 边界](0012-agent-header-boundary.md) | `agent.h` 的应用入口、聚合范围、生命周期与同步运行边界提案 |
 | [0013 文本表示](0013-text-representation.md) | 公共 API 文本表示候选方案：NUL 字符串、长度视图、混合边界、双轨 API 与 `_Generic` |
@@ -42,7 +42,7 @@
 | [0029 官方可选 Skill 文件加载器](0029-official-skill-file-loader.md) | 可选包两层结构、三触发条件后实现；默认严格回滚、best_effort 显式选择；顺序/信任/查询前置齐备 |
 | [0030 可选共享文件 I/O 边界](0030-shared-file-io-boundary.md) | 共享物理 I/O 的早期评估；后续平台预制方案与迁移节奏见 ADR 0031 |
 | [0031 预制平台文件存储与读取](0031-prefabricated-platform-file-storage.md) | 已实现可选字节文件契约、JSONL bridge、USER 有界读取与平台入口，删除旧平台入口；真机文件系统和掉电保证待验证 |
-| [0032 Memory 领域管理](0032-memory-domain-management.md) | 已实现独立 Memory ops、Markdown 后端、有界快照和 Context 显式文档选择；ReAct 接入未完成 |
+| [0032 Memory 领域管理](0032-memory-domain-management.md) | 已实现独立 Memory ops、Markdown 后端、有界快照和 Context 显式文档选择，并接入同步 Run |
 
 新增 ADR 时：沿用四位递增编号与 `NNNN-kebab-case.md` 命名，并将条目追加到
 上表。

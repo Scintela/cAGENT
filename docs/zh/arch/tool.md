@@ -1,6 +1,6 @@
 # Tool 模块架构
 
-状态：同步注册、准入、授权与执行机制已实现；ReAct 调用和 Session/Event 编排尚未接入。
+同步注册、准入、授权与执行已接入 ReAct 调用和 Session/Event 编排。
 公共契约见[Tool 接口](../api/tool.md)，验证记录见[开发日志](../development/tool.md)。
 本文是当前 Tool 实现边界，取代旧目标架构中 schema 缓存、descriptor 强制注册和
 多 Policy contributor 的描述，不引入暂停确认、自动重试或并行执行。
@@ -21,7 +21,7 @@ src/
     tool_schema.c            文本/JSON 对象准入，不执行 JSON Schema
     tool_guard.c             取消/时限、validate、Policy、handler、输出
   policy/policy_chain.c       单 Policy 设置与 fail-closed 决策
-  run/                       后续接入：迭代、预算、Session/Event、统计
+  run/                       迭代、预算、Session/Event、统计
 codecs/json/
   reader.c                   严格 JSON/UTF-8 与无 token 的唯一键对象校验
   writer.c                   Provider 格式化；Tool 本身不依赖
@@ -73,7 +73,7 @@ registry 在 init 时分配并清零；零槽位时 registry 指针为 NULL，�
   -> Persistent registry
   -> 可见 Tool view 投影
 
-Run -> Model request -> Provider      后续 Run 接入
+Run -> Model request -> Provider      已接入
   -> tools JSON -> HTTP -> 模型
   -> 完整 Tool-call sink -> Run 复制 ID/name/arguments
   -> Run 预留结果空间、传入剩余调用预算
@@ -89,7 +89,7 @@ agent_tool_invoke (私有)               已实现
   -> handler 一次 -> bounded sticky sink
   -> 输出文本校验 + 返回执行事实
 
-Run 消费执行事实                       后续 Run 接入
+Run 消费执行事实                       已接入
   -> handler_called 则扣减预算、记录调用事实
   -> 配对 Tool-call/result、事件和统计
   -> 下一次 Model 迭代或终止 turn

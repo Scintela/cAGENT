@@ -1,10 +1,9 @@
 # Tool 接口
 
-状态：同步 Tool 模块已实现，代码提交 `965c93f`。接口定义在
-`include/agent/tool.h` 和 `include/agent/policy.h`；架构见[Tool 模块](../arch/tool.md)。
-**当前 `agent_run()` 的 ReAct 调度尚未实现**，注册工具不意味着已能通过 Core
-完成模型调用、工具执行和 Session 提交。本文区分可调用的公共注册接口和已经完成、
-等待 Run 接入的私有执行机制。
+接口定义在 `include/agent/tool.h` 和 `include/agent/policy.h`。
+同步注册、授权与执行机制已接入 `agent_run()`、Session 和事件链。
+本文说明公共注册/回调契约；私有调用入口不向应用公开。
+首次使用见[Tool 指南](../guides/tools.md)，架构见[Tool 模块](../arch/tool.md)。
 
 ## 1. 类型与所有权
 
@@ -92,7 +91,7 @@ handler 调用 `sink->write(sink->context, text)` 输出长度感知的 UTF-8 �
 每次 write 均检查取消和 deadline，首个错误保持 sticky；后续 write 返回同一错误，
 不再复制数据。handler 应立即传播错误；即使忽略错误，框架也不会返回整体成功。
 
-Run 接入时须在 handler 前提供至少 `AGENT_MAX_TOOL_OUTPUT_BYTES + 1` 字节的目标缓冲，
+Run 在 handler 前提供至少 `AGENT_MAX_TOOL_OUTPUT_BYTES + 1` 字节的目标缓冲，
 否则返回 CAPACITY 且不执行。超过输出字节上限返回 LIMIT，不静默截断，不重新执行。
 输出缓冲可以来自 Core scratch，不得与输入、上下文、limits、cancel token、注册文本或
 持久 Core 状态重叠；应用还须保证不会覆盖其不透明 callback 状态。

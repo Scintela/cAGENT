@@ -1,7 +1,7 @@
 # Context 接口
 
-状态：2026-10-06 已实现统一有界投影，联合使用 Session、Tool、Skill、Memory；
-`agent_run()` 尚未接入，以下注册能力不能单独构成端到端对话。
+统一有界投影已接入 `agent_run()`，联合使用 Session、Tool、Skill、Memory。
+应用注册来源，Run 负责准备快照和逐次模型调用投影，不公开手工构建入口。
 
 ## 动态贡献
 
