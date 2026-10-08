@@ -7,6 +7,8 @@
 //
 // 推送 GitHub 后：Settings -> Pages -> Source 选 "GitHub Actions"，
 
+const {themes: prismThemes} = require('prism-react-renderer');
+
 /** @type {import('@docusaurus/types').DocusaurusConfig} */
 const config = {
   title: 'cAgentV2',
@@ -64,6 +66,15 @@ const config = {
   ],
 
   themeConfig: {
+    colorMode: {
+      defaultMode: 'light',
+      disableSwitch: false,
+      respectPrefersColorScheme: true,
+    },
+    prism: {
+      theme: prismThemes.github,
+      darkTheme: prismThemes.dracula,
+    },
     navbar: {
       title: 'cAgentV2',
       logo: {
