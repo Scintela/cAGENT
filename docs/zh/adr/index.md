@@ -2,7 +2,7 @@
 
 本节保存 cAgentV2 的架构决策记录（Architecture Decision Records）。每篇 ADR
 记录一个边界或契约的裁决：背景、候选方案、决定与后果。接口收敛以
-[公共 API 参考](../api/public-api.md)及当前源码为准；ADR 中描述的历史候选或目标
+[公共 API 参考](api/public-api.md)及当前源码为准；ADR 中描述的历史候选或目标
 能力不等于已实现能力。调用手册与架构决策分开维护。
 
 ## 文档原则

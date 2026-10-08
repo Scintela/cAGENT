@@ -13,7 +13,7 @@
 ## 接口与数据流
 
 `agent_register_skill()` 复制描述符，`agent_unregister_skill()` 解除借用。
-描述符内容与生命周期见 [API](../api/skill.md)；固定数组和投影边界见[架构](../arch/skill.md)。
+描述符内容与生命周期见 [API](api/skill.md)；固定数组和投影边界见[架构](arch/skill.md)。
 应用文本进入 Registry，Context 按本轮预算选择，最终成为 Model 请求中的指令文本。
 库不会在注册时读文件，也不会在注销时释放应用内存。
 

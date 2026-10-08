@@ -29,7 +29,7 @@ front-matter 解析、缓冲管理与 read_skill 工具），验证了链路可�
   （候选 `providers/skill/loader/`）交付。归 `providers/` 而非 `src/`：它是可选
   格式实现，`src/` 只收每个构建都存在的 Kernel 机制，`src/skill/` 保留注册表
   机制并作为本层的下游。目录归属规则见
-  [当前模块与目录地图](../arch/module-map.md)。
+  [当前模块与目录地图](arch/module-map.md)。
 - **POSIX 薄层**（候选 `ports/posix/skills/`）：目录枚举、定长读取与排序。
   Host 可验证通用逻辑；ESP-IDF VFS、NuttX VFS、RT-Thread DFS 仅是候选复用目标，
   须分别验证目标文件系统的目录、路径与文件操作语义。

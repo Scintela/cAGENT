@@ -119,7 +119,7 @@ OpenVela 可通过普通目标装配或把通用 Provider 源加入应用构建�
 发布前/后的失败；可选 Host/模拟 IDF/NuttX 构建与 JSON 独立性；新增两组
 契约通过 AddressSanitizer/UndefinedBehaviorSanitizer。
 
-Context 已实现显式选择、预算和快照接入，见 [Context 接口](../api/context.md)。
+Context 已实现显式选择、预算和快照接入，见 [Context 接口](api/context.md)。
 仍未实现：自动文档发现、相关性检索、Memory Tool、后台摘要提取与
 多文档版本事务。真实 ESP-IDF/OpenVela 固件、Flash 磨损和掉电行为仍需产品验证。
 开发流程与 API 使用见 [Memory 开发记录](../development/memory.md)。

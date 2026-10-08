@@ -17,7 +17,7 @@ const config = {
   baseUrl: '/cAGENT/',
 
   // 中文为默认语言，英文翻译位于 docs/website/i18n/en/，
-  // 未翻译页面自动回退显示中文原文。
+  // 开发者手册提供英文版；维护资料保留中文，未翻译页面回退中文原文。
   i18n: {
     defaultLocale: 'zh',
     locales: ['zh', 'en'],

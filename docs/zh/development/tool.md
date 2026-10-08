@@ -1,7 +1,7 @@
 # Tool 模块开发记录
 
 日期：2026-10-06。代码提交：`965c93f`。
-接口与字段见[Tool API](../api/tool.md)，数据流与模块责任见[Tool 架构](../arch/tool.md)。
+接口与字段见[Tool API](api/tool.md)，数据流与模块责任见[Tool 架构](arch/tool.md)。
 
 ## 本次完成
 

@@ -19,7 +19,10 @@ npm start -- --host 127.0.0.1
 
 预览地址为 http://localhost:3000/cAGENT/。静态产物位于 `website/build/`；
 GitHub Actions 构建并发布至 https://scintela.github.io/cAGENT/。
-中文是完整维护目标，英文未翻译页面回退中文，不能宣称英文手册已完整翻译。
+开发者手册提供中英文版本。英文内容位于
+`website/i18n/en/docusaurus-plugin-content-docs/current/`，与中文手册保持相同页面 ID。
+维护资料（ADR 与开发日志）只维护中文，不新增英文版；英文导航明确标注为中文资料，
+未翻译页面回退中文原文。
 
 ## 内容结构
 
@@ -36,12 +39,18 @@ GitHub Actions 构建并发布至 https://scintela.github.io/cAGENT/。
 ## 维护规则
 
 站内页面使用相对 Markdown 链接，源码使用 GitHub 链接。
+翻译页与中文维护资料交叉链接时使用文档根相对形式（如 `api/context.md`、
+`development/skill.md`），由 Docusaurus 在当前语言和原文目录中解析；
+不要使用只在某一种语言的物理目录下成立的 `../` 路径。
 新增手册页登记 sidebars；ADR 与开发日志按目录自动纳入维护导航。
 不修改 ADR 编号，不删除设计历史来伪造已实现状态。
 
-`npm run check` 检查 Markdown 文件链接与导航覆盖；
-`check:examples` 从手册提取 C 示例，编译全部新指南片段并运行快速开始。
+`npm run check` 检查中英文 Markdown 链接、导航覆盖、英文手册覆盖和代码示例一致性；
+`check:examples` 提取中英文 C 示例，编译指南片段并分别运行快速开始。
 完整站点构建检查 MDX、路由和站内锚点。
 示例验证不调用真实 LLM 或 SDK，不等于设备验收。
+
+新增或修改开发者手册时同步维护两种语言；API 标识、构建开关和可执行代码块保持一致。
+不把英文译文中的能力描述升级为尚未实现的承诺。
 
 详细写作约定及参考来源见 [文档组织与维护](zh/contributing/documentation.md)。

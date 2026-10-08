@@ -8,6 +8,8 @@ import {spawnSync} from 'node:child_process';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 const content = path.join(root, 'docs/zh');
+const english = path.join(root,
+  'docs/website/i18n/en/docusaurus-plugin-content-docs/current');
 const require = createRequire(import.meta.url);
 const sidebar = require('../sidebars.js');
 
@@ -18,7 +20,25 @@ function markdownFiles(directory) {
   });
 }
 const files = markdownFiles(content);
+const englishFiles = markdownFiles(english);
 const ids = new Set(files.map(file => path.relative(content, file).replace(/\.md$/, '')));
+const englishIds = new Set(englishFiles.map(file => path.relative(english, file).replace(/\.md$/, '')));
+const manualIds = new Set([...ids].filter(id => !/^(adr|development)\//.test(id)));
+const executableBlocks = text => [...text.matchAll(
+  /^```(?:c|cpp|cmake|sh|bash)(?:[ \t][^\n]*)?\n[\s\S]*?^```[ \t]*$/gm
+)].map(match => match[0]);
+for (const id of manualIds) assert(englishIds.has(id), 'English translation missing: ' + id);
+for (const id of englishIds) {
+  assert(manualIds.has(id), 'Unexpected English document: ' + id);
+  assert.deepEqual(
+    executableBlocks(readFileSync(path.join(english, id + '.md'), 'utf8')),
+    executableBlocks(readFileSync(path.join(content, id + '.md'), 'utf8')),
+    'Executable examples differ between locales: ' + id);
+}
+const documentSets = [
+  {locale: 'zh', directory: content, files},
+  {locale: 'en', directory: english, files: englishFiles},
+];
 const visible = new Set();
 function visit(items) {
   for (const item of items) {
@@ -34,17 +54,28 @@ function visit(items) {
 visit(sidebar.docs);
 for (const id of visible) assert(ids.has(id), 'Unknown sidebar document: ' + id);
 for (const id of ids) assert(visible.has(id), 'Document missing from sidebar: ' + id);
-for (const file of files) {
-  const text = readFileSync(file, 'utf8').replace(/^```[^\n]*\n[\s\S]*?^```\s*$/gm, '');
-  for (const match of text.matchAll(/!?\[[^\]]*\]\(([^)]+)\)/g)) {
-    const target = match[1].split('#')[0];
-    if (!target || /^(https?:|mailto:|\/)/.test(target)) continue;
-    const resolved = path.resolve(path.dirname(file), decodeURIComponent(target));
-    assert(files.includes(resolved),
-      path.relative(root, file) + ': use a valid document or GitHub source link: ' + target);
+for (const documents of documentSets) {
+  for (const file of documents.files) {
+    const text = readFileSync(file, 'utf8').replace(/^```[^\n]*\n[\s\S]*?^```\s*$/gm, '');
+    for (const match of text.matchAll(/!?\[[^\]]*\]\(([^)]+)\)/g)) {
+      const target = match[1].split('#')[0];
+      if (!target || /^(https?:|mailto:|\/)/.test(target)) continue;
+      // Docusaurus resolves explicit relative links only beside the physical source.
+      const directories = /^(\.\/|\.\.\/)/.test(target)
+        ? [path.dirname(file)]
+        : [path.dirname(file), documents.directory,
+          ...(documents.locale === 'en' ? [content] : [])];
+      assert(directories.some(directory => {
+        const resolved = path.resolve(directory, decodeURIComponent(target));
+        return documents.files.includes(resolved) ||
+          (documents.locale === 'en' && files.includes(resolved));
+      }),
+        path.relative(root, file) + ': use a valid document or GitHub source link: ' + target);
+    }
   }
 }
-console.log('Validated ' + files.length + ' Chinese documents and sidebar coverage.');
+console.log('Validated ' + files.length + ' Chinese documents, ' + englishFiles.length +
+  ' English manual translations, sidebar coverage and executable-example parity.');
 
 if (process.argv.includes('--examples')) {
   const temporary = mkdtempSync(path.join(tmpdir(), 'cagent-docs-'));
@@ -70,8 +101,11 @@ if (process.argv.includes('--examples')) {
     const flags = ['-std=c99', '-Wall', '-Wextra', '-Wpedantic', '-Werror',
       '-DAGENT_BUILD_CONFIG_HEADER="agent_build_config.h"', ...includes];
     let count = 0;
-    for (const file of files) {
-      const relative = path.relative(content, file);
+    for (const entry of documentSets.flatMap(documents => documents.files.map(file => ({
+      file, directory: documents.directory, locale: documents.locale,
+    })))) {
+      const {file, directory, locale} = entry;
+      const relative = path.relative(directory, file);
       if (!/^(getting-started|guides|platforms)\//.test(relative)) continue;
       const text = readFileSync(file, 'utf8');
       for (const match of text.matchAll(/^```c(?: [^\n]*)?\n([\s\S]*?)^```/gm)) {
@@ -84,7 +118,7 @@ if (process.argv.includes('--examples')) {
           const result = spawnSync(executable, [], {encoding: 'utf8'});
           assert.equal(result.status, 0, result.stderr);
           assert.match(result.stdout, /Hello from cAgentV2\./);
-          console.log(result.stdout.trim());
+          console.log(locale + ': ' + result.stdout.trim());
         } else {
           run(compiler, [...flags, '-fsyntax-only', source]);
         }

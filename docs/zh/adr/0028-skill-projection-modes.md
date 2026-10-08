@@ -4,7 +4,7 @@
 - 日期：2026-10-01
 
 2026-10-06 实现说明：当前公共 `agent_skill_t` 仍是全文贡献，详见
-[Skill 接口](../api/skill.md)。本文的按需元数据、模式选择和读取 Tool 尚未进入实际 API。
+[Skill 接口](api/skill.md)。本文的按需元数据、模式选择和读取 Tool 尚未进入实际 API。
 - 关联：[ADR 0010](0010-context-projection.md)、[ADR 0020](0020-synchronous-run-mvp.md)、[ADR 0023](0023-file-backed-memory-soul-skill.md)、[ADR 0025](0025-builtin-tools-boundary.md)
 
 ## 背景

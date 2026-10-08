@@ -2,7 +2,7 @@
 
 - 状态：已实现有界全文与联合投影；Run/ReAct 接入待完成
 - 日期：2026-09-26
-- 实现更新：2026-10-06；实际接口与测试见 [Context 架构](../arch/context.md)。
+- 实现更新：2026-10-06；实际接口与测试见 [Context 架构](arch/context.md)。
 
 本文提到的 `agent_turn_end()` 是后续候选接口；同步 MVP 以 `agent_run()` 返回结束运行，见 ADR 0020。
 

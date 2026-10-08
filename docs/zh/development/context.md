@@ -10,7 +10,7 @@
 
 公共接口保留动态注册/注销，新增 `agent_register_memory_context()` 选择逻辑文档。
 贡献描述符增加 `max_bytes` 和 `placement`；处于开发期，直接完善契约，不保留旧私有入口。
-结构体、公共示例及返回值见 [API](../api/context.md)，数据流与寿命见[架构](../arch/context.md)。
+结构体、公共示例及返回值见 [API](api/context.md)，数据流与寿命见[架构](arch/context.md)。
 
 ## 跨模块修改
 

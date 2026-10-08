@@ -1,0 +1,42 @@
+{
+  "version.label": {
+    "message": "Current",
+    "description": "The label for version current"
+  },
+  "sidebar.docs.category.快速开始": {
+    "message": "Getting Started",
+    "description": "The label for category '快速开始' in sidebar 'docs'"
+  },
+  "sidebar.docs.category.使用指南": {
+    "message": "Guides",
+    "description": "The label for category '使用指南' in sidebar 'docs'"
+  },
+  "sidebar.docs.category.API 参考": {
+    "message": "API Reference",
+    "description": "The label for category 'API 参考' in sidebar 'docs'"
+  },
+  "sidebar.docs.category.平台接入": {
+    "message": "Platforms",
+    "description": "The label for category '平台接入' in sidebar 'docs'"
+  },
+  "sidebar.docs.category.架构与原理": {
+    "message": "Architecture",
+    "description": "The label for category '架构与原理' in sidebar 'docs'"
+  },
+  "sidebar.docs.category.测试与贡献": {
+    "message": "Testing and Contributions",
+    "description": "The label for category '测试与贡献' in sidebar 'docs'"
+  },
+  "sidebar.docs.category.维护资料": {
+    "message": "Maintenance (Chinese)",
+    "description": "The label for category '维护资料' in sidebar 'docs'"
+  },
+  "sidebar.docs.category.开发记录": {
+    "message": "Development Logs (Chinese)",
+    "description": "The label for category '开发记录' in sidebar 'docs'"
+  },
+  "sidebar.docs.category.架构决策 (ADR)": {
+    "message": "Architecture Decisions (Chinese)",
+    "description": "The label for category '架构决策 (ADR)' in sidebar 'docs'"
+  }
+}
