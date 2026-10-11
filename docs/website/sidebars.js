@@ -40,7 +40,7 @@ module.exports = {
     },
     {
       type: 'category', label: '测试与贡献',
-      items: ['contributing/testing', 'contributing/documentation'],
+      items: ['contributing/engineering-rules', 'contributing/testing', 'contributing/documentation'],
     },
     {
       type: 'category', label: '维护资料', collapsed: true,
