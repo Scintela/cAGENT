@@ -1,0 +1,65 @@
+# 代码构建与测试流水线：全量 Host 契约测试（双编译器）、
+# 可选组件全开构建与消毒剂回归。需要本地目标源码树的检查
+# （交叉编译、上游头文件）由 tests/run_all.sh 自行排除。
+name: ci
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "docs/**"
+      - "*.md"
+  pull_request:
+
+concurrency:
+  group: "ci-${{ github.ref }}"
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    name: suites (${{ matrix.cc }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        cc: [gcc, clang]
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run all test suites
+        env:
+          CC: ${{ matrix.cc }}
+        run: bash tests/run_all.sh
+
+  components:
+    name: cmake components
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure with all optional components
+        run: >
+          cmake -S . -B build
+          -DAGENT_BUILD_JSON_CODEC=ON
+          -DAGENT_BUILD_MOCK_PROVIDER=ON
+          -DAGENT_BUILD_OPENAI_PROVIDER=ON
+          -DAGENT_BUILD_SESSION_RAM=ON
+          -DAGENT_BUILD_SESSION_JSONL=ON
+          -DAGENT_BUILD_FILE_STORE=ON
+          -DAGENT_BUILD_MARKDOWN_MEMORY=ON
+          -DAGENT_BUILD_POSIX_FILE_STORE=ON
+      - name: Build
+        run: cmake --build build -j
+
+  sanitize:
+    name: asan + ubsan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      CFLAGS: "-fsanitize=address,undefined -fno-omit-frame-pointer -g"
+    steps:
+      - uses: actions/checkout@v4
+      - name: File store helpers
+        run: bash tests/providers/files/compile.sh
+      - name: POSIX file fault injection
+        run: bash tests/ports/posix/file_store_faults.sh
