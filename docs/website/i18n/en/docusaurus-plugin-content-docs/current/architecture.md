@@ -1,6 +1,6 @@
 # Architecture
 
-cAgentV2 separates execution mechanisms, domain protocols and platform services.
+cAgent separates execution mechanisms, domain protocols and platform services.
 The application chooses dependencies, budgets and trust; Core coordinates the
 order of operations and invariants within a Turn.
 

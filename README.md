@@ -1,4 +1,4 @@
-# cAgentV2
+# cAgent
 
 > ⚠️ **项目状态:快速开发迭代阶段(v0.0.1)**
 >
@@ -6,7 +6,7 @@
 > 公共 API 随时可能调整、不承诺跨版本兼容,**暂不建议用于生产环境**。
 
 
-cAgentV2 是面向嵌入式与 Host 的跨平台 C 语言 Agent 库，目标是在 ESP-IDF、
+cAgent 是面向嵌入式与 Host 的跨平台 C 语言 Agent 库，目标是在 ESP-IDF、
 OpenVela、RT-Thread 等系统上复用同一套应用接口。项目采用平台无关的 Core、
 可选 Model Provider 和平台 Port；容量在构建期确定，实例资源与依赖在初始化期提供。
 
@@ -200,7 +200,7 @@ bash tests/build/file_store/compile.sh
 
 ## 文档
 
-- 在线文档站点：`https://<username>.github.io/cAgentV2/`（推送 GitHub 并启用
+- 在线文档站点：`https://<username>.github.io/cAgent/`（推送 GitHub 并启用
   Pages 后生效；本地预览与目录说明见 [docs/README.md](docs/README.md)）
 - [总体架构设计](docs/zh/architecture.md)
 - [公共 API 草案](docs/zh/api/public-api.md)

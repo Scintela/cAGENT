@@ -58,7 +58,7 @@ static uint64_t monotonic_ms(void* context)
 static agent_error_t complete(void* context,
     const agent_model_request_t* request, const agent_model_sink_t* sink)
 {
-    static const char reply[] = "Hello from cAgentV2.";
+    static const char reply[] = "Hello from cAgent.";
     (void)context;
     (void)request;
     return sink->text(sink->context,
@@ -115,7 +115,7 @@ cmake --build build
 ./build/my_agent
 ```
 
-运行成功时输出文本包含 `Hello from cAgentV2.`，执行和交付状态均为成功。
+运行成功时输出文本包含 `Hello from cAgent.`，执行和交付状态均为成功。
 诊断名称的具体字符串以 `agent_error_str()` 为准。
 
 ## 5. 理解刚才发生的事情

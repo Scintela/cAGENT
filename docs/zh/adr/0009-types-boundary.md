@@ -7,7 +7,7 @@
 
 ## 背景
 
-cAgentV2 面向 ESP-IDF、openvela、RT-Thread 与 Host 的同一套 C API。公共头文件既要让
+cAgent 面向 ESP-IDF、openvela、RT-Thread 与 Host 的同一套 C API。公共头文件既要让
 Model、Tool、Context、Run、Event、Session 和 Runtime 共享必要的值类型，又不能把某个
 领域模块的描述符扩散为所有调用者的基础依赖。
 

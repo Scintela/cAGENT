@@ -4,7 +4,7 @@
 set -euo pipefail
 
 root="$(cd "$(dirname "$0")/../../.." && pwd)"
-build_dir="${TMPDIR:-/tmp}/cagentv2-openvela-port-tests"
+build_dir="${TMPDIR:-/tmp}/cagent-openvela-port-tests"
 mkdir -p "$build_dir"
 
 cc -std=c99 -Wall -Wextra -Werror -pedantic \

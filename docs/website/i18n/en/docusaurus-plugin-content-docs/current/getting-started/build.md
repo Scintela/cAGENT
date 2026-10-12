@@ -1,6 +1,6 @@
 # Build and Configuration
 
-cAgentV2 is primarily built together with application source. C configuration
+cAgent is primarily built together with application source. C configuration
 macros are the foundation; ordinary CMake generates a shared configuration
 header. Kconfig is optional platform integration, not a mandatory Core dependency.
 

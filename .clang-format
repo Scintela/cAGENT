@@ -1,4 +1,4 @@
-# cAgentV2 格式化配置 —— 从现有代码风格推导。
+# cAgent 格式化配置 —— 从现有代码风格推导。
 # 工具:clang-format 23.x。运行:clang-format -i <file>
 ---
 Language: Cpp

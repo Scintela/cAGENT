@@ -117,7 +117,7 @@ if (process.argv.includes('--examples')) {
             path.join(build, 'codecs/json/libcagent_json_reader.a'), '-o', executable]);
           const result = spawnSync(executable, [], {encoding: 'utf8'});
           assert.equal(result.status, 0, result.stderr);
-          assert.match(result.stdout, /Hello from cAgentV2\./);
+          assert.match(result.stdout, /Hello from cAgent\./);
           console.log(locale + ': ' + result.stdout.trim());
         } else {
           run(compiler, [...flags, '-fsyntax-only', source]);

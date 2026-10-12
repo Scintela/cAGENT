@@ -6,4 +6,4 @@
 
 #include <agent/model.h>
 
-/* TODO(cAgentV2): Implement scripted completion and a public test configuration. */
+/* TODO(cAgent): Implement scripted completion and a public test configuration. */

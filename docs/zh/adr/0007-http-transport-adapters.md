@@ -5,7 +5,7 @@
 
 ## 背景
 
-cAgentV2 需要让 OpenAI-compatible Model Provider 在 ESP-IDF、openvela、RT-Thread 和
+cAgent 需要让 OpenAI-compatible Model Provider 在 ESP-IDF、openvela、RT-Thread 和
 Host 上发送 HTTP 请求，但 Core 不应知道具体 HTTP client、TLS、DNS、Wi-Fi、线程模型或
 连接池。不同平台的 HTTP API 在以下方面不同：
 

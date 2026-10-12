@@ -4,7 +4,7 @@
 set -euo pipefail
 
 root="$(cd "$(dirname "$0")/../../.." && pwd)"
-build_dir="${TMPDIR:-/tmp}/cagentv2-espidf-port-tests"
+build_dir="${TMPDIR:-/tmp}/cagent-espidf-port-tests"
 mkdir -p "$build_dir"
 
 for bundle in off on; do

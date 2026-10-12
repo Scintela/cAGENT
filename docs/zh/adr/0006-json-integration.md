@@ -7,7 +7,7 @@
 
 ## 背景
 
-cAgentV2 需要在后续阶段支持：
+cAgent 需要在后续阶段支持：
 
 - OpenAI-compatible HTTP 请求的 JSON 序列化；
 - 模型响应与流式 SSE `data` payload 的 JSON 解析；

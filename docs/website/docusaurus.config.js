@@ -1,4 +1,4 @@
-// cAgentV2 文档站点配置（Docusaurus，docs-only 模式）
+// cAgent 文档站点配置（Docusaurus，docs-only 模式）
 //
 // 本地预览（在 docs/website/ 目录下）：
 //   npm ci
@@ -11,7 +11,7 @@ const {themes: prismThemes} = require('prism-react-renderer');
 
 /** @type {import('@docusaurus/types').DocusaurusConfig} */
 const config = {
-  title: 'cAgentV2',
+  title: 'cAgent',
   tagline: '面向嵌入式与 Host 的跨平台 C 语言 Agent 库',
   url: 'https://scintela.github.io',
   baseUrl: '/cAGENT/',
@@ -76,7 +76,7 @@ const config = {
       darkTheme: prismThemes.dracula,
     },
     navbar: {
-      title: 'cAgentV2',
+      title: 'cAgent',
       logo: {
         alt: 'Scintela',
         src: 'img/logo-light.png',
@@ -96,7 +96,7 @@ const config = {
     },
     footer: {
       style: 'dark',
-      copyright: 'cAgentV2 contributors · MIT License',
+      copyright: 'cAgent contributors · MIT License',
     },
   },
   favicon: 'img/favicon.png',

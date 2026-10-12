@@ -1,16 +1,16 @@
 ---
 slug: /
-title: cAgentV2 Developer Manual
+title: cAgent Developer Manual
 ---
 
-# cAgentV2 Developer Manual
+# cAgent Developer Manual
 
 :::warning Development status (v0.0.1)
 This project is under **rapid iteration**: platform ports (ESP-IDF / OpenVela / RT-Thread) are not yet complete, public APIs may change at any time, and no cross-version compatibility is promised. **Not ready for production use yet.**
 :::
 
 
-cAgentV2 is a C99 library for synchronous embedded agents. The application owns
+cAgent is a C99 library for synchronous embedded agents. The application owns
 platform services, budgets, models and tools; Core coordinates context projection,
 model iterations, guarded tool execution and session finalization.
 

@@ -60,7 +60,7 @@ static uint64_t monotonic_ms(void* context)
 static agent_error_t complete(void* context,
     const agent_model_request_t* request, const agent_model_sink_t* sink)
 {
-    static const char reply[] = "Hello from cAgentV2.";
+    static const char reply[] = "Hello from cAgent.";
     (void)context;
     (void)request;
     return sink->text(sink->context,
@@ -118,7 +118,7 @@ cmake --build build
 ./build/my_agent
 ```
 
-Successful output includes `Hello from cAgentV2.` with successful execution and
+Successful output includes `Hello from cAgent.` with successful execution and
 delivery statuses. Diagnostic spellings are defined by `agent_error_str()`.
 
 ## 5. Understand the Flow

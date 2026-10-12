@@ -7,7 +7,7 @@ MVP 裁决见 ADR 0020：`agent.h` 直接声明同步运行和取消接口，不
 
 ## 背景
 
-cAgentV2 同时面向产品应用开发者、Model/Transport Provider 作者、平台 Port 作者和可选
+cAgent 同时面向产品应用开发者、Model/Transport Provider 作者、平台 Port 作者和可选
 addon 作者。若所有公共头都要求从 `agent.h` 间接包含，最小应用会被迫看到 Model、HTTP、
 Transport、Context、Storage 和未来 Plugin 的扩展契约；若 `agent.h` 只包含 `agent_t`，普通
 嵌入式应用又需要手工发现并包含过多基础头。

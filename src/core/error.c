@@ -3,7 +3,7 @@
  * SPDX-FileCopyrightText: 2026 tanglinjie
  */
 /**
- * cAgentV2 错误码 实现（骨架）。
+ * cAgent 错误码 实现（骨架）。
  *
  * 职责：agent_error_t 到稳定 ASCII 标识的映射
  * V1 参考：src/core/error.c

@@ -170,4 +170,4 @@ agent_model_t* agent_get_model(const agent_t* agent)
     return agent->model;
 }
 
-/* TODO(cAgentV2): 实现本模块。 */
+/* TODO(cAgent): 实现本模块。 */

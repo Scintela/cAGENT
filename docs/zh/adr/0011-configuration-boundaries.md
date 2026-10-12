@@ -5,7 +5,7 @@
 
 ## 背景
 
-cAgentV2 的主要目标是 ESP-IDF、openvela、RT-Thread 等由产品固件静态链接源码的嵌入式
+cAgent 的主要目标是 ESP-IDF、openvela、RT-Thread 等由产品固件静态链接源码的嵌入式
 场景。此类产品通常在构建时已知需要哪些模块、一个 Agent 需要多少 Tool/Session/Context
 槽位，以及可为 Core 保留多少 RAM。为每个 Agent 暴露大量运行期容量字段和布局查询接口
 虽然灵活，却增加公共 API、初始化布局代码和应用配置负担，未必符合首版轻量 Core 的目标。

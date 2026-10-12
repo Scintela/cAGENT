@@ -6,4 +6,4 @@
 
 #include <agent/model.h>
 
-/* TODO(cAgentV2): Add only when a native protocol implementation is required. */
+/* TODO(cAgent): Add only when a native protocol implementation is required. */

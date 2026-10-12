@@ -1,5 +1,5 @@
 #!/bin/sh
-# cAgentV2 红线检验（与 rules/engineering.md 同址维护）
+# cAgent 红线检验（与 rules/engineering.md 同址维护）
 # 用法：在仓库任意位置运行 bash rules/checks.sh；退出码 0 即全部通过。
 # 覆盖：E1 动态内存 / E2 系统头白名单 / E3 预处理边界 / E5 可重入。
 set -u

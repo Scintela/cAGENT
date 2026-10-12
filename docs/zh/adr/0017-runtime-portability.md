@@ -5,7 +5,7 @@
 
 ## 背景
 
-cAgentV2 要在 ESP-IDF、openvela/NuttX、RT-Thread、STM32 裸机或 FreeRTOS，以及 Host 上运行。
+cAgent 要在 ESP-IDF、openvela/NuttX、RT-Thread、STM32 裸机或 FreeRTOS，以及 Host 上运行。
 这些环境的时钟、临界区、日志和 heap API 不同，但 Core 的 workspace、turn 和 Model 抽象不应依赖
 任一系统头文件。
 

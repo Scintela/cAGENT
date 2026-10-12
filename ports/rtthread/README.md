@@ -44,8 +44,8 @@ set(AGENT_RTTHREAD_RUNTIME ON CACHE BOOL "" FORCE)
 set(AGENT_RTTHREAD_TRANSPORT ON CACHE BOOL "" FORCE)
 set(AGENT_RTTHREAD_FILE_STORE ON CACHE BOOL "" FORCE)
 set(AGENT_RTTHREAD_SDK_TARGET my_rtthread_sdk CACHE STRING "" FORCE)
-add_subdirectory(path/to/cAgentV2 cagent)
-add_subdirectory(path/to/cAgentV2/ports/rtthread cagent_rtthread)
+add_subdirectory(path/to/cAgent cagent)
+add_subdirectory(path/to/cAgent/ports/rtthread cagent_rtthread)
 target_link_libraries(app PRIVATE cagent::rtthread_runtime
     cagent::rtthread_transport cagent::rtthread_file_store)
 ```

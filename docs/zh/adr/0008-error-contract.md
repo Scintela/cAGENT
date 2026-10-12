@@ -7,7 +7,7 @@
 
 ## 背景
 
-cAgentV2 的 Core、Model Provider、Transport、Context、Tool 和 Session 需要在 ESP-IDF、
+cAgent 的 Core、Model Provider、Transport、Context、Tool 和 Session 需要在 ESP-IDF、
 openvela、RT-Thread 与 Host 上用同一方式报告失败。平台的 errno、mbedTLS、HTTP、JSON
 和设备 SDK 各自有错误体系；将它们穿透到公共 API 会使应用代码依赖某个 Port 或 Provider。
 
