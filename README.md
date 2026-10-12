@@ -1,5 +1,11 @@
 # cAgentV2
 
+> ⚠️ **项目状态:快速开发迭代阶段(v0.0.1)**
+>
+> 本库正处于早期快速迭代期:各系统适配(ESP-IDF / OpenVela / RT-Thread)尚未完全,
+> 公共 API 随时可能调整、不承诺跨版本兼容,**暂不建议用于生产环境**。
+
+
 cAgentV2 是面向嵌入式与 Host 的跨平台 C 语言 Agent 库，目标是在 ESP-IDF、
 OpenVela、RT-Thread 等系统上复用同一套应用接口。项目采用平台无关的 Core、
 可选 Model Provider 和平台 Port；容量在构建期确定，实例资源与依赖在初始化期提供。
